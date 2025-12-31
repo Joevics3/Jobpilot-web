@@ -614,7 +614,7 @@ function CVEditForm({
       {hasContent(data.roles) && (
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Professional Roles</h3>
-          {data.roles.map((role, index) => (
+          {(data.roles ?? []).map((role, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
                 type="text"
@@ -646,7 +646,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Skills</h3>
           <div className="space-y-2">
-            {data.skills.map((skill, index) => (
+            {(data.skills ?? []).map((skill, index) => (
               <div key={index} className="flex gap-2">
                 <input
                   type="text"
@@ -679,7 +679,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Work Experience</h3>
           <div className="space-y-4">
-            {data.experience.map((exp, index) => (
+            {(data.experience ?? []).map((exp, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Experience #{index + 1}</h4>
@@ -755,7 +755,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Education</h3>
           <div className="space-y-4">
-            {data.education.map((edu, index) => (
+            {(data.education ?? []).map((edu, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Education #{index + 1}</h4>
@@ -775,7 +775,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Projects</h3>
           <div className="space-y-4">
-            {data.projects.map((proj, index) => (
+            {(data.projects ?? []).map((proj, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Project #{index + 1}</h4>
@@ -793,7 +793,7 @@ function CVEditForm({
       {hasContent(data.accomplishments) && (
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Key Accomplishments</h3>
-          {data.accomplishments.map((acc, index) => (
+          {(data.accomplishments ?? []).map((acc, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input type="text" value={acc} onChange={(e) => { const newAccs = [...(data.accomplishments || [])]; newAccs[index] = e.target.value; onFieldChange(['accomplishments'], newAccs); }} className="flex-1 p-2 border rounded" />
               <button onClick={() => { const newAccs = [...(data.accomplishments || [])]; newAccs.splice(index, 1); onFieldChange(['accomplishments'], newAccs); }} className="p-2 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
@@ -807,7 +807,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Awards</h3>
           <div className="space-y-4">
-            {data.awards.map((award, index) => (
+            {(data.awards ?? []).map((award, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Award #{index + 1}</h4>
@@ -827,7 +827,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Certifications</h3>
           <div className="space-y-4">
-            {data.certifications.map((cert, index) => (
+            {(data.certifications ?? []).map((cert, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Certification #{index + 1}</h4>
@@ -847,7 +847,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Languages</h3>
           <div className="space-y-2">
-            {data.languages.map((lang, index) => (
+            {(data.languages ?? []).map((lang, index) => (
               <div key={index} className="flex gap-2">
                 <input type="text" value={lang} onChange={(e) => { const newLangs = [...(data.languages || [])]; newLangs[index] = e.target.value; onFieldChange(['languages'], newLangs); }} className="flex-1 p-2 border rounded" />
                 <button onClick={() => { const newLangs = [...(data.languages || [])]; newLangs.splice(index, 1); onFieldChange(['languages'], newLangs); }} className="p-2 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
@@ -862,7 +862,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Interests</h3>
           <div className="space-y-2">
-            {data.interests.map((interest, index) => (
+            {(data.interests ?? []).map((interest, index) => (
               <div key={index} className="flex gap-2">
                 <input type="text" value={interest} onChange={(e) => { const newInterests = [...(data.interests || [])]; newInterests[index] = e.target.value; onFieldChange(['interests'], newInterests); }} className="flex-1 p-2 border rounded" />
                 <button onClick={() => { const newInterests = [...(data.interests || [])]; newInterests.splice(index, 1); onFieldChange(['interests'], newInterests); }} className="p-2 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
@@ -877,7 +877,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Publications</h3>
           <div className="space-y-4">
-            {data.publications.map((pub, index) => (
+            {(data.publications ?? []).map((pub, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Publication #{index + 1}</h4>
@@ -897,7 +897,7 @@ function CVEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Volunteer Work</h3>
           <div className="space-y-4">
-            {data.volunteerWork.map((vol, index) => (
+            {(data.volunteerWork ?? []).map((vol, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Volunteer Work #{index + 1}</h4>
@@ -918,7 +918,7 @@ function CVEditForm({
         <div className="pb-6">
           <h3 className="text-lg font-semibold mb-3">Additional Sections</h3>
           <div className="space-y-4">
-            {data.additionalSections.map((section, index) => (
+            {(data.additionalSections ?? []).map((section, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">Section #{index + 1}</h4>
@@ -1090,7 +1090,7 @@ function CoverLetterEditForm({
         <div className="border-b pb-6">
           <h3 className="text-lg font-semibold mb-3">Highlights</h3>
           <div className="space-y-2">
-            {data.highlights.map((highlight, index) => (
+            {(data.highlights ?? []).map((highlight, index) => (
               <div key={index} className="flex gap-2">
                 <input type="text" value={highlight} onChange={(e) => { const newHighlights = [...(data.highlights || [])]; newHighlights[index] = e.target.value; onFieldChange(['highlights'], newHighlights); }} className="flex-1 p-2 border rounded" />
                 <button onClick={() => { const newHighlights = [...(data.highlights || [])]; newHighlights.splice(index, 1); onFieldChange(['highlights'], newHighlights); }} className="p-2 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
