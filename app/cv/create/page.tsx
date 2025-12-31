@@ -135,7 +135,7 @@ export default function CVCreatePage() {
         userId: user.id,
         jobId: realJobId,
         jobPastedText: jobPastedTextForCV,
-        templateId: selectedCVTemplate,
+        templateId: selectedCVTemplate ?? undefined,
       });
 
       setGeneratedCVData(cvData);
@@ -147,8 +147,8 @@ export default function CVCreatePage() {
           jobId: realJobId,
           jobPastedText: jobPastedTextForCV,
           cvPastedText: JSON.stringify(cvData),
-          templateId: selectedCoverLetterTemplate,
-          format: coverLetterType || 'document',
+          templateId: selectedCoverLetterTemplate ?? undefined,
+          format: coverLetterType ?? 'document',
         });
         setGeneratedCoverLetterData(coverLetterData);
       }
