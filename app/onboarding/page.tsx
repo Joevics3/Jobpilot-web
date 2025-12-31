@@ -570,7 +570,7 @@ export default function OnboardingPage() {
           });
           
           // Show instructions
-          setMessage('Please check your email and click the confirmation link, then return here to sign in.', 'success');
+          showMessage('Please check your email and click the confirmation link, then return here to sign in.', 'success');
         } else {
           // User has session (email confirmation not required) - save data immediately
           try {
