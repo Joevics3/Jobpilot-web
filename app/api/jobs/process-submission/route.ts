@@ -372,7 +372,7 @@ export async function POST(request: NextRequest) {
           .eq('duplicate_check->>hash', duplicateCheck.hash)
       ]);
 
-      if (submittedJobs.data?.length > 0 || existingJobs.data?.length > 0) {
+      if ((submittedJobs.data?.length ?? 0) > 0 || (existingJobs.data?.length ?? 0) > 0) {
         // Mark as duplicate/rejected
         await supabaseAdmin
           .from('user_submitted_jobs')
