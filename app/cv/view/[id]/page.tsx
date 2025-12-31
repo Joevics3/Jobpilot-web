@@ -203,7 +203,7 @@ export default function CVViewPage() {
         jsPDF: {
           unit: 'mm',
           format: 'a4',
-          orientation: 'portrait',
+          orientation: 'portrait' as const,
           compress: true
         }
       };
