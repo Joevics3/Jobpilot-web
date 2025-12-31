@@ -136,11 +136,21 @@ export default function CVViewPage() {
 
   const handleDownload = async () => {
     if (!renderedHTML) return;
+    
+    // Guard: Ensure we're in a browser environment
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !document?.body) {
+      console.error('Browser environment is not available');
+      return;
+    }
+
+    // TypeScript now knows document exists
+    const doc = document;
+    const docBody = doc.body;
 
     setIsGeneratingPDF(true);
     try {
       // Create a temporary container with A4 dimensions
-      const element = document.createElement('div');
+      const element = doc.createElement('div');
       element.innerHTML = `
         <style>
           @page {
@@ -172,7 +182,7 @@ export default function CVViewPage() {
       element.style.top = '-9999px';
 
       // Add to body temporarily
-      document.body.appendChild(element);
+      docBody.appendChild(element);
 
       // Configure PDF options
       const opt = {
@@ -197,7 +207,7 @@ export default function CVViewPage() {
       await html2pdf().set(opt).from(element).save();
 
       // Clean up
-      document.body.removeChild(element);
+      docBody.removeChild(element);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
