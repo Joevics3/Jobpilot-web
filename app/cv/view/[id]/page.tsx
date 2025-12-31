@@ -138,13 +138,14 @@ export default function CVViewPage() {
     if (!renderedHTML) return;
     
     // Guard: Ensure we're in a browser environment
-    if (typeof window === 'undefined' || typeof document === 'undefined' || !document?.body) {
+    // Use window.document explicitly to avoid shadowing with state variable 'document'
+    if (typeof window === 'undefined' || !window.document?.body) {
       console.error('Browser environment is not available');
       return;
     }
 
-    // TypeScript now knows document exists
-    const doc = document;
+    // TypeScript now knows window.document exists
+    const doc = window.document;
     const docBody = doc.body;
 
     setIsGeneratingPDF(true);
