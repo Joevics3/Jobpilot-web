@@ -125,33 +125,16 @@ export default function CVCreatePage() {
       setGenerating(true);
       setStep('generation');
 
-      // Prepare user data for generation
-      const userDataForGeneration = {
-        cv_name: userData.cv_name || '',
-        cv_email: userData.cv_email || '',
-        cv_phone: userData.cv_phone || '',
-        cv_location: userData.cv_location || '',
-        cv_summary: userData.cv_summary || '',
-        cv_skills: userData.cv_skills || [],
-        cv_work_experience: userData.cv_work_experience || [],
-        cv_education: userData.cv_education || [],
-        cv_projects: userData.cv_projects || [],
-        cv_accomplishments: userData.cv_accomplishments || [],
-        cv_awards: userData.cv_awards || [],
-        cv_certifications: userData.cv_certifications || [],
-        cv_languages: userData.cv_languages || [],
-        cv_interests: userData.cv_interests || [],
-        cv_linkedin: userData.cv_linkedin || '',
-        cv_github: userData.cv_github || '',
-        cv_portfolio: userData.cv_portfolio || '',
-      };
-
       const jobDescription = selectedJob?.description || pastedJobDetails;
+      const isPastedJob = selectedJob?.id?.startsWith('pasted-') || !!pastedJobDetails;
+      const realJobId = selectedJob?.id && !isPastedJob ? selectedJob.id : undefined;
+      const jobPastedTextForCV = isPastedJob ? jobDescription : undefined;
 
       // Generate CV
       const cvData = await generateCV({
-        userData: userDataForGeneration,
-        jobDescription,
+        userId: user.id,
+        jobId: realJobId,
+        jobPastedText: jobPastedTextForCV,
         templateId: selectedCVTemplate,
       });
 
@@ -160,12 +143,12 @@ export default function CVCreatePage() {
       // Generate cover letter if requested
       if (createCoverLetter) {
         const coverLetterData = await generateCoverLetter({
-          userData: userDataForGeneration,
-          cvData: cvData,
-          jobDescription,
-          jobTitle: selectedJob?.title,
-          companyName: selectedJob?.company,
+          userId: user.id,
+          jobId: realJobId,
+          jobPastedText: jobPastedTextForCV,
+          cvPastedText: JSON.stringify(cvData),
           templateId: selectedCoverLetterTemplate,
+          format: coverLetterType || 'document',
         });
         setGeneratedCoverLetterData(coverLetterData);
       }
