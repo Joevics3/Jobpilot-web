@@ -81,6 +81,7 @@ interface ProfileFormData {
 }
 
 export default function EditProfilePage() {
+  // Profile edit page component
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
