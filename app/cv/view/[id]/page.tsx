@@ -511,7 +511,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Name</label>
               <input
                 type="text"
-                value={data.personalDetails.name}
+                value={data.personalDetails?.name ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'name'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -522,7 +522,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Title</label>
               <input
                 type="text"
-                value={data.personalDetails.title}
+                value={data.personalDetails?.title ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'title'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -533,7 +533,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Email</label>
               <input
                 type="email"
-                value={data.personalDetails.email}
+                value={data.personalDetails?.email ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'email'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -544,7 +544,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Phone</label>
               <input
                 type="tel"
-                value={data.personalDetails.phone}
+                value={data.personalDetails?.phone ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'phone'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -555,7 +555,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Location</label>
               <input
                 type="text"
-                value={data.personalDetails.location}
+                value={data.personalDetails?.location ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'location'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -566,7 +566,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">LinkedIn</label>
               <input
                 type="url"
-                value={data.personalDetails.linkedin}
+                value={data.personalDetails?.linkedin ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'linkedin'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -577,7 +577,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">GitHub</label>
               <input
                 type="url"
-                value={data.personalDetails.github}
+                value={data.personalDetails?.github ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'github'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -588,7 +588,7 @@ function CVEditForm({
               <label className="block text-sm font-medium mb-1">Portfolio</label>
               <input
                 type="url"
-                value={data.personalDetails.portfolio}
+                value={data.personalDetails?.portfolio ?? ''}
                 onChange={(e) => onFieldChange(['personalDetails', 'portfolio'], e.target.value)}
                 className="w-full p-2 border rounded"
               />
@@ -984,31 +984,31 @@ function CoverLetterEditForm({
           {hasContent(data.personalInfo?.name) && (
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
-              <input type="text" value={data.personalInfo.name} onChange={(e) => onFieldChange(['personalInfo', 'name'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.personalInfo?.name ?? ''} onChange={(e) => onFieldChange(['personalInfo', 'name'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.personalInfo?.email) && (
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
-              <input type="email" value={data.personalInfo.email} onChange={(e) => onFieldChange(['personalInfo', 'email'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="email" value={data.personalInfo?.email ?? ''} onChange={(e) => onFieldChange(['personalInfo', 'email'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.personalInfo?.phone) && (
             <div>
               <label className="block text-sm font-medium mb-1">Phone</label>
-              <input type="tel" value={data.personalInfo.phone} onChange={(e) => onFieldChange(['personalInfo', 'phone'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="tel" value={data.personalInfo?.phone ?? ''} onChange={(e) => onFieldChange(['personalInfo', 'phone'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.personalInfo?.address) && (
             <div>
               <label className="block text-sm font-medium mb-1">Address</label>
-              <input type="text" value={data.personalInfo.address} onChange={(e) => onFieldChange(['personalInfo', 'address'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.personalInfo?.address ?? ''} onChange={(e) => onFieldChange(['personalInfo', 'address'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.personalInfo?.location) && (
             <div>
               <label className="block text-sm font-medium mb-1">Location</label>
-              <input type="text" value={data.personalInfo.location} onChange={(e) => onFieldChange(['personalInfo', 'location'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.personalInfo?.location ?? ''} onChange={(e) => onFieldChange(['personalInfo', 'location'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
         </div>
@@ -1021,25 +1021,25 @@ function CoverLetterEditForm({
           {hasContent(data.recipientInfo?.name) && (
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
-              <input type="text" value={data.recipientInfo.name} onChange={(e) => onFieldChange(['recipientInfo', 'name'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.recipientInfo?.name ?? ''} onChange={(e) => onFieldChange(['recipientInfo', 'name'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.recipientInfo?.title) && (
             <div>
               <label className="block text-sm font-medium mb-1">Title</label>
-              <input type="text" value={data.recipientInfo.title} onChange={(e) => onFieldChange(['recipientInfo', 'title'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.recipientInfo?.title ?? ''} onChange={(e) => onFieldChange(['recipientInfo', 'title'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.recipientInfo?.company) && (
             <div>
               <label className="block text-sm font-medium mb-1">Company</label>
-              <input type="text" value={data.recipientInfo.company} onChange={(e) => onFieldChange(['recipientInfo', 'company'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.recipientInfo?.company ?? ''} onChange={(e) => onFieldChange(['recipientInfo', 'company'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.recipientInfo?.address) && (
             <div>
               <label className="block text-sm font-medium mb-1">Address</label>
-              <input type="text" value={data.recipientInfo.address} onChange={(e) => onFieldChange(['recipientInfo', 'address'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.recipientInfo?.address ?? ''} onChange={(e) => onFieldChange(['recipientInfo', 'address'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
         </div>
@@ -1123,19 +1123,19 @@ function CoverLetterEditForm({
           {hasContent(data.meta?.jobTitle) && (
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1">Job Title</label>
-              <input type="text" value={data.meta.jobTitle} onChange={(e) => onFieldChange(['meta', 'jobTitle'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.meta?.jobTitle ?? ''} onChange={(e) => onFieldChange(['meta', 'jobTitle'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.meta?.company) && (
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1">Company</label>
-              <input type="text" value={data.meta.company} onChange={(e) => onFieldChange(['meta', 'company'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.meta?.company ?? ''} onChange={(e) => onFieldChange(['meta', 'company'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
           {hasContent(data.meta?.date) && (
             <div>
               <label className="block text-sm font-medium mb-1">Date</label>
-              <input type="text" value={data.meta.date} onChange={(e) => onFieldChange(['meta', 'date'], e.target.value)} className="w-full p-2 border rounded" />
+              <input type="text" value={data.meta?.date ?? ''} onChange={(e) => onFieldChange(['meta', 'date'], e.target.value)} className="w-full p-2 border rounded" />
             </div>
           )}
         </div>
