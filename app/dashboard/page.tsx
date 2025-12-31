@@ -186,7 +186,7 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-semibold text-green-800">Onboarding Complete!</h3>
                   <p className="text-green-700">
                     Your profile has been successfully created and all your information has been saved. 
-                    You're now ready to start your job search journey with JobMeter!
+                    You&apos;re now ready to start your job search journey with JobMeter!
                   </p>
                   </div>
                 </div>

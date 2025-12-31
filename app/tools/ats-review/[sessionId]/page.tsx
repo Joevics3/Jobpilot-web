@@ -113,7 +113,7 @@ export default function ATSReviewSessionPage() {
         <div className="text-center">
           <XCircle size={48} className="mx-auto text-red-500 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Session Not Found</h2>
-          <p className="text-gray-600 mb-4">The review session you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-4">The review session you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             href="/tools"
             className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"

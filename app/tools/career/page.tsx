@@ -143,7 +143,7 @@ export default function CareerPage() {
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">Your Career Readiness Score</h2>
             <p className="text-gray-600 max-w-md mx-auto">
-              Based on your profile, skills, and experience, you're well-positioned for career advancement.
+              Based on your profile, skills, and experience, you&apos;re well-positioned for career advancement.
               Focus on the recommendations below to improve further.
             </p>
           </div>
@@ -390,7 +390,7 @@ export default function CareerPage() {
               <h3 className="text-lg font-semibold text-gray-900">Reanalyze Career Data</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              This will regenerate your career analysis based on your current profile. Only reanalyze if you've made significant changes to your profile data.
+              This will regenerate your career analysis based on your current profile. Only reanalyze if you&apos;ve made significant changes to your profile data.
             </p>
             <div className="flex gap-3">
               <button

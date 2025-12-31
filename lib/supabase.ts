@@ -36,6 +36,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// Create Supabase admin client for server-side operations (only available server-side)
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+export const supabaseAdmin = typeof window === 'undefined' && supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : supabase // Fallback to regular client on client-side
+
 // Suppress console errors for failed token refresh attempts
 // These errors occur because autoRefreshToken is disabled, but they don't break functionality
 if (typeof window !== 'undefined') {

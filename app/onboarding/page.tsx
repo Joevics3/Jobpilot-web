@@ -915,7 +915,7 @@ export default function OnboardingPage() {
               </div>
               <CardTitle className="text-xl">Select Your Target Roles</CardTitle>
               <CardDescription>
-                Choose the job roles you're interested in. We've pre-selected roles based on your CV analysis.
+                Choose the job roles you&apos;re interested in. We&apos;ve pre-selected roles based on your CV analysis.
               </CardDescription>
             </CardHeader>
             
@@ -993,7 +993,7 @@ export default function OnboardingPage() {
               {/* Add Custom Role */}
               <div>
                 <h3 className="font-medium text-slate-900 mb-2">Add Custom Role</h3>
-                <p className="text-sm text-slate-600 mb-3">Don't see your target role? Add it manually</p>
+                <p className="text-sm text-slate-600 mb-3">Don&apos;t see your target role? Add it manually</p>
                 <div className="flex gap-2">
                   <Input 
                     placeholder="Enter a job role..."
@@ -1149,7 +1149,7 @@ export default function OnboardingPage() {
                   <MapPin className="h-5 w-5 text-red-600" />
                   <Label className="text-base font-semibold">Preferred Locations</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Add multiple locations where you'd like to work</p>
+                <p className="text-sm text-slate-600 mb-3">Add multiple locations where you&apos;d like to work</p>
                 <div className="flex gap-2 mb-3">
                   <Input 
                     placeholder="Lagos, Abuja, New York"
@@ -1431,7 +1431,7 @@ export default function OnboardingPage() {
                     <div>
                       <h4 className="font-medium mb-1">Email Confirmation Required</h4>
                       <p className="text-sm">
-                        We've sent a confirmation email to your inbox. Please check your email and click the confirmation link to complete your account setup.
+                        We&apos;ve sent a confirmation email to your inbox. Please check your email and click the confirmation link to complete your account setup.
                       </p>
                     </div>
                   </div>

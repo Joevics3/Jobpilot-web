@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors. Only use this if you're certain the errors won't break your app.
+    ignoreDuringBuilds: false, // Keep false, but we'll fix all errors
+  },
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors. Only use this if you're certain type errors won't break your app.
+    // ignoreBuildErrors: false, // Keep false
+  },
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],

@@ -380,7 +380,7 @@ export default function SavedPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2 text-white">Saved Jobs</h1>
-            <p className="text-white/80">Keep track of jobs you're interested in</p>
+            <p className="text-white/80">Keep track of jobs you&apos;re interested in</p>
           </div>
           <button
             onClick={handleRefresh}
