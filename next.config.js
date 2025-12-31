@@ -34,6 +34,14 @@ const nextConfig = {
     ],
   },
   webpack: (config, { dev, isServer }) => {
+    // Ignore optional dependencies for ws package (used by Supabase realtime)
+    // These are optional performance enhancements, not required for functionality
+    if (!config.resolve.fallback) {
+      config.resolve.fallback = {};
+    }
+    config.resolve.fallback.bufferutil = false;
+    config.resolve.fallback['utf-8-validate'] = false;
+
     // Optimize for development
     if (dev && !isServer) {
       config.watchOptions = {

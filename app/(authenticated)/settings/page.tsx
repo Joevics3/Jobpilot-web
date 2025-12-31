@@ -297,7 +297,11 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={item.id}
-                    onClick={item.onClick}
+                    onClick={() => {
+                      if ('onClick' in item && item.onClick) {
+                        item.onClick();
+                      }
+                    }}
                     className={`
                       w-full flex items-center justify-between p-4 transition-colors
                       ${!isLast ? 'border-b border-gray-100' : ''}
