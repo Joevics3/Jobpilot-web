@@ -305,9 +305,9 @@ export default function SettingsPage() {
                     className={`
                       w-full flex items-center justify-between p-4 transition-colors
                       ${!isLast ? 'border-b border-gray-100' : ''}
-                      ${item.destructive ? 'hover:bg-red-50' : 'hover:bg-gray-50'}
+                      ${'destructive' in item && item.destructive ? 'hover:bg-red-50' : 'hover:bg-gray-50'}
                     `}
-                    disabled={item.toggle}
+                    disabled={'toggle' in item && item.toggle}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
@@ -320,7 +320,7 @@ export default function SettingsPage() {
                         <h3
                           className="text-sm font-semibold mb-0.5"
                           style={{
-                            color: item.destructive ? theme.colors.error : theme.colors.text.primary,
+                            color: 'destructive' in item && item.destructive ? theme.colors.error : theme.colors.text.primary,
                           }}
                         >
                           {item.title}
@@ -331,9 +331,9 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    {item.toggle ? (
+                    {'toggle' in item && item.toggle ? (
                       <Switch
-                        checked={item.value}
+                        checked={item.value as boolean}
                         onCheckedChange={item.onToggle}
                         className="flex-shrink-0"
                       />
@@ -342,7 +342,7 @@ export default function SettingsPage() {
                         size={20}
                         className="flex-shrink-0"
                         style={{
-                          color: item.destructive ? theme.colors.error : theme.colors.text.secondary,
+                          color: 'destructive' in item && item.destructive ? theme.colors.error : theme.colors.text.secondary,
                         }}
                       />
                     )}
