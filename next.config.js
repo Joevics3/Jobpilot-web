@@ -14,6 +14,13 @@ const nextConfig = {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
+  transpilePackages: [
+    'lucide-react',
+    '@radix-ui/react-progress',
+    '@radix-ui/react-icons',
+    '@radix-ui/react-slot',
+    'cmdk',
+  ],
   swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
