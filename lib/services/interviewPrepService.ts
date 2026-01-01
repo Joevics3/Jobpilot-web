@@ -254,27 +254,6 @@ Evaluate this answer and provide constructive feedback.`;
   }
 
   /**
-   * Parse JSON response from AI (handles markdown code blocks)
-   */
-  static parseAIResponse<T>(responseText: string): T {
-    let jsonString = responseText.trim();
-    
-    // Extract JSON from response (handle markdown code blocks if present)
-    const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonString = jsonMatch[0];
-    }
-    
-    try {
-      return JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      console.error('Response text:', responseText);
-      throw new Error('Failed to parse AI response');
-    }
-  }
-
-  /**
    * Generate interview questions
    */
   static async generateQuestions(
