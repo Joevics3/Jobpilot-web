@@ -10,6 +10,7 @@ export interface GroundingResult {
   remote?: boolean;
   requirements?: string[];
   skills?: string[];
+  experience_level?: string;
 }
 
 export interface ParsedProfile {

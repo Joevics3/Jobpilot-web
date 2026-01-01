@@ -150,3 +150,52 @@ export interface JobPreferences {
   created_at: string
   updated_at: string
 }
+
+export interface Job {
+  id: string
+  title: string
+  company: string
+  location?: string
+  salary_min?: number
+  salary_max?: number
+  salary_currency?: string
+  job_type?: string
+  remote?: boolean
+  description?: string
+  requirements?: string[]
+  skills?: string[]
+  experience_level?: string
+  source?: string
+  source_url?: string
+  posted_date?: string
+  expires_date?: string
+  is_active?: boolean
+  duplicate_hash?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface JobSource {
+  id: string
+  name: string
+  type: 'rss' | 'grounding' | 'scraping' | 'manual'
+  url?: string
+  is_active?: boolean
+  last_fetched?: string
+  fetch_frequency?: number
+  total_jobs_fetched?: number
+  active_jobs_count?: number
+  created_at: string
+}
+
+export interface GroundingSearch {
+  id: string
+  query: string
+  role_category?: string
+  location?: string
+  jobs_found?: number
+  status?: 'pending' | 'completed' | 'failed'
+  error_message?: string
+  created_at: string
+  completed_at?: string
+}
