@@ -253,35 +253,22 @@ export default function CareerPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-1">{gap.skill}</h3>
-                          <p className="text-gray-600 text-sm">{gap.description}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-blue-600">{gap.priority}/5</div>
+                          <div className="text-sm font-bold text-blue-600 capitalize">{gap.priority}</div>
                           <div className="text-xs text-gray-500">Priority</div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-semibold text-gray-900 mb-2">Current Level</h4>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full"
-                              style={{ width: `${gap.currentLevel}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">{gap.currentLevel}% proficiency</p>
+                          <p className="text-sm text-gray-600">{gap.currentLevel}</p>
                         </div>
 
                         <div>
                           <h4 className="text-sm font-semibold text-gray-900 mb-2">Target Level</h4>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full"
-                              style={{ width: `${gap.targetLevel}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">{gap.targetLevel}% required</p>
+                          <p className="text-sm text-gray-600">{gap.targetLevel}</p>
                         </div>
                       </div>
 
