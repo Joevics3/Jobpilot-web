@@ -74,9 +74,9 @@ export default function InterviewPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sessionHistory.map((session) => {
-                const completedQuestions = session.answers.filter(a => a.evaluation).length;
-                const totalQuestions = session.questions.length;
-                const progressPercent = totalQuestions > 0 ? (completedQuestions / totalQuestions) * 100 : 0;
+                const totalQuestions = session.chat.filter(m => m.type === 'question').length;
+                const completedAnswers = session.chat.filter(m => m.type === 'answer').length;
+                const progressPercent = totalQuestions > 0 ? (completedAnswers / totalQuestions) * 100 : 0;
 
                 return (
                   <div
@@ -98,7 +98,7 @@ export default function InterviewPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-green-600">
-                          {completedQuestions}/{totalQuestions}
+                          {completedAnswers}/{totalQuestions}
                         </div>
                         <div className="text-xs text-gray-500">Questions</div>
                       </div>
