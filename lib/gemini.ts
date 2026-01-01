@@ -76,13 +76,16 @@ export interface ParsedProfile {
 }
 
 export class GeminiService {
-  private apiKey: string;
+  private apiKey: string | undefined;
 
-  constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY!;
+  private getApiKey(): string {
+    if (!this.apiKey) {
+      this.apiKey = process.env.GEMINI_API_KEY;
+    }
     if (!this.apiKey) {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
+    return this.apiKey;
   }
 
   async parseCVWithFallback(cvText: string): Promise<ParsedProfile> {
@@ -210,7 +213,7 @@ ${cvText}`;
       try {
         console.log(`🔄 Trying model: ${modelName}`);
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.getApiKey()}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -475,7 +478,7 @@ ${cvText}`;
         try {
           console.log(`🔄 Trying Gemini model ${modelName} for file extraction...`);
           
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.apiKey}`, {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.getApiKey()}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -568,7 +571,7 @@ ${cvText}`;
         Extract as much relevant information as possible for each job.
       `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.getApiKey()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -622,7 +625,7 @@ ${cvText}`;
         ${jobText}
       `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.getApiKey()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -673,7 +676,7 @@ ${cvText}`;
         ${rssContent}
       `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.getApiKey()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
