@@ -224,7 +224,7 @@ export default function CareerPage() {
                         <div>
                           <h4 className="text-sm font-semibold text-gray-900 mb-2">Career Opportunities</h4>
                           <ul className="text-sm text-gray-600 space-y-1">
-                            {path.opportunities.slice(0, 3).map((opp, oppIndex) => (
+                            {path.potentialRoles.slice(0, 3).map((opp, oppIndex) => (
                               <li key={oppIndex} className="flex items-start gap-2">
                                 <span className="text-green-600 mt-1">•</span>
                                 <span>{opp}</span>
@@ -318,7 +318,7 @@ export default function CareerPage() {
                         Market Trends
                       </h3>
                       <div className="space-y-3">
-                        {analysis.marketInsights.trends.map((trend, index) => (
+                        {analysis.marketInsights.industryTrends.map((trend, index) => (
                           <div key={index} className="flex items-start gap-3">
                             <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                             <p className="text-gray-600">{trend}</p>
@@ -333,7 +333,7 @@ export default function CareerPage() {
                         Opportunities
                       </h3>
                       <div className="space-y-3">
-                        {analysis.marketInsights.opportunities.map((opp, index) => (
+                        {analysis.insights.opportunities.map((opp, index) => (
                           <div key={index} className="flex items-start gap-3">
                             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                             <p className="text-gray-600">{opp}</p>
@@ -350,7 +350,7 @@ export default function CareerPage() {
                         Warnings
                       </h3>
                       <div className="space-y-3">
-                        {analysis.marketInsights.warnings.map((warning, index) => (
+                        {analysis.insights.warnings.map((warning, index) => (
                           <div key={index} className="flex items-start gap-3">
                             <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                             <p className="text-gray-600">{warning}</p>
@@ -365,7 +365,7 @@ export default function CareerPage() {
                         Tips
                       </h3>
                       <div className="space-y-3">
-                        {analysis.marketInsights.tips.map((tip, index) => (
+                        {analysis.insights.tips.map((tip, index) => (
                           <div key={index} className="flex items-start gap-3">
                             <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
                             <p className="text-gray-600">{tip}</p>
