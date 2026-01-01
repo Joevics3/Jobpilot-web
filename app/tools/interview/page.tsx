@@ -150,13 +150,13 @@ export default function InterviewPage() {
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Start your first interview practice session to get personalized questions and AI-powered feedback.
             </p>
-            <button
-              onClick={() => setShowModal(true)}
+            <Link
+              href="/tools"
               className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold"
             >
               <Plus size={20} />
               Start Your First Session
-            </button>
+            </Link>
           </div>
         )}
       </div>
