@@ -18,6 +18,7 @@ interface BlogPost {
   meta_title: string | null;
   meta_description: string | null;
   published_at: string;
+  updated_at?: string;
   view_count: number;
   seo_keywords: string[] | null;
 }
