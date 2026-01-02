@@ -216,14 +216,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-export async function POST(req: Request) {
-  try {
-    // Validate API key at runtime
-    let geminiKey: string;
-    try {
-      geminiKey = getGeminiApiKey();
-    } catch (keyError) {
       console.error('GEMINI_API_KEY validation error:', keyError);
       return NextResponse.json(
         { 

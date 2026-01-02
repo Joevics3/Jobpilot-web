@@ -176,14 +176,6 @@ export default function UpgradeModal({
     </div>
   );
 }
-
-
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
