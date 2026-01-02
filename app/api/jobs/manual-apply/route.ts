@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Check if already applied
     const { data: existingApp } = await supabase
       .from('job_applications')
-      .select('id, application_status')
+      .select('id, application_status, retry_count')
       .eq('user_id', userId)
       .eq('job_id', jobId)
       .single();
