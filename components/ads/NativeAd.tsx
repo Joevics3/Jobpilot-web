@@ -12,7 +12,7 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoaded = useRef(false);
-  const containerId = "container-1e2aa34112d35cbf5a5c237b9d086461";
+  const [containerId] = useState(() => `native-ad-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`);
 
   useEffect(() => {
     setIsMounted(true);
