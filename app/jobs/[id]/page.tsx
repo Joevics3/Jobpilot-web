@@ -10,6 +10,8 @@ import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine
 import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
+import UpgradeModal from '@/components/jobs/UpgradeModal';
+import { useCredits } from '@/hooks/useCredits';
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -32,6 +34,12 @@ export default function JobDetailsPage() {
   const [matchBreakdown, setMatchBreakdown] = useState<any>(null);
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeErrorType, setUpgradeErrorType] = useState<'PREMIUM_REQUIRED' | 'QUOTA_EXCEEDED' | 'INSUFFICIENT_CREDITS' | null>(null);
+  const [upgradeErrorData, setUpgradeErrorData] = useState<any>(null);
+  const { balance, hasEnoughCredits, loadCreditBalance } = useCredits();
 
   useEffect(() => {
     checkAuth();
@@ -239,9 +247,110 @@ export default function JobDetailsPage() {
     setApplicationModalOpen(true);
   };
 
-  const handleApplicationAction = async (type: 'email' | 'phone' | 'link') => {
-    if (!job) return;
+  const handleAutoApply = async () => {
+    if (!job || !user) return;
 
+    const application = job.application || {};
+    const email = application.email || job.application_email;
+    
+    if (!email) {
+      // Should not happen if button is conditionally rendered, but safety check
+      return;
+    }
+
+    // Step 1: Check if user has enough credits (2 credits per application)
+    const AUTO_APPLY_CREDITS_COST = 2;
+    
+    try {
+      // Refresh credit balance to get latest
+      await loadCreditBalance();
+
+      if (!hasEnoughCredits(AUTO_APPLY_CREDITS_COST)) {
+        // User doesn't have enough credits - show upgrade modal
+        setUpgradeErrorType('INSUFFICIENT_CREDITS');
+        setUpgradeErrorData({
+          message: `Auto-apply requires ${AUTO_APPLY_CREDITS_COST} credits. You have ${balance} credit${balance !== 1 ? 's' : ''}. Please purchase credits to continue.`,
+          requiredCredits: AUTO_APPLY_CREDITS_COST,
+          currentCredits: balance,
+        });
+        setUpgradeModalOpen(true);
+        return;
+      }
+
+      // Premium check passed - trigger application in background (fire-and-forget)
+      // Mark as applied immediately so user can continue browsing
+      const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
+      let appliedArray: string[] = [];
+      
+      if (applied) {
+        try {
+          appliedArray = JSON.parse(applied);
+        } catch (e) {
+          console.error('Error parsing applied jobs:', e);
+        }
+      }
+
+      if (!appliedArray.includes(jobId)) {
+        const updatedApplied = [...appliedArray, jobId];
+        localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(updatedApplied));
+        setApplied(true);
+
+        // Remove from saved jobs if it was saved
+        const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
+        if (saved) {
+          try {
+            const savedArray: string[] = JSON.parse(saved);
+            if (savedArray.includes(jobId)) {
+              const updatedSaved = savedArray.filter(id => id !== jobId);
+              localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(updatedSaved));
+              setSaved(false);
+            }
+          } catch (e) {
+            console.error('Error updating saved jobs:', e);
+          }
+        }
+      }
+
+      // Trigger application in background - don't wait for response
+      fetch('/api/jobs/manual-apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          jobId: jobId,
+        }),
+      }).catch((error) => {
+        // Silently log errors - backend will handle retries
+        console.error('Background application error (will be retried):', error);
+      });
+
+      // User can continue browsing - application is processing in background
+    } catch (error: any) {
+      console.error('Error in auto apply:', error);
+      // Only show error if it's a premium/quota issue (already handled above)
+      // Other errors will be handled by backend retry mechanism
+    }
+  };
+
+  const handleApplicationAction = async (type: 'email' | 'phone' | 'link') => {
+    if (!job || !user) return;
+
+    // For email applications, use mailto: link (auto-apply is now handled by separate button)
+    if (type === 'email') {
+      const application = job.application || {};
+      const email = application.email || job.application_email;
+      
+      if (email) {
+        // Open mailto: link for manual email application
+        const targetUrl = email.startsWith('mailto:') ? email : `mailto:${email}`;
+        window.location.href = targetUrl;
+        return;
+      }
+    }
+
+    // For phone and link, use existing behavior
     try {
       // Mark the job as applied
       const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
@@ -277,21 +386,13 @@ export default function JobDetailsPage() {
       }
 
       // Open the application method
-      let targetUrl = '';
       const application = job.application || {};
       
       switch (type) {
-        case 'email':
-          const email = application.email || job.application_email;
-          if (email) {
-            targetUrl = email.startsWith('mailto:') ? email : `mailto:${email}`;
-            window.location.href = targetUrl;
-          }
-          break;
         case 'phone':
           const phone = application.phone || job.application_phone;
           if (phone) {
-            targetUrl = phone.startsWith('tel:') ? phone : `tel:${phone}`;
+            const targetUrl = phone.startsWith('tel:') ? phone : `tel:${phone}`;
             window.location.href = targetUrl;
           }
           break;
@@ -787,6 +888,21 @@ export default function JobDetailsPage() {
             )}
           </button>
 
+          {/* Auto Apply Button - Only show if job has email application method */}
+          {(job.application?.email || job.application_email) && (
+            <button
+              onClick={handleAutoApply}
+              disabled={!user || applied}
+              className={`flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                applied
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {applied ? 'Applied' : 'Auto Apply'}
+            </button>
+          )}
+
           <button
             onClick={() => {
               // Save current job to cache for modal
@@ -841,10 +957,7 @@ export default function JobDetailsPage() {
             <div className="space-y-3 mb-6">
               {(job.application?.email || job.application_email) && (
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleApplicationAction('email')}
-                    className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors bg-gray-50 text-left"
-                  >
+                  <div className="flex-1 flex items-center gap-3 p-3 rounded-lg bg-gray-50">
                     <Mail size={24} style={{ color: theme.colors.primary.DEFAULT }} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900">Email Application</p>
@@ -852,13 +965,21 @@ export default function JobDetailsPage() {
                         {(job.application?.email || job.application_email || '').replace('mailto:', '')}
                       </p>
                     </div>
-                  </button>
+                  </div>
                   <button
                     onClick={() => handleCopyToClipboard('email')}
                     className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <Copy size={20} className="text-gray-500" />
                   </button>
+                </div>
+              )}
+              
+              {!user && (
+                <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                  <p className="text-sm text-yellow-800">
+                    Please <button onClick={() => router.push('/auth')} className="underline font-medium">sign in</button> to apply
+                  </p>
                 </div>
               )}
 
@@ -941,6 +1062,24 @@ export default function JobDetailsPage() {
           router.push(`/cv/view/${coverLetterId}`);
         }}
       />
+
+      {/* Upgrade Modal */}
+      {upgradeErrorType && (
+        <UpgradeModal
+          isOpen={upgradeModalOpen}
+          onClose={() => {
+            setUpgradeModalOpen(false);
+            setUpgradeErrorType(null);
+            setUpgradeErrorData(null);
+          }}
+          errorType={upgradeErrorType}
+          message={upgradeErrorData?.message}
+          resetDate={upgradeErrorData?.resetDate}
+          monthlyLimit={upgradeErrorData?.monthlyLimit}
+          requiredCredits={upgradeErrorData?.requiredCredits}
+          currentCredits={upgradeErrorData?.currentCredits}
+        />
+      )}
     </>
   );
 }

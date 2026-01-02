@@ -17,18 +17,19 @@ export function Progress({
   const transformValue = 100 - (percentage / max) * 100;
   
   return (
-    <ProgressPrimitive.Root
-      className={cn(
-        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
-        className
-      )}
+  <ProgressPrimitive.Root
+    className={cn(
+      "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+      className
+    )}
       value={percentage}
       max={max}
-    >
-      <ProgressPrimitive.Indicator
-        className="h-full w-full flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all"
+  >
+    <ProgressPrimitive.Indicator
+      className="h-full w-full flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all"
         style={{ transform: `translateX(-${transformValue}%)` }}
-      />
-    </ProgressPrimitive.Root>
+    />
+  </ProgressPrimitive.Root>
   );
 }
+

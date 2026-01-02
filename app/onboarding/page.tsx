@@ -270,63 +270,75 @@ export default function OnboardingPage() {
 
   // Function to parse the temporary CV text
   const parseTempCVText = async (text: string) => {
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Starting temp CV parsing, text length:', text.length);
+
     try {
-      
       const res = await fetch('/api/onboarding/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
-      
+
+      if (process.env.NODE_ENV === 'development') console.log('📡 Parse API response status:', res.status);
+
       if (!res.ok) {
-        throw new Error(`Parsing failed: ${res.status}`);
+        const errorText = await res.text();
+        if (process.env.NODE_ENV === 'development') console.log('❌ Parse API error response:', errorText);
+        const errorData = await res.json().catch(() => ({ error: `Parsing failed: ${res.status}`, details: errorText }));
+        throw new Error(errorData.error || `Parsing failed: ${res.status}`);
       }
-      
+
       const data = await res.json();
+      if (process.env.NODE_ENV === 'development') console.log('📄 Parse API response data:', data);
+
+      if (!data?.parsed) {
+        if (process.env.NODE_ENV === 'development') console.log('❌ Missing parsed data in response');
+        throw new Error('Invalid response: missing parsed data');
+      }
+
+      if (process.env.NODE_ENV === 'development') console.log('✅ Parse successful, profile data:', data.parsed);
       
-      if (data?.parsed) {
-        // Extract roles from work experience (actual CV roles)
-        const cvRoles = data.parsed.workExperience?.map((exp: any) => exp.title) || [];
-        
-        const profile = {
-          name: data.parsed.fullName || 'Name not found',
-          email: data.parsed.email || 'Email not found',
-          phone: data.parsed.phone || 'Phone not found',
-          location: data.parsed.location || 'Location not found',
-          summary: data.parsed.summary || 'Summary not found',
-          roles: cvRoles, // Roles found in the CV (work experience)
-          skills: data.parsed.skills || [],
-          experience: 'Experience level to be determined',
-          workExperience: data.parsed.workExperience || [],
-          education: data.parsed.education || [],
-          projects: data.parsed.projects || [],
-          accomplishments: data.parsed.accomplishments || [],
-          awards: data.parsed.awards || [],
-          certifications: data.parsed.certifications || [],
-          languages: data.parsed.languages || [],
-          interests: data.parsed.interests || [],
-          linkedin: data.parsed.linkedin || '',
-          github: data.parsed.github || '',
-          portfolio: data.parsed.portfolio || '',
-          publications: data.parsed.publications || [],
-          volunteerWork: data.parsed.volunteerWork || [],
-          additionalSections: data.parsed.additionalSections || [],
-          cvAiSuggestedRoles: data.parsed.suggestedRoles || [] // AI-generated additional roles
-        };
-        
-        // Set the extracted profile immediately
-        setExtractedData(profile);
-        
-        // Store locally (updated to match mobile app cache keys)
-        try {
-          localStorage.setItem('onboarding_cv_data', JSON.stringify(profile));
-          localStorage.setItem('onboarding_cv_file', JSON.stringify({ text }));
-          // Legacy keys for backward compatibility
-          localStorage.setItem('extractedProfile', JSON.stringify(profile));
-          localStorage.setItem('cvText', text);
-        } catch (storageError) {
-          console.warn('Failed to save to localStorage:', storageError);
-        }
+      // Extract roles from work experience (actual CV roles)
+      const cvRoles = data.parsed.workExperience?.map((exp: any) => exp.title) || [];
+      
+      const profile = {
+        name: data.parsed.fullName || 'Name not found',
+        email: data.parsed.email || 'Email not found',
+        phone: data.parsed.phone || 'Phone not found',
+        location: data.parsed.location || 'Location not found',
+        summary: data.parsed.summary || 'Summary not found',
+        roles: cvRoles, // Roles found in the CV (work experience)
+        skills: Array.isArray(data.parsed.skills) ? data.parsed.skills : [],
+        experience: 'Experience level to be determined',
+        workExperience: Array.isArray(data.parsed.workExperience) ? data.parsed.workExperience : [],
+        education: Array.isArray(data.parsed.education) ? data.parsed.education : [],
+        projects: Array.isArray(data.parsed.projects) ? data.parsed.projects : [],
+        accomplishments: Array.isArray(data.parsed.accomplishments) ? data.parsed.accomplishments : [],
+        awards: Array.isArray(data.parsed.awards) ? data.parsed.awards : [],
+        certifications: Array.isArray(data.parsed.certifications) ? data.parsed.certifications : [],
+        languages: Array.isArray(data.parsed.languages) ? data.parsed.languages : [],
+        interests: Array.isArray(data.parsed.interests) ? data.parsed.interests : [],
+        linkedin: data.parsed.linkedin || '',
+        github: data.parsed.github || '',
+        portfolio: data.parsed.portfolio || '',
+        publications: Array.isArray(data.parsed.publications) ? data.parsed.publications : [],
+        volunteerWork: Array.isArray(data.parsed.volunteerWork) ? data.parsed.volunteerWork : [],
+        additionalSections: Array.isArray(data.parsed.additionalSections) ? data.parsed.additionalSections : [],
+        cvAiSuggestedRoles: Array.isArray(data.parsed.suggestedRoles) ? data.parsed.suggestedRoles : [] // AI-generated additional roles
+      };
+      
+      // Set the extracted profile immediately
+      setExtractedData(profile);
+      
+      // Store locally (updated to match mobile app cache keys)
+      try {
+        localStorage.setItem('onboarding_cv_data', JSON.stringify(profile));
+        localStorage.setItem('onboarding_cv_file', JSON.stringify({ text }));
+        // Legacy keys for backward compatibility
+        localStorage.setItem('extractedProfile', JSON.stringify(profile));
+        localStorage.setItem('cvText', text);
+      } catch (storageError) {
+        console.warn('Failed to save to localStorage:', storageError);
       }
     } catch (error) {
       console.error('Temp CV parsing error:', error);
@@ -445,17 +457,17 @@ export default function OnboardingPage() {
           // Clear cached data since it's now saved
           localStorage.removeItem('pending_onboarding_data');
           
-          showMessage('Signed in successfully! Redirecting to dashboard...', 'success');
+          showMessage('Signed in successfully! Redirecting...', 'success');
           
           // Redirect to dashboard using Next.js router
           setTimeout(() => {
             console.log('Attempting to redirect to dashboard...');
             try {
-              router.push('/dashboard');
+              router.push('/');
             } catch (redirectError) {
               console.error('Router redirect failed:', redirectError);
               // Fallback to window.location
-              window.location.href = '/dashboard';
+              window.location.href = '/';
             }
           }, 1500);
         } catch (saveError: any) {
@@ -576,14 +588,14 @@ export default function OnboardingPage() {
           try {
             setIsSavingData(true);
             await saveOnboardingDataToSupabase(data.user);
-            showMessage('Account created and onboarding data saved! Redirecting to dashboard...', 'success');
+            showMessage('Account created and onboarding data saved! Redirecting...', 'success');
             
             // Clear cached data since it's now saved
             localStorage.removeItem('pending_onboarding_data');
             
-            // Redirect to dashboard
+            // Redirect to homepage
             setTimeout(() => {
-              router.push('/dashboard');
+              router.push('/');
             }, 1500);
           } catch (saveError: any) {
             console.error('Error saving onboarding data:', saveError);
@@ -837,8 +849,8 @@ export default function OnboardingPage() {
       localStorage.removeItem('onboardingPreferences');
 
       // TODO: Here you would typically send data to Supabase
-      // For now, we'll just redirect to dashboard
-      window.location.href = '/dashboard';
+      // For now, we'll just redirect to homepage
+      window.location.href = '/';
       
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -854,7 +866,7 @@ export default function OnboardingPage() {
         return (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Upload & Analyze Your CV</CardTitle>
+              <CardTitle className="text-xl">Upload</CardTitle>
               <CardDescription>
                 Upload your CV, paste text, or enter details manually. Our AI will analyze your experience and skills.
               </CardDescription>
@@ -913,7 +925,7 @@ export default function OnboardingPage() {
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
                 <Briefcase className="h-7 w-7 text-white" />
               </div>
-              <CardTitle className="text-xl">Select Your Target Roles</CardTitle>
+              <CardTitle className="text-xl">Roles</CardTitle>
               <CardDescription>
                 Choose the job roles you&apos;re interested in. We&apos;ve pre-selected roles based on your CV analysis.
               </CardDescription>
@@ -1136,7 +1148,7 @@ export default function OnboardingPage() {
               <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
                 <MapPin className="h-7 w-7 text-white" />
               </div>
-              <CardTitle className="text-xl">Set Preferences</CardTitle>
+              <CardTitle className="text-xl">Preferences</CardTitle>
               <CardDescription>
                 Tell us about your ideal job to personalize your recommendations.
               </CardDescription>
@@ -1380,7 +1392,7 @@ export default function OnboardingPage() {
               <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
                 <CheckCircle className="h-7 w-7 text-white" />
               </div>
-              <CardTitle className="text-xl">Create Your Account</CardTitle>
+              <CardTitle className="text-xl">Account</CardTitle>
               <CardDescription>
                 Create your account to complete your onboarding and save your profile
               </CardDescription>
@@ -1418,7 +1430,7 @@ export default function OnboardingPage() {
                 <div className="p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center gap-3">
                   <div className="h-5 w-5 rounded-full border-2 border-green-600 border-t-transparent animate-spin" />
                   <span className="text-sm font-medium">
-                    Redirecting you to your dashboard...
+                    Redirecting you to the homepage...
                   </span>
                 </div>
               )}
@@ -1527,7 +1539,7 @@ export default function OnboardingPage() {
                       ) : isRedirecting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Redirecting to Dashboard...
+                          Redirecting...
                         </>
                       ) : (
                         'Create Account & Complete Onboarding'
@@ -1566,22 +1578,21 @@ export default function OnboardingPage() {
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-slate-600">Step {currentStep} of {totalSteps}</span>
             <span className="text-sm text-slate-600">{Math.round(progressPercentage)}% Complete</span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
             <span className={`${isStep1Completed ? 'text-green-600 font-medium' : ''}`}>
-              {isStep1Completed ? '✓' : '1'} Upload & Analyze CV
+              {isStep1Completed ? '✓' : ''} Upload
             </span>
             <span className={`${isStep2Completed ? 'text-green-600 font-medium' : ''}`}>
-              {isStep2Completed ? '✓' : '2'} Select Target Roles
+              {isStep2Completed ? '✓' : ''} Roles
             </span>
             <span className={`${isStep3Completed ? 'text-green-600 font-medium' : ''}`}>
-              {isStep3Completed ? '✓' : '3'} Set Preferences
+              {isStep3Completed ? '✓' : ''} Preferences
             </span>
             <span className={`${isStep4Completed ? 'text-green-600 font-medium' : ''}`}>
-              {isStep4Completed ? '✓' : '4'} Create Account
+              {isStep4Completed ? '✓' : ''} Account
             </span>
           </div>
         </div>
@@ -1643,6 +1654,18 @@ export default function OnboardingPage() {
             <div></div>
         </div>
       </div>
+
+      {/* Signup Loading Overlay */}
+      {(isLoading || isSavingData || isRedirecting) && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-4 shadow-xl">
+            <div className="h-8 w-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+            <p className="text-slate-700 font-medium">
+              {isLoading ? 'Creating Account...' : isSavingData ? 'Saving Your Data...' : 'Redirecting...'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Loading Overlay Popup */}
       {showLoadingOverlay && (
@@ -1757,106 +1780,149 @@ function CVUploadStep({ onExtracted, isProcessing, setIsProcessing, onProfileExt
   };
 
   const extractFromFile = async (file: File) => {
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Starting file extraction for:', file.name);
+
     try {
       setError("");
-      
+
       const form = new FormData();
       form.append('file', file);
-      
+
       const res = await fetch('/api/onboarding/ocr', { method: 'POST', body: form });
-      
+
+      if (process.env.NODE_ENV === 'development') console.log('📡 OCR API response status:', res.status);
+
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('OCR API error:', res.status, errorText);
+        if (process.env.NODE_ENV === 'development') console.log('❌ OCR API error response:', errorText);
+        
+        // Check if it's an extraction failure (all methods failed)
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error === 'EXTRACTION_FAILED') {
+            // Show retry error message
+            setError('Text extraction failed. All methods (Gemini and OCR) failed. Please try again or upload a different file.');
+            setIsProcessing(false);
+            setShowLoadingOverlay(false);
+            return; // Don't throw, just show error
+          }
+        } catch (e) {
+          // Not JSON, continue with normal error
+        }
+        
         throw new Error(`OCR failed: ${res.status} ${errorText}`);
       }
-      
+
       const data = await res.json();
-      
+      if (process.env.NODE_ENV === 'development') console.log('📄 OCR API response data:', data);
+
       if (data?.text) {
+        if (process.env.NODE_ENV === 'development') console.log('✅ Text extracted, length:', data.text.length);
         setCvText(data.text as string);
         onExtracted(data.text as string);
-        
+
         // Parse the CV text immediately after extraction
         await parseCVText(data.text as string);
       } else {
-        console.error('No text in OCR response:', data);
+        if (process.env.NODE_ENV === 'development') console.log('❌ No text in OCR response');
         throw new Error('No text extracted from file');
       }
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') console.log('💥 File extraction error:', error);
       console.error('File processing error:', error);
       throw error; // Let the caller handle state resets
     }
   };
 
   const parseCVText = async (text: string) => {
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Starting manual CV parsing, text length:', text.length);
+
+    setIsParsingCV(true);
     try {
       setError("");
-      
+
       const res = await fetch('/api/onboarding/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
-      
+
+      if (process.env.NODE_ENV === 'development') console.log('📡 Parse API response status:', res.status);
+
       if (!res.ok) {
-        throw new Error(`Parsing failed: ${res.status}`);
+        const errorText = await res.text();
+        if (process.env.NODE_ENV === 'development') console.log('❌ Parse API error response:', errorText);
+        const errorData = await res.json().catch(() => ({ error: `Parsing failed: ${res.status}`, details: errorText }));
+        throw new Error(errorData.error || `Parsing failed: ${res.status}`);
       }
       
       const data = await res.json();
+      if (process.env.NODE_ENV === 'development') console.log('📄 Parse API response data:', data);
+
+      if (!data?.parsed) {
+        if (process.env.NODE_ENV === 'development') console.log('❌ Missing parsed data in response');
+        throw new Error('Invalid response: missing parsed data');
+      }
+
+      if (process.env.NODE_ENV === 'development') console.log('✅ Parse successful, profile data:', data.parsed);
       
-      if (data?.parsed) {
-        // Extract roles from work experience (actual CV roles)
-        const cvRoles = data.parsed.workExperience?.map((exp: any) => exp.title) || [];
-        
-        const profile = {
-          name: data.parsed.fullName || 'Name not found',
-          email: data.parsed.email || 'Email not found',
-          phone: data.parsed.phone || 'Phone not found',
-          location: data.parsed.location || 'Location not found',
-          summary: data.parsed.summary || 'Summary not found',
-          roles: cvRoles, // Roles found in the CV (work experience)
-          skills: data.parsed.skills || [],
-          experience: 'Experience level to be determined',
-          workExperience: data.parsed.workExperience || [],
-          education: data.parsed.education || [],
-          projects: data.parsed.projects || [],
-          accomplishments: data.parsed.accomplishments || [],
-          awards: data.parsed.awards || [],
-          certifications: data.parsed.certifications || [],
-          languages: data.parsed.languages || [],
-          interests: data.parsed.interests || [],
-          linkedin: data.parsed.linkedin || '',
-          github: data.parsed.github || '',
-          portfolio: data.parsed.portfolio || '',
-          publications: data.parsed.publications || [],
-          volunteerWork: data.parsed.volunteerWork || [],
-          additionalSections: data.parsed.additionalSections || [],
-          cvAiSuggestedRoles: data.parsed.suggestedRoles || [] // AI-generated additional roles
-        };
-        
-        // Set the extracted profile immediately
-        setExtractedProfile(profile);
-        onProfileExtracted(profile);
-        
-        // Store locally until submitted (updated to match mobile app cache keys)
-        try {
-          localStorage.setItem('onboarding_cv_data', JSON.stringify(profile));
-          localStorage.setItem('onboarding_cv_file', JSON.stringify({ text }));
-          // Legacy keys for backward compatibility
-          localStorage.setItem('extractedProfile', JSON.stringify(profile));
-          localStorage.setItem('cvText', text);
-        } catch (storageError) {
-          console.warn('Failed to save to localStorage:', storageError);
-          // Continue without localStorage - not critical for functionality
-        }
+      // Extract roles from work experience (actual CV roles)
+      const cvRoles = data.parsed.workExperience?.map((exp: any) => exp.title) || [];
+      
+      const profile = {
+        name: data.parsed.fullName || 'Name not found',
+        email: data.parsed.email || 'Email not found',
+        phone: data.parsed.phone || 'Phone not found',
+        location: data.parsed.location || 'Location not found',
+        summary: data.parsed.summary || 'Summary not found',
+        roles: cvRoles, // Roles found in the CV (work experience)
+        skills: Array.isArray(data.parsed.skills) ? data.parsed.skills : [],
+        experience: 'Experience level to be determined',
+        workExperience: Array.isArray(data.parsed.workExperience) ? data.parsed.workExperience : [],
+        education: Array.isArray(data.parsed.education) ? data.parsed.education : [],
+        projects: Array.isArray(data.parsed.projects) ? data.parsed.projects : [],
+        accomplishments: Array.isArray(data.parsed.accomplishments) ? data.parsed.accomplishments : [],
+        awards: Array.isArray(data.parsed.awards) ? data.parsed.awards : [],
+        certifications: Array.isArray(data.parsed.certifications) ? data.parsed.certifications : [],
+        languages: Array.isArray(data.parsed.languages) ? data.parsed.languages : [],
+        interests: Array.isArray(data.parsed.interests) ? data.parsed.interests : [],
+        linkedin: data.parsed.linkedin || '',
+        github: data.parsed.github || '',
+        portfolio: data.parsed.portfolio || '',
+        publications: Array.isArray(data.parsed.publications) ? data.parsed.publications : [],
+        volunteerWork: Array.isArray(data.parsed.volunteerWork) ? data.parsed.volunteerWork : [],
+        additionalSections: Array.isArray(data.parsed.additionalSections) ? data.parsed.additionalSections : [],
+        cvAiSuggestedRoles: Array.isArray(data.parsed.suggestedRoles) ? data.parsed.suggestedRoles : [] // AI-generated additional roles
+      };
+      
+      // Set the extracted profile immediately
+      setExtractedProfile(profile);
+      onProfileExtracted(profile);
+      
+      // Store locally until submitted (updated to match mobile app cache keys)
+      try {
+        localStorage.setItem('onboarding_cv_data', JSON.stringify(profile));
+        localStorage.setItem('onboarding_cv_file', JSON.stringify({ text }));
+        // Legacy keys for backward compatibility
+        localStorage.setItem('extractedProfile', JSON.stringify(profile));
+        localStorage.setItem('cvText', text);
+      } catch (storageError) {
+        console.warn('Failed to save to localStorage:', storageError);
+        // Continue without localStorage - not critical for functionality
       }
     } catch (error) {
       console.error('CV parsing error:', error);
-      setError("Failed to parse CV text. Please try again.");
-      // Reset states on error
-      setExtractedProfile(null);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to parse CV text. Please try again.';
+      setError(errorMessage);
+      // Don't reset extractedProfile to null - keep previous state if available
+      // This prevents React rendering errors
+      // Only clear extractedProfile if it was never successfully set
+      if (!extractedProfile) {
+        setExtractedProfile(null);
+      }
       throw error; // Let the caller handle state resets
+    } finally {
+      setIsParsingCV(false);
     }
   };
 
@@ -1932,7 +1998,10 @@ function CVUploadStep({ onExtracted, isProcessing, setIsProcessing, onProfileExt
   };
 
   const analyzeManualData = async () => {
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Starting manual data analysis');
+
     if (!manualData.fullName || !manualData.email) {
+      if (process.env.NODE_ENV === 'development') console.log('❌ Missing required fields');
       setError("Please fill in at least your name and email");
       return;
     }
@@ -1940,7 +2009,7 @@ function CVUploadStep({ onExtracted, isProcessing, setIsProcessing, onProfileExt
     setIsProcessing(true);
     setShowLoadingOverlay(true);
     setError("");
-    
+
     try {
       // Create a text representation of the manual data
       const manualText = `Name: ${manualData.fullName}
@@ -1952,12 +2021,15 @@ Work Experience: ${manualData.workExperience}
 Education: ${manualData.education}
 Skills: ${manualData.skills}`.trim();
 
-             // Set the text
-       setCvText(manualText);
-      
+      if (process.env.NODE_ENV === 'development') console.log('📝 Generated manual text, length:', manualText.length);
+
+      // Set the text
+      setCvText(manualText);
+
       // Parse the manual data using Gemini
       await parseCVText(manualText);
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') console.log('💥 Manual data parsing error:', error);
       console.error('Manual data parsing error:', error);
       setError("Failed to analyze the profile. Please try again.");
     } finally {
@@ -2033,7 +2105,7 @@ Skills: ${manualData.skills}`.trim();
           )}
           
           <div 
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-4 md:p-8 text-center transition-colors ${
               isDragging ? 'border-blue-400 bg-blue-50' : 'border-slate-300 hover:border-slate-400'
             } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
             onDragOver={handleDragOver}
@@ -2103,10 +2175,20 @@ Skills: ${manualData.skills}`.trim();
             {cvText.trim() && !extractedProfile && !isProcessing && (
               <Button 
                 onClick={() => parseCVText(cvText)}
+                disabled={isParsingCV}
                 className="mt-2 bg-blue-600 hover:bg-blue-700"
               >
-                <Brain className="mr-2 h-4 w-4" />
-                Analyze Text with AI
+                {isParsingCV ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="mr-2 h-4 w-4" />
+                    Analyze Text with AI
+                  </>
+                )}
               </Button>
             )}
             

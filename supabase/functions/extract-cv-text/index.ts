@@ -31,15 +31,16 @@ async function extractTextWithGemini(fileBuffer: Uint8Array, mimeType: string, b
   }
 
   // Prepare the prompt for text extraction
-  const prompt = `Extract all text from this ${fileFormat.includes('image') ? 'image' : 'PDF document'}. Return only the extracted text content, preserving the structure and formatting as much as possible. Include all sections, headings, paragraphs, lists, and any other text elements.`;
+  const prompt = `Extract all text from this ${fileFormat.includes('image') ? 'image' : 'PDF document'}. Return the complete text content exactly as it appears, preserving all structure, formatting, and layout. Include headers, paragraphs, lists, tables, and any other text elements. Do not summarize or modify the content - extract it verbatim.`;
 
   // Use specified Gemini models - prioritize faster models first
-  // gemini-2.5-flash-lite is fastest, then gemini-1.5-flash, then others
+  // gemini-2.0-flash-exp is good for multimodal, gemini-1.5-flash is stable
   const models = [
-    'gemini-2.5-flash-lite', // Fastest - primary choice
-    'gemini-1.5-flash',      // Fast fallback
-    'gemini-2.0-flash',      // Alternative
-    'gemini-1.5-pro'         // Slower but more capable - last resort
+    'gemini-2.0-flash-exp',  // Best for multimodal tasks
+    'gemini-1.5-flash',      // Stable fallback
+    'gemini-1.5-pro',        // More capable fallback
+    'gemini-2.5-flash-lite', // Last resort
+    'gemini-2.5-flash'       // Last resort
   ];
 
   for (const modelName of models) {
@@ -49,7 +50,7 @@ async function extractTextWithGemini(fileBuffer: Uint8Array, mimeType: string, b
       
       // Create AbortController for timeout - reduced to 45 seconds for faster failure
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout for multimodal
       
       try {
         const requestStartTime = Date.now();
@@ -59,22 +60,24 @@ async function extractTextWithGemini(fileBuffer: Uint8Array, mimeType: string, b
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [
-                {
-                  text: prompt
-                },
-                {
-                  inlineData: {
-                    mimeType: fileFormat,
-                    data: base64Data
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt
+                  },
+                  {
+                    inlineData: {
+                      mimeType: fileFormat,
+                      data: base64Data
+                    }
                   }
-                }
-              ]
-            }],
+                ]
+              }
+            ],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             }
           }),
           signal: controller.signal
@@ -95,17 +98,34 @@ async function extractTextWithGemini(fileBuffer: Uint8Array, mimeType: string, b
 
         const parseStartTime = Date.now();
         const data = await response.json();
-        const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        console.log(`📄 Raw response for ${modelName}:`, JSON.stringify(data, null, 2));
+
+        // Handle different response formats
+        let extractedText = '';
+
+        if (data.candidates && data.candidates[0]) {
+          const candidate = data.candidates[0];
+          if (candidate.content && candidate.content.parts) {
+            extractedText = candidate.content.parts
+              .filter((part: any) => part.text)
+              .map((part: any) => part.text)
+              .join('\n');
+          }
+        }
+
         const parseTime = Date.now() - parseStartTime;
         console.log(`⏱️ Response parsing took ${parseTime}ms`);
-        
-        if (!extractedText) {
-          console.log(`❌ Model ${modelName} returned no text, trying next model...`);
+        console.log(`📝 Extracted text length: ${extractedText.length}`);
+
+        if (!extractedText || extractedText.trim().length < 10) {
+          console.log(`❌ Model ${modelName} returned insufficient text (${extractedText.length} chars), trying next model...`);
           continue;
         }
 
         const totalTime = Date.now() - startTime;
         console.log(`✅ Successfully extracted text using ${modelName}, length: ${extractedText.length}, total time: ${totalTime}ms`);
+        console.log(`📄 First 500 chars: ${extractedText.substring(0, 500)}`);
         return extractedText.trim();
       } catch (fetchError: any) {
         clearTimeout(timeoutId);

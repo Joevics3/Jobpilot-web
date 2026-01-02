@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { RotateCcw, FileText, FileCheck, Plus } from 'lucide-react';
+import { RotateCcw, FileText, Plus } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 interface JobFeedHeaderProps {
@@ -9,7 +9,6 @@ interface JobFeedHeaderProps {
   refreshingMatches: boolean;
   onRefreshMatches: () => void;
   onCreateCV: () => void;
-  onCreateCoverLetter: () => void;
   onSubmitJob: () => void;
 }
 
@@ -18,7 +17,6 @@ export default function JobFeedHeader({
   refreshingMatches,
   onRefreshMatches,
   onCreateCV,
-  onCreateCoverLetter,
   onSubmitJob,
 }: JobFeedHeaderProps) {
   const getGreeting = () => {
@@ -90,18 +88,6 @@ export default function JobFeedHeader({
           >
             <FileText size={16} />
             <span>Create CV</span>
-          </button>
-
-          <button
-            onClick={onCreateCoverLetter}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm hover:shadow-md transition-all duration-200"
-            style={{
-              backgroundColor: theme.colors.background.DEFAULT,
-              color: theme.colors.primary.DEFAULT,
-            }}
-          >
-            <FileCheck size={16} />
-            <span>Cover Letter</span>
           </button>
 
           <button

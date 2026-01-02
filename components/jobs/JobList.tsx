@@ -583,17 +583,7 @@ export default function JobList() {
           onRefreshMatches={handleRefreshMatches}
           onCreateCV={() => {
             if (user) {
-              // Save jobs to localStorage for modal access
-              saveJobsToCache();
-              setCvModalOpen(true);
-            } else {
-              setAuthModalOpen(true);
-            }
-          }}
-          onCreateCoverLetter={() => {
-            if (user) {
-              saveJobsToCache();
-              setCoverLetterModalOpen(true);
+              router.push('/cv');
             } else {
               setAuthModalOpen(true);
             }
@@ -612,7 +602,7 @@ export default function JobList() {
           >
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm font-medium flex-1" style={{ color: theme.colors.primary.DEFAULT }}>
-                Sign in to see your personalized match scores and get job recommendations tailored to your profile
+                Sign in to get personalized match scores.
               </span>
               <Button
                 onClick={() => setAuthModalOpen(true)}

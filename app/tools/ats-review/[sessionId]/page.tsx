@@ -253,36 +253,36 @@ export default function ATSReviewSessionPage() {
             {expandedCategory && analysisResult.scoreBreakdown?.[expandedCategory] && (() => {
               const categoryData = analysisResult.scoreBreakdown[expandedCategory];
               return (
-                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {categoryLabels[expandedCategory] || expandedCategory}
-                    </h3>
-                    <button
-                      onClick={() => setExpandedCategory(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <XCircle size={20} />
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {categoryLabels[expandedCategory] || expandedCategory}
+                  </h3>
+                  <button
+                    onClick={() => setExpandedCategory(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
                       <p className="text-gray-700">{categoryData.details}</p>
-                    </div>
+                  </div>
                     {categoryData.examples && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
-                        <p className="text-gray-700 whitespace-pre-line">
-                          {categoryData.examples}
-                        </p>
-                      </div>
-                    )}
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
+                      <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
                       <p className="text-gray-700 whitespace-pre-line">
-                        {categoryData.recommendation}
+                          {categoryData.examples}
                       </p>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
+                    <p className="text-gray-700 whitespace-pre-line">
+                        {categoryData.recommendation}
+                    </p>
                     </div>
                   </div>
                 </div>
