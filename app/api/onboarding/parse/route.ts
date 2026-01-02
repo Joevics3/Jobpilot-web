@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 30; // 30 seconds max
+export const maxDuration = 120; // Increased to 120 seconds for parsing
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-async function parseCVWithGemini(cvText: string): Promise<any> {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured');
+// Get API key at runtime (not module load time) to ensure it's available in Vercel
+function getGeminiApiKey(): string {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('GEMINI_API_KEY environment variable is not set');
   }
+  return key;
+}
+
+async function parseCVWithGemini(cvText: string): Promise<any> {
+  const GEMINI_API_KEY = getGeminiApiKey();
 
   const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
 
@@ -159,9 +165,16 @@ ${cvText}`;
 
 export async function POST(req: Request) {
   try {
-    if (!GEMINI_API_KEY) {
+    // Validate API key at runtime
+    try {
+      getGeminiApiKey();
+    } catch (keyError) {
+      console.error('GEMINI_API_KEY validation error:', keyError);
       return NextResponse.json(
-        { error: 'GEMINI_API_KEY not configured' },
+        { 
+          error: 'GEMINI_API_KEY not configured',
+          details: process.env.NODE_ENV === 'development' ? (keyError instanceof Error ? keyError.message : 'Unknown error') : undefined
+        },
         { status: 500 }
       );
     }

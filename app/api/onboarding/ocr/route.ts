@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 30; // Reduced to 30 seconds
+export const maxDuration = 120; // Increased to 120 seconds for file processing
 
-// API Keys
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const OCR_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
+// Get API keys at runtime (not module load time) to ensure they're available in Vercel
+function getGeminiApiKey(): string {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('GEMINI_API_KEY environment variable is not set');
+  }
+  return key;
+}
+
+function getOcrApiKey(): string {
+  return process.env.OCR_SPACE_API_KEY || 'helloworld';
+}
 
 // Simple Gemini extraction - try models in order
 async function extractWithGemini(base64Data: string, mimeType: string): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured');
-  }
-
+  const GEMINI_API_KEY = getGeminiApiKey();
   const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
 
   for (const model of models) {
@@ -80,6 +86,7 @@ async function extractWithGemini(base64Data: string, mimeType: string): Promise<
 
 // OCR.space fallback
 async function extractWithOCR(base64Data: string, mimeType: string, fileName: string): Promise<string> {
+  const OCR_API_KEY = getOcrApiKey();
   const binaryString = atob(base64Data);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
@@ -113,10 +120,17 @@ async function extractWithOCR(base64Data: string, mimeType: string, fileName: st
 
 export async function POST(req: Request) {
   try {
-    // Validate API key immediately
-    if (!GEMINI_API_KEY) {
+    // Validate API key at runtime
+    let geminiKey: string;
+    try {
+      geminiKey = getGeminiApiKey();
+    } catch (keyError) {
+      console.error('GEMINI_API_KEY validation error:', keyError);
       return NextResponse.json(
-        { error: 'GEMINI_API_KEY not configured' },
+        { 
+          error: 'GEMINI_API_KEY not configured',
+          details: process.env.NODE_ENV === 'development' ? (keyError instanceof Error ? keyError.message : 'Unknown error') : undefined
+        },
         { status: 500 }
       );
     }
@@ -182,8 +196,22 @@ export async function POST(req: Request) {
     }
   } catch (error: any) {
     console.error('OCR route error:', error);
+    const errorMessage = error?.message || 'Unexpected error';
+    const errorStack = error?.stack;
+    
+    // Log more details in production for debugging
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      name: error?.name,
+      type: typeof error
+    });
+    
     return NextResponse.json(
-      { error: error?.message || 'Unexpected error' },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }
