@@ -1719,6 +1719,7 @@ function CVUploadStep({ onExtracted, isProcessing, setIsProcessing, onProfileExt
   const [extractedProfile, setExtractedProfile] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
+  const [isParsingCV, setIsParsingCV] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const [manualData, setManualData] = useState({
     fullName: '',
