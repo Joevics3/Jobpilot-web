@@ -1152,12 +1152,3 @@ export default function JobDetailsPage() {
   );
 }
 
-
-          requiredCredits={upgradeErrorData?.requiredCredits}
-          currentCredits={upgradeErrorData?.currentCredits}
-        />
-      )}
-    </>
-  );
-}
-

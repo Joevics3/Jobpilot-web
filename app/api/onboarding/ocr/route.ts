@@ -217,22 +217,6 @@ export async function POST(req: Request) {
   }
 }
 
-  });
-
-  const result = await response.json();
-  
-  if (result.IsErroredOnProcessing) {
-    throw new Error(`OCR failed: ${result.ErrorMessage}`);
-  }
-
-  const text = result.ParsedResults?.[0]?.ParsedText || '';
-  if (!text) {
-    throw new Error('No text found');
-  }
-
-  return text;
-}
-
 export async function POST(req: Request) {
   try {
     // Validate API key at runtime

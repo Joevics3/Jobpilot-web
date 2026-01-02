@@ -195,45 +195,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-  const prompt = `Extract CV information into JSON. Return ONLY valid JSON, no markdown:
-
-{
-  "fullName": "Name from CV",
-  "email": "Email address",
-  "phone": "Phone number",
-  "location": "City, Country",
-  "summary": "Professional summary",
-  "skills": ["skill1", "skill2"],
-  "workExperience": [{"title": "Job Title", "company": "Company", "duration": "Period", "description": "Details"}],
-  "education": [{"degree": "Degree", "institution": "School", "year": "Year"}],
-  "suggestedRoles": ["Role1", "Role2", "Role3", "Role4", "Role5", "Role6", "Role7", "Role8", "Role9", "Role10", "Role11", "Role12", "Role13", "Role14", "Role15"],
-  "projects": [],
-  "accomplishments": [],
-  "awards": [],
-  "certifications": [],
-  "languages": [],
-  "interests": [],
-  "linkedin": "",
-  "github": "",
-  "portfolio": "",
-  "publications": [],
-  "volunteerWork": [],
-  "additionalSections": []
-}
-
-IMPORTANT FOR suggestedRoles:
-- Suggest 10-15 job roles (not just 5)
-- Use COMMON job titles that appear frequently in job adverts
-- Examples: "Software Engineer", "Product Manager", "Data Analyst", "Marketing Manager", "Sales Representative", "Project Manager", "Business Analyst", "UX Designer", "Accountant", "HR Manager", "Operations Manager", "Customer Success Manager", "Content Writer", "Graphic Designer", "Financial Analyst"
-- Base suggestions on the person's skills, experience, and education
-- Include both entry-level and mid-level roles that match their profile
-- Use standard, widely-recognized job titles (not company-specific titles)
-
-CV Text:
-${cvText}`;
-
-  for (const model of models) {
     const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`;
     
     const controller = new AbortController();
