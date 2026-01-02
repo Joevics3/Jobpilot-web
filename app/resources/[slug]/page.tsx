@@ -5,6 +5,7 @@ import BlogPostContent from '@/components/resources/BlogPostContent';
 import ShareButton from '@/components/resources/ShareButton';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Eye } from 'lucide-react';
+import BannerAd from '@/components/ads/BannerAd';
 
 interface BlogPost {
   id: string;
@@ -253,6 +254,11 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               />
             </div>
           )}
+
+          {/* Banner Ad - Below Featured Image */}
+          <div className="mb-8">
+            <BannerAd />
+          </div>
 
           {/* Content */}
           <BlogPostContent content={post.content} />

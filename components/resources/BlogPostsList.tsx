@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Eye, ArrowRight } from 'lucide-react';
+import NativeAd from '@/components/ads/NativeAd';
+import React from 'react';
 
 interface BlogPost {
   id: string;
@@ -32,11 +34,11 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {posts.map((post) => (
-        <article
-          key={post.id}
-          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
-        >
+      {posts.map((post, index) => (
+        <React.Fragment key={post.id}>
+          <article
+            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
+          >
           {/* Featured Image */}
           {post.featured_image_url && (
             <Link href={`/resources/${post.slug}`}>
@@ -112,6 +114,13 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
             </div>
           </div>
         </article>
+        {/* In-feed Native Ad - After every 6th post */}
+        {(index + 1) % 6 === 0 && index < posts.length - 1 && (
+          <div className="col-span-1 md:col-span-2 lg:col-span-3">
+            <NativeAd />
+          </div>
+        )}
+      </React.Fragment>
       ))}
     </div>
   );

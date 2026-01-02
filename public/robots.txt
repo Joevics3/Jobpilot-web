@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard/
+Disallow: /onboarding/
+Disallow: /settings/
+Disallow: /saved/
+Disallow: /cv/view/
+
+# Sitemap
+Sitemap: https://www.jobmeter.app/sitemap.xml
+

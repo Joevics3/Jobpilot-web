@@ -42,6 +42,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { theme } from '@/lib/theme';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -866,8 +867,7 @@ export default function OnboardingPage() {
         return (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Upload</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm md:text-base">
                 Upload your CV, paste text, or enter details manually. Our AI will analyze your experience and skills.
               </CardDescription>
             </CardHeader>
@@ -898,7 +898,8 @@ export default function OnboardingPage() {
                     <Button 
                       onClick={nextStep}
                       disabled={!extractedData.name}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                      style={{ backgroundColor: theme.colors.accent.blue }}
                     >
                       Continue
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -922,21 +923,18 @@ export default function OnboardingPage() {
         return (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
+              <div className="p-2 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: theme.colors.accent.blue }}>
                 <Briefcase className="h-7 w-7 text-white" />
               </div>
               <CardTitle className="text-xl">Roles</CardTitle>
-              <CardDescription>
-                Choose the job roles you&apos;re interested in. We&apos;ve pre-selected roles based on your CV analysis.
-              </CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
               {/* Roles Extracted from CV */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-green-600" />
-                  <h3 className="font-medium text-slate-900">Roles Extracted from your CV</h3>
+                  <Sparkles className="h-5 w-5" style={{ color: theme.colors.success }} />
+                  <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>Roles Extracted from your CV</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {extractedData.roles && extractedData.roles.length > 0 ? (
@@ -946,9 +944,10 @@ export default function OnboardingPage() {
                         variant={selectedRoles.includes(role) ? "default" : "outline"}
                         className={`cursor-pointer px-3 py-2 transition-all ${
                           selectedRoles.includes(role) 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600' 
-                            : 'bg-blue-50 hover:bg-blue-100 hover:border-blue-300 border-blue-200'
+                            ? 'text-white' 
+                            : 'border-gray-300'
                         }`}
+                        style={selectedRoles.includes(role) ? { backgroundColor: theme.colors.accent.blue, borderColor: theme.colors.accent.blue } : { backgroundColor: theme.colors.background.muted, borderColor: theme.colors.border.DEFAULT }}
                         onClick={() => handleRoleToggle(role)}
                       >
                         {role}
@@ -968,11 +967,11 @@ export default function OnboardingPage() {
               {/* AI Suggested Roles */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Brain className="h-5 w-5 text-green-600" />
-                  <h3 className="font-medium text-slate-900">Select from Recommended Roles</h3>
-                  <div className="flex items-center gap-1 bg-green-50 border border-green-200 rounded px-2 py-1">
-                    <Star className="h-3 w-3 text-green-600" />
-                    <span className="text-xs font-medium text-green-600">Smart Match</span>
+                  <Brain className="h-5 w-5" style={{ color: theme.colors.success }} />
+                  <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>Select from Recommended Roles</h3>
+                  <div className="flex items-center gap-1 rounded px-2 py-1" style={{ backgroundColor: theme.colors.success + '15', border: `1px solid ${theme.colors.success}40` }}>
+                    <Star className="h-3 w-3" style={{ color: theme.colors.success }} />
+                    <span className="text-xs font-medium" style={{ color: theme.colors.success }}>Smart Match</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -983,9 +982,10 @@ export default function OnboardingPage() {
                         variant={selectedRoles.includes(role) ? "default" : "outline"}
                         className={`cursor-pointer px-3 py-2 transition-all ${
                           selectedRoles.includes(role) 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600' 
-                            : 'bg-green-50 hover:bg-green-100 hover:border-green-300 border-green-200'
+                            ? 'text-white' 
+                            : 'border-gray-300'
                         }`}
+                        style={selectedRoles.includes(role) ? { backgroundColor: theme.colors.accent.blue, borderColor: theme.colors.accent.blue } : { backgroundColor: theme.colors.success + '15', borderColor: theme.colors.success + '40' }}
                         onClick={() => handleRoleToggle(role)}
                       >
                         {role}
@@ -1004,8 +1004,7 @@ export default function OnboardingPage() {
 
               {/* Add Custom Role */}
               <div>
-                <h3 className="font-medium text-slate-900 mb-2">Add Custom Role</h3>
-                <p className="text-sm text-slate-600 mb-3">Don&apos;t see your target role? Add it manually</p>
+                <h3 className="font-medium mb-2" style={{ color: theme.colors.text.primary }}>Add Custom Role</h3>
                 <div className="flex gap-2">
                   <Input 
                     placeholder="Enter a job role..."
@@ -1022,7 +1021,8 @@ export default function OnboardingPage() {
                   <Button 
                     onClick={addCustomRole}
                     disabled={!newRole.trim() || selectedRoles.includes(newRole.trim())}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="text-white"
+                    style={{ backgroundColor: theme.colors.accent.blue }}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -1040,8 +1040,8 @@ export default function OnboardingPage() {
                   </p>
                   <div className="space-y-2">
                     {selectedRoles.map((role) => (
-                      <div key={role} className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded px-3 py-2">
-                        <span className="text-sm font-medium text-slate-800">{role}</span>
+                      <div key={role} className="flex items-center justify-between rounded px-3 py-2" style={{ backgroundColor: theme.colors.background.muted, border: `1px solid ${theme.colors.border.DEFAULT}` }}>
+                        <span className="text-sm font-medium" style={{ color: theme.colors.text.primary }}>{role}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1057,8 +1057,8 @@ export default function OnboardingPage() {
               )}
               
               {/* Summary Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-700">
+              <div className="rounded-lg p-4" style={{ backgroundColor: theme.colors.background.muted, border: `1px solid ${theme.colors.border.DEFAULT}` }}>
+                <p className="text-sm" style={{ color: theme.colors.accent.blue }}>
                   <strong>{selectedRoles.length}</strong> {selectedRoles.length === 1 ? 'role' : 'roles'} selected. 
                   This helps us find the most relevant job opportunities for you.
                 </p>
@@ -1078,7 +1078,8 @@ export default function OnboardingPage() {
                   <Button 
                     onClick={nextStep}
                     disabled={selectedRoles.length === 0}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    style={{ backgroundColor: theme.colors.accent.blue }}
                   >
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -1145,23 +1146,19 @@ export default function OnboardingPage() {
         return (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
+              <div className="p-2 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: theme.colors.accent.blue }}>
                 <MapPin className="h-7 w-7 text-white" />
               </div>
               <CardTitle className="text-xl">Preferences</CardTitle>
-              <CardDescription>
-                Tell us about your ideal job to personalize your recommendations.
-              </CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
               {/* Preferred Locations */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Preferred Locations</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Preferred Locations</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Add multiple locations where you&apos;d like to work</p>
                 <div className="flex gap-2 mb-3">
                   <Input 
                     placeholder="Lagos, Abuja, New York"
@@ -1175,7 +1172,7 @@ export default function OnboardingPage() {
                     }}
                     className="flex-1"
                   />
-                  <Button onClick={addLocation} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={addLocation} className="text-white" style={{ backgroundColor: theme.colors.accent.blue }}>
                     Add
                   </Button>
                 </div>
@@ -1198,11 +1195,10 @@ export default function OnboardingPage() {
 
               {/* Work Preference */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Work Preference</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Work Preference</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">What type of work arrangement do you prefer?</p>
                 <div className="flex flex-wrap gap-2">
                   {remotePreferences.map((preference) => (
                     <button
@@ -1213,9 +1209,10 @@ export default function OnboardingPage() {
                       })}
                       className={`px-4 py-2 rounded-md border transition-all ${
                         preferences.remotePreference === preference
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-50'
+                          ? 'text-white'
+                          : 'bg-white border-gray-300'
                       }`}
+                      style={preferences.remotePreference === preference ? { backgroundColor: theme.colors.accent.blue, borderColor: theme.colors.accent.blue } : { color: theme.colors.text.primary }}
                     >
                       {preference}
                     </button>
@@ -1225,11 +1222,10 @@ export default function OnboardingPage() {
 
               {/* Salary Range */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Banknote className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Salary Range</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <Banknote className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Salary Range</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Annual salary expectations (NGN)</p>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Minimum</Label>
                   <Input 
@@ -1247,11 +1243,10 @@ export default function OnboardingPage() {
 
               {/* Experience Level */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Award className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Experience Level</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Experience Level</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Select the level that best matches your experience</p>
                 <div className="flex flex-wrap gap-2">
                   {experienceLevels.map((level) => (
                     <button
@@ -1262,9 +1257,10 @@ export default function OnboardingPage() {
                       })}
                       className={`px-4 py-2 rounded-md border transition-all ${
                         preferences.experienceLevel === level
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-50'
+                          ? 'text-white'
+                          : 'bg-white border-gray-300'
                       }`}
+                      style={preferences.experienceLevel === level ? { backgroundColor: theme.colors.accent.blue, borderColor: theme.colors.accent.blue } : { color: theme.colors.text.primary }}
                     >
                       {level}
                     </button>
@@ -1274,11 +1270,10 @@ export default function OnboardingPage() {
 
               {/* Job Type */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Job Type</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Job Type</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">What type of employment are you looking for?</p>
                 <div className="flex flex-wrap gap-2">
                   {jobTypes.map((type) => (
                     <button
@@ -1289,9 +1284,10 @@ export default function OnboardingPage() {
                       })}
                       className={`px-4 py-2 rounded-md border transition-all ${
                         preferences.jobType === type
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-50'
+                          ? 'text-white'
+                          : 'bg-white border-gray-300'
                       }`}
+                      style={preferences.jobType === type ? { backgroundColor: theme.colors.accent.blue, borderColor: theme.colors.accent.blue } : { color: theme.colors.text.primary }}
                     >
                       {type}
                     </button>
@@ -1301,11 +1297,10 @@ export default function OnboardingPage() {
 
               {/* Industry Sector */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-5 w-5 text-red-600" />
-                  <Label className="text-base font-semibold">Industry Sector</Label>
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
+                  <Label className="text-base font-semibold" style={{ color: theme.colors.text.primary }}>Industry Sector</Label>
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Select the industry sector you want to work in</p>
                 <Select
                   value={preferences.sector}
                   onValueChange={(value) => setPreferences({
@@ -1374,7 +1369,8 @@ export default function OnboardingPage() {
                   </Button>
                   <Button 
                     onClick={handleFinish}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="text-white px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    style={{ backgroundColor: theme.colors.accent.blue }}
                   >
                     Start Job Hunting
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -1389,7 +1385,7 @@ export default function OnboardingPage() {
         return (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="bg-gradient-to-r from-emerald-500 to-green-500 p-2 rounded-full w-12 h-12 mx-auto mb-2">
+              <div className="p-2 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: theme.colors.accent.blue }}>
                 <CheckCircle className="h-7 w-7 text-white" />
               </div>
               <CardTitle className="text-xl">Account</CardTitle>
@@ -2078,12 +2074,12 @@ Skills: ${manualData.skills}`.trim();
 
         <TabsContent value="upload" className="space-y-4">
           {uploadedFile && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="rounded-lg p-4" style={{ backgroundColor: theme.colors.background.muted, border: `1px solid ${theme.colors.border.DEFAULT}` }}>
               <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-blue-600" />
+                <FileText className="h-5 w-5" style={{ color: theme.colors.accent.blue }} />
                 <div className="flex-1">
-                  <p className="font-medium text-blue-800">{uploadedFile.name}</p>
-                  <p className="text-sm text-blue-600">
+                  <p className="font-medium" style={{ color: theme.colors.text.primary }}>{uploadedFile.name}</p>
+                  <p className="text-sm" style={{ color: theme.colors.accent.blue }}>
                     {isProcessing ? 'Processing...' : 'Ready for analysis'}
                   </p>
                 </div>
@@ -2106,9 +2102,9 @@ Skills: ${manualData.skills}`.trim();
           )}
           
           <div 
-            className={`border-2 border-dashed rounded-lg p-4 md:p-8 text-center transition-colors ${
-              isDragging ? 'border-blue-400 bg-blue-50' : 'border-slate-300 hover:border-slate-400'
-            } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`text-center transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -2122,11 +2118,11 @@ Skills: ${manualData.skills}`.trim();
               id="cv-upload"
               disabled={isProcessing}
             />
-            <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-slate-700 mb-2">
+            <Upload className="h-12 w-12 mx-auto mb-4 hidden md:block" style={{ color: theme.colors.text.muted }} />
+            <p className="text-lg font-medium mb-2 hidden md:block" style={{ color: theme.colors.text.primary }}>
               Drop your CV here or click to browse
             </p>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm mb-4" style={{ color: theme.colors.text.secondary }}>
               Supports PDF, DOC, DOCX, JPG, PNG files up to 10MB
             </p>
             <Button 
@@ -2143,7 +2139,8 @@ Skills: ${manualData.skills}`.trim();
                 }
               }}
               disabled={isProcessing}
-              className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: theme.colors.accent.blue }}
             >
               <Upload className="mr-2 h-4 w-4" />
               Choose File
@@ -2558,6 +2555,86 @@ Skills: ${manualData.skills}`.trim();
                     </a>
                   </div>
                 )}
+                {extractedProfile.github && (
+                  <div>
+                    <span className="font-medium text-slate-600">GitHub: </span>
+                    <a href={extractedProfile.github} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {extractedProfile.github}
+                    </a>
+                  </div>
+                )}
+                {extractedProfile.portfolio && (
+                  <div>
+                    <span className="font-medium text-slate-600">Portfolio: </span>
+                    <a href={extractedProfile.portfolio} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {extractedProfile.portfolio}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Publications */}
+          {extractedProfile.publications?.length > 0 && (
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Publications
+              </h3>
+              <div className="space-y-3">
+                {extractedProfile.publications.map((pub: any, idx: number) => (
+                  <div key={idx} className="border-l-4 border-indigo-500 pl-4">
+                    <p className="font-semibold text-slate-800">{pub.title || '—'}</p>
+                    <p className="text-indigo-600 font-medium text-sm">{pub.journal || '—'}</p>
+                    {pub.year && <p className="text-slate-500 text-xs mt-1">Year: {pub.year}</p>}
+                    {pub.url && (
+                      <a href={pub.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm mt-1 hover:underline block">
+                        View Publication →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Volunteer Work */}
+          {extractedProfile.volunteerWork?.length > 0 && (
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <h3 className="font-semibold text-slate-800 mb-3">Volunteer Work</h3>
+              <div className="space-y-3">
+                {extractedProfile.volunteerWork.map((v: any, idx: number) => (
+                  <div key={idx} className="border-l-4 border-green-500 pl-4">
+                    <p className="font-semibold text-slate-800">{v.organization || '—'}</p>
+                    <p className="text-green-600 font-medium text-sm">{v.role || '—'}</p>
+                    {v.duration && <p className="text-slate-500 text-xs mt-1">{v.duration}</p>}
+                    {v.description && <p className="text-slate-700 text-sm mt-2 leading-relaxed">{v.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Additional Sections */}
+          {extractedProfile.additionalSections?.length > 0 && (
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <h3 className="font-semibold text-slate-800 mb-3">Additional Sections</h3>
+              <div className="space-y-3">
+                {extractedProfile.additionalSections.map((s: any, idx: number) => (
+                  <div key={idx} className="border-l-4 border-slate-400 pl-4">
+                    <p className="font-semibold text-slate-800">{s.sectionName || '—'}</p>
+                    {s.content && <p className="text-slate-700 text-sm mt-2 leading-relaxed">{s.content}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
                 {extractedProfile.github && (
                   <div>
                     <span className="font-medium text-slate-600">GitHub: </span>

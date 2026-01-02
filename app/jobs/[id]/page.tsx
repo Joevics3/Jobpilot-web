@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import Script from 'next/script';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
@@ -12,6 +12,8 @@ import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useCredits } from '@/hooks/useCredits';
+import BannerAd from '@/components/ads/BannerAd';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -659,8 +661,13 @@ export default function JobDetailsPage() {
         </div>
       </div>
 
+      {/* Banner Ad - Before Key Information Grid */}
+      <div className="px-6 py-3 mt-4">
+        <BannerAd />
+      </div>
+
       {/* Key Information Grid */}
-      <div className="px-6 py-4 mt-4">
+      <div className="px-6 py-4">
         <div className="mb-6 rounded-xl p-4 shadow-sm bg-white">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
@@ -793,6 +800,11 @@ export default function JobDetailsPage() {
           return null;
         })()}
 
+        {/* Banner Ad - After Key Responsibilities */}
+        <div className="mb-6">
+          <BannerAd />
+        </div>
+
         {/* Qualifications */}
         {(() => {
           const qualifications = job.qualifications || [];
@@ -857,9 +869,60 @@ export default function JobDetailsPage() {
           </section>
         )}
 
+        {/* Additional Job Information Accordion */}
+        {((job.about_role && job.about_role.trim()) || 
+          (job.who_apply && job.who_apply.trim()) || 
+          (job.standout && job.standout.trim())) && (
+          <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+            <Accordion type="multiple" className="w-full">
+              {job.about_role && job.about_role.trim() && (
+                <AccordionItem value="about-role" className="border-b border-gray-200">
+                  <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-3">
+                    About This Role
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">
+                      {job.about_role}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {job.who_apply && job.who_apply.trim() && (
+                <AccordionItem value="who-apply" className="border-b border-gray-200">
+                  <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-3">
+                    Who Should Apply
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">
+                      {job.who_apply}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {job.standout && job.standout.trim() && (
+                <AccordionItem value="standout" className="border-b-0">
+                  <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-yellow-500" />
+                      <span>How to Stand Out When Applying</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">
+                      {job.standout}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
+          </section>
+        )}
+
         {/* Application Link */}
         {(job.application_url || (job.application && (job.application.url || job.application.link))) && (
-          <section className="mb-28 rounded-xl p-4 shadow-sm bg-white">
+          <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
             <a
               href={job.application_url || job.application?.url || job.application?.link}
               target="_blank"
@@ -872,6 +935,11 @@ export default function JobDetailsPage() {
             </a>
           </section>
         )}
+
+        {/* Banner Ad - At Bottom */}
+        <div className="mb-32">
+          <BannerAd />
+        </div>
       </div>
 
       {/* Bottom Action Bar */}
@@ -1076,6 +1144,15 @@ export default function JobDetailsPage() {
           message={upgradeErrorData?.message}
           resetDate={upgradeErrorData?.resetDate}
           monthlyLimit={upgradeErrorData?.monthlyLimit}
+          requiredCredits={upgradeErrorData?.requiredCredits}
+          currentCredits={upgradeErrorData?.currentCredits}
+        />
+      )}
+    </>
+  );
+}
+
+
           requiredCredits={upgradeErrorData?.requiredCredits}
           currentCredits={upgradeErrorData?.currentCredits}
         />

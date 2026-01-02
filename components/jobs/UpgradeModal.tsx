@@ -177,3 +177,32 @@ export default function UpgradeModal({
   );
 }
 
+
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 transition-colors"
+          >
+            Maybe Later
+          </button>
+          <button
+            onClick={handleUpgrade}
+            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-colors"
+            style={{
+              backgroundColor: theme.colors.primary.DEFAULT,
+            }}
+          >
+            {errorType === 'INSUFFICIENT_CREDITS' ? 'Purchase Credits' : errorType === 'PREMIUM_REQUIRED' ? 'Upgrade Now' : 'Upgrade Plan'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

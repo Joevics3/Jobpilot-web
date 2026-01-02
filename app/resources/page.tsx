@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import BlogPostsList from '@/components/resources/BlogPostsList';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
+import ResourcesBannerAd from '@/components/resources/ResourcesBannerAd';
 
 export const metadata: Metadata = {
   title: 'Career Resources & Blog | JobMeter',
@@ -112,6 +113,9 @@ export default async function ResourcesPage() {
                 </div>
               </div>
             )}
+
+            {/* Banner Ad - At Top */}
+            <ResourcesBannerAd />
 
             {/* Posts by Category */}
             {categories.map((category) => (

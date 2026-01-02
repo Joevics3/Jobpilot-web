@@ -16,6 +16,10 @@ import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine
 import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
+import BannerAd from '@/components/ads/BannerAd';
+import NativeAd from '@/components/ads/NativeAd';
+import Script from 'next/script';
+import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -75,7 +79,7 @@ export default function JobList() {
     // Check if jobs are cached and if we should reload
     const cachedJobsKey = 'jobs_cache';
     const cacheTimestampKey = 'jobs_cache_timestamp';
-    const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+    const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours
     
     try {
       const cachedJobs = localStorage.getItem(cachedJobsKey);
@@ -576,6 +580,15 @@ export default function JobList() {
 
   return (
     <>
+      {/* SEO Structured Data */}
+      <OrganizationSchema />
+      <WebSiteSchema 
+        searchAction={{
+          target: 'https://www.jobmeter.app/?q={search_term_string}',
+          queryInput: 'required name=search_term_string',
+        }}
+      />
+      
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
         <JobFeedHeader
           userName={userName}
@@ -583,7 +596,7 @@ export default function JobList() {
           onRefreshMatches={handleRefreshMatches}
           onCreateCV={() => {
             if (user) {
-              router.push('/cv');
+              router.push('/cv?tab=cv');
             } else {
               setAuthModalOpen(true);
             }
@@ -616,6 +629,11 @@ export default function JobList() {
             </div>
           </div>
         )}
+
+        {/* Top Banner Ad - Below header, above sort bar */}
+        <div className="px-6 py-3">
+          <BannerAd />
+        </div>
 
         <div
           className="sticky top-0 z-10 px-6 py-3 flex items-center justify-between border-b"
@@ -660,16 +678,21 @@ export default function JobList() {
               </p>
             </div>
           ) : (
-            sortedJobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                savedJobs={savedJobs}
-                appliedJobs={appliedJobs}
-                onSave={handleSave}
-                onApply={handleApply}
-                onShowBreakdown={handleShowBreakdown}
-              />
+            sortedJobs.map((job, index) => (
+              <React.Fragment key={job.id}>
+                <JobCard
+                  job={job}
+                  savedJobs={savedJobs}
+                  appliedJobs={appliedJobs}
+                  onSave={handleSave}
+                  onApply={handleApply}
+                  onShowBreakdown={handleShowBreakdown}
+                />
+                {/* In-feed native ad after every 3rd job card */}
+                {(index + 1) % 3 === 0 && index < sortedJobs.length - 1 && (
+                  <NativeAd />
+                )}
+              </React.Fragment>
             ))
           )}
         </div>

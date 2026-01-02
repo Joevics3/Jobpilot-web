@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
 // import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+import BannerAd from '@/components/ads/BannerAd';
 
 type TabType = 'paths' | 'skills' | 'insights';
 
@@ -236,6 +237,11 @@ export default function CareerPage() {
                     </div>
                   ))}
                 </div>
+                
+                {/* Banner Ad - End of Career Paths Tab */}
+                <div className="mt-8">
+                  <BannerAd />
+                </div>
               </div>
             )}
 
@@ -285,6 +291,11 @@ export default function CareerPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+                
+                {/* Banner Ad - End of Skill Gaps Tab */}
+                <div className="mt-8">
+                  <BannerAd />
                 </div>
               </div>
             )}
@@ -361,6 +372,11 @@ export default function CareerPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+                
+                {/* Banner Ad - End of Insights Tab */}
+                <div className="mt-8">
+                  <BannerAd />
                 </div>
               </div>
             )}

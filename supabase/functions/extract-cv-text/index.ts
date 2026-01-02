@@ -308,3 +308,23 @@ serve(async (req) => {
   }
 });
 
+
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    }
+  } catch (error: any) {
+    console.error('Edge function error:', error);
+    return new Response(
+      JSON.stringify({ error: error?.message || 'Unexpected error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+});
+

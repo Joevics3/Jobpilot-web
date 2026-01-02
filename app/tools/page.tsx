@@ -6,6 +6,7 @@ import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 import InterviewPrepModal from '@/components/tools/InterviewPrepModal';
 import CareerCoachModal from '@/components/tools/CareerCoachModal';
+import BannerAd from '@/components/ads/BannerAd';
 
 interface Tool {
   id: string;
@@ -94,44 +95,57 @@ export default function ToolsPage() {
           </div>
         </div>
 
+        {/* Top Banner Ad - Before Interview Prep */}
+        <div className="px-6 py-3">
+          <BannerAd />
+        </div>
+
         {/* Tools Grid */}
         <div className="px-6 py-6">
           <div className="flex flex-col gap-4">
-            {tools.map((tool) => {
+            {tools.map((tool, index) => {
               const Icon = tool.icon;
               return (
-                <button
-                  key={tool.id}
-                  onClick={() => handleToolClick(tool)}
-                  className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
-                  style={{
-                    border: `1px solid ${theme.colors.border.DEFAULT}`,
-                  }}
-                >
-                  {/* Icon Container */}
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${tool.color}15` }}
+                <React.Fragment key={tool.id}>
+                  <button
+                    onClick={() => handleToolClick(tool)}
+                    className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
+                    style={{
+                      border: `1px solid ${theme.colors.border.DEFAULT}`,
+                    }}
                   >
-                    <Icon size={28} style={{ color: tool.color }} />
-                  </div>
+                    {/* Icon Container */}
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${tool.color}15` }}
+                    >
+                      <Icon size={28} style={{ color: tool.color }} />
+                    </div>
 
-                  {/* Tool Info */}
-                  <div className="flex-1 text-left">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">
-                      {tool.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {tool.description}
-                    </p>
-                  </div>
+                    {/* Tool Info */}
+                    <div className="flex-1 text-left">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {tool.description}
+                      </p>
+                    </div>
 
-                  {/* Arrow */}
-                  <ArrowRight
-                    size={20}
-                    className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
-                  />
-                </button>
+                    {/* Arrow */}
+                    <ArrowRight
+                      size={20}
+                      className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                    />
+                  </button>
+                  
+                  {/* Banner Ad - After ATS CV Review (2nd tool) */}
+                  {index === 1 && (
+                    <div className="my-4">
+                      <BannerAd />
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>
