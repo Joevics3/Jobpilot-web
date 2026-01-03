@@ -8,6 +8,7 @@ import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoac
 import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import InlineAd from '@/components/ads/InlineAd';
+import BannerAd from '@/components/ads/BannerAd';
 
 type TabType = 'paths' | 'skills' | 'insights';
 
