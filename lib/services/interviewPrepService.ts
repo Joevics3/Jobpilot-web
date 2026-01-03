@@ -371,20 +371,44 @@ Evaluate this answer and provide constructive feedback.`;
    * Build prompt for chat-based interview responses
    */
   static buildChatPrompt(session: InterviewSession, userAnswer: string): string {
-    const CHAT_PROMPT = `You are an expert interview coach conducting a conversational interview. The candidate just answered a question. Provide brief feedback and ask the next relevant question.
+    // Extract CV content if available
+    let cvText = '';
+    if (session.cvUsed) {
+      // Try to get CV from session or localStorage
+      try {
+        const cvDocs = localStorage.getItem('cv_documents');
+        if (cvDocs) {
+          const docs = JSON.parse(cvDocs);
+          const latestCV = docs.find((doc: any) => doc.type === 'cv');
+          if (latestCV) {
+            cvText = this.extractCVText(latestCV.content || latestCV.structured_data || '');
+          }
+        }
+      } catch (e) {
+        console.error('Error extracting CV:', e);
+      }
+    }
+
+    const CHAT_PROMPT = `You are a professional interviewer conducting a job interview. Your role is to act as the interviewer and ask relevant interview questions based on the job description and the candidate's CV/resume.
+
+IMPORTANT: You are the INTERVIEWER, not a coach. Ask interview questions as if you are interviewing the candidate for the position. Do not provide coaching feedback - just ask the next question naturally.
 
 Your response must be valid JSON only, matching this exact structure:
 
 {
-  "feedback": "2-3 sentence brief feedback on their answer",
+  "feedback": "Brief acknowledgment of their answer (1-2 sentences, interviewer style)",
   "nextQuestion": "The next interview question, or null if interview should end"
 }
 
 Guidelines:
-- Keep feedback brief and encouraging
-- Ask only ONE follow-up question per response
-- Make questions specific to the job: ${session.jobTitle} at ${session.jobCompany || 'company'}
-- Cover: experience, skills, problem-solving, team work, motivation
+- Act as the interviewer, not a coach
+- Ask natural, conversational interview questions
+- Questions should be based on the job description: ${session.jobTitle || 'the position'}
+- Use the candidate's CV/resume to ask relevant questions about their experience
+- Vary question difficulty: easy, medium, and hard questions
+- Ask about: technical skills, experience, problem-solving, teamwork, motivation, behavioral situations
+- Keep questions specific to the role and candidate's background
+- Ask only ONE question per response
 - End interview after 8-10 questions total
 - Return ONLY valid JSON, no markdown, no explanations`;
 
@@ -394,19 +418,25 @@ Guidelines:
       `${msg.type === 'question' ? 'Interviewer' : 'Candidate'}: ${msg.content}`
     ).join('\n');
 
+    const jobDesc = session.jobDescription.substring(0, 1500);
+    const jobDescSuffix = session.jobDescription.length > 1500 ? '...' : '';
+
     return `${CHAT_PROMPT}
 
 Job Details:
 - Title: ${session.jobTitle || 'Not specified'}
 - Company: ${session.jobCompany || 'Not specified'}
-- Description: ${session.jobDescription.substring(0, 500)}${session.jobDescription.length > 500 ? '...' : ''}
+- Description: ${jobDesc}${jobDescSuffix}
+
+${cvText ? `Candidate's CV/Resume:
+${cvText.substring(0, 1500)}${cvText.length > 1500 ? '...' : ''}` : 'Note: No CV/resume provided. Ask general questions based on the job description.'}
 
 Conversation History:
 ${conversationHistory}
 
 Candidate's latest answer: "${userAnswer}"
 
-Provide brief feedback and ask the next question, or end the interview if appropriate.`;
+As the interviewer, acknowledge their answer briefly and ask the next relevant interview question based on the job requirements and their background.`;
   }
 
   /**
@@ -492,11 +522,11 @@ Provide brief feedback and ask the next question, or end the interview if approp
       currentPhase: 'introduction',
     };
 
-    // Start with the introduction question
+    // Start with the introduction question (as interviewer)
     session.chat.push({
       id: 'intro',
       type: 'question',
-      content: "Tell me about yourself. I'd like to know about your background, experience, and what you're looking for in this role.",
+      content: `Hello! Thank you for coming in today. I'm excited to learn more about you. Can you tell me about yourself - your background, experience, and what interests you about the ${jobTitle || 'position'}?`,
       timestamp: Date.now(),
     });
 

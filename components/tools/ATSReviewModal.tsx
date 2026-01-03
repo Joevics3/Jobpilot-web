@@ -165,7 +165,35 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     setStep('job-selection');
   };
 
-  const handleJobSelect = (job: Job) => {
+  const handleJobSelect = async (job: Job) => {
+    // If job doesn't have description, try to fetch it
+    if (!job.description || !job.description.trim()) {
+      try {
+        // Try to get full job details from cached jobs
+        const cachedJobs = localStorage.getItem('cached_jobs');
+        if (cachedJobs) {
+          const jobsData = JSON.parse(cachedJobs);
+          const fullJob = jobsData.find((j: any) => j.id === job.id);
+          if (fullJob && fullJob.description) {
+            setSelectedJob({
+              ...job,
+              description: fullJob.description,
+            });
+            setStep('analyzing');
+            handleGenerate('cv-job');
+            return;
+          }
+        }
+        // If still no description, show error
+        alert('This job does not have a description. Please paste the job description manually or select a different job.');
+        return;
+      } catch (error) {
+        console.error('Error fetching job details:', error);
+        alert('Unable to load job description. Please paste the job description manually or select a different job.');
+        return;
+      }
+    }
+    
     setSelectedJob(job);
     setStep('analyzing');
     handleGenerate('cv-job');
@@ -363,63 +391,17 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
                   </div>
                   {cvDocuments.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-600 mb-4">No CVs found. Create a test CV to try the ATS review.</p>
+                      <p className="text-gray-600 mb-4">No CVs found. Create a CV first or paste your CV content.</p>
                       <div className="space-y-2">
                         <Button
                           onClick={() => {
-                            // Create a test CV for debugging
-                            const testCV = {
-                              id: 'test-cv-' + Date.now(),
-                              name: 'Test CV - Software Engineer',
-                              type: 'cv',
-                              templateId: 'template-1',
-                              structuredData: {
-                                personalDetails: {
-                                  name: 'John Doe',
-                                  email: 'john.doe@email.com',
-                                  phone: '+1 234 567 8900',
-                                  location: 'San Francisco, CA'
-                                },
-                                summary: 'Experienced software engineer with 5+ years of expertise in full-stack development, cloud technologies, and agile methodologies.',
-                                skills: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'AWS'],
-                                experience: [
-                                  {
-                                    role: 'Senior Software Engineer',
-                                    company: 'TechCorp Inc.',
-                                    location: 'San Francisco, CA',
-                                    startDate: '2021-01',
-                                    endDate: 'Present',
-                                    bullets: [
-                                      'Led development of microservices architecture serving 1M+ users',
-                                      'Implemented CI/CD pipelines reducing deployment time by 60%'
-                                    ]
-                                  }
-                                ],
-                                education: [
-                                  {
-                                    degree: 'Bachelor of Science in Computer Science',
-                                    institution: 'University of California, Berkeley',
-                                    graduationDate: '2019'
-                                  }
-                                ]
-                              },
-                              content: '<div>Test CV HTML content</div>',
-                              createdAt: new Date().toISOString(),
-                              updatedAt: new Date().toISOString()
-                            };
-
-                            const existingDocs = localStorage.getItem('cv_documents');
-                            const documents = existingDocs ? JSON.parse(existingDocs) : [];
-                            documents.unshift(testCV);
-                            localStorage.setItem('cv_documents', JSON.stringify(documents));
-
-                            // Reload CVs
-                            loadCVDocuments();
+                            router.push('/cv?tab=cv');
+                            onClose();
                           }}
                           variant="outline"
                           className="mr-2"
                         >
-                          Create Test CV
+                          Create CV
                         </Button>
                         <Button
                           onClick={() => setCvSelectionMethod('paste')}

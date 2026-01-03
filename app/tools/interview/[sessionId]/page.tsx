@@ -84,8 +84,22 @@ export default function InterviewSessionPage() {
   const startRecording = async () => {
     try {
       setIsRecording(true);
-      await SpeechUtils.startListening((transcript) => {
-        setUserInput(prev => prev + (prev ? ' ' : '') + transcript);
+      await SpeechUtils.startListening((result) => {
+        // Extract transcript from SpeechRecognitionResult object
+        const transcript = result.transcript || '';
+        if (transcript) {
+          if (result.isFinal) {
+            // Final result: append to existing input
+            setUserInput(prev => prev + (prev ? ' ' : '') + transcript.trim());
+          } else {
+            // Interim result: update the last part
+            setUserInput(prev => {
+              // Remove any previous interim text and add new one
+              const parts = prev.split(/\s+/);
+              return parts.slice(0, -1).join(' ') + (parts.length > 1 ? ' ' : '') + transcript;
+            });
+          }
+        }
       });
     } catch (error) {
       console.error('Error starting recording:', error);

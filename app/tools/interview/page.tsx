@@ -6,11 +6,13 @@ import { ArrowLeft, Plus, MessageCircle, FileCheck, Clock, TrendingUp } from 'lu
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
 import { InterviewPrepService, InterviewSession } from '@/lib/services/interviewPrepService';
+import InterviewPrepModal from '@/components/tools/InterviewPrepModal';
 import BannerAd from '@/components/ads/BannerAd';
 
 export default function InterviewPage() {
   const router = useRouter();
   const [sessionHistory, setSessionHistory] = useState<InterviewSession[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Load session history
   useEffect(() => {
@@ -54,12 +56,12 @@ export default function InterviewPage() {
                 </p>
               </div>
             </div>
-            <Link
-              href="/tools"
+            <button
+              onClick={() => setModalOpen(true)}
               className="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <Plus size={20} />
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -155,17 +157,25 @@ export default function InterviewPage() {
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Start your first interview practice session to get personalized questions and AI-powered feedback.
             </p>
-            <Link
-              href="/tools"
+            <button
+              onClick={() => setModalOpen(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold"
             >
               <Plus size={20} />
               Start Your First Session
-            </Link>
+            </button>
           </div>
         )}
       </div>
 
+      {/* Interview Prep Modal */}
+      <InterviewPrepModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          loadSessionHistory(); // Reload history after modal closes
+        }}
+      />
     </div>
   );
 }

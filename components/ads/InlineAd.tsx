@@ -27,6 +27,8 @@ export default function InlineAd({
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
+  // Generate unique ID for this ad instance to prevent conflicts
+  const adId = useRef(`inline-ad-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`).current;
 
   useEffect(() => {
     setIsMounted(true);
@@ -53,26 +55,31 @@ export default function InlineAd({
     // Clear container first
     container.innerHTML = '';
 
-    // Create the script element
-    const script = document.createElement('script');
-    script.innerHTML = `
-      atOptions = {
-        'key' : '${adKey}',
-        'format' : 'iframe',
-        'height' : ${adHeight},
-        'width' : ${adWidth},
-        'params' : {}
-      };
+    // Create unique global variable name for this ad instance
+    const uniqueVarName = `atOptions_${adId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    // Create the script element with unique global variable
+    const optionsScript = document.createElement('script');
+    optionsScript.type = 'text/javascript';
+    optionsScript.innerHTML = `
+      (function() {
+        window.${uniqueVarName} = {
+          'key' : '${adKey}',
+          'format' : 'iframe',
+          'height' : ${adHeight},
+          'width' : ${adWidth},
+          'params' : {}
+        };
+        window.atOptions = window.${uniqueVarName};
+      })();
     `;
+    document.head.appendChild(optionsScript);
 
     // Create invoke script
     const invokeScript = document.createElement('script');
     invokeScript.src = `https://www.highperformanceformat.com/${adKey}/invoke.js`;
     invokeScript.async = true;
     invokeScript.setAttribute('data-cfasync', 'false');
-
-    // Append scripts to container
-    container.appendChild(script);
     container.appendChild(invokeScript);
 
     return () => {
@@ -81,8 +88,16 @@ export default function InlineAd({
       if (container) {
         container.innerHTML = '';
       }
+      // Remove options script from head
+      if (optionsScript.parentNode) {
+        optionsScript.parentNode.removeChild(optionsScript);
+      }
+      // Clean up global variable
+      if (typeof window !== 'undefined') {
+        delete (window as any)[uniqueVarName];
+      }
     };
-  }, [isMounted, mobileKey, mobileHeight, mobileWidth, desktopKey, desktopHeight, desktopWidth]);
+  }, [isMounted, mobileKey, mobileHeight, mobileWidth, desktopKey, desktopHeight, desktopWidth, adId]);
 
   if (!isMounted) {
     return (

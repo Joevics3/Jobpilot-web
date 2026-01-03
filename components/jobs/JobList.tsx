@@ -669,9 +669,11 @@ export default function JobList() {
                   onApply={handleApply}
                   onShowBreakdown={handleShowBreakdown}
                 />
-                {/* In-feed inline ad after every 5th job card */}
-                {(index + 1) % 5 === 0 && index < sortedJobs.length - 1 && (
-                  <InlineAd key={`inline-ad-${index}-${Date.now()}`} />
+                {/* In-feed inline ad after every 5th job card (300x250 for mobile, 728x90 for desktop) */}
+                {(index + 1) % 5 === 0 && (
+                  <div key={`inline-ad-${index}`} className="my-4">
+                    <InlineAd />
+                  </div>
                 )}
               </React.Fragment>
             ))

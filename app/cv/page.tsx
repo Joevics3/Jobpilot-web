@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Plus, FileText, Edit, Download, Share2, Trash2 } from 'lucide-react';
+import { Plus, FileText, Trash2 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import CreateCVModal from '@/components/cv/CreateCVModal';
@@ -188,9 +188,10 @@ export default function CVListPage() {
             {filteredDocuments.map((doc, index) => (
               <React.Fragment key={doc.id}>
               <div
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100 cursor-pointer"
+                onClick={() => router.push(`/cv/view/${doc.id}`)}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1">{doc.name}</h3>
                     <p className="text-xs text-gray-500">
@@ -198,30 +199,14 @@ export default function CVListPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDelete(doc.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(doc.id);
+                    }}
                     className="p-1 hover:bg-red-50 rounded transition-colors"
                   >
                     <Trash2 size={16} className="text-red-500" />
                   </button>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/cv/view/${doc.id}`)}
-                    className="flex-1"
-                  >
-                    <Edit size={14} className="mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Download size={14} className="mr-1" />
-                    Download
-                  </Button>
                 </div>
               </div>
                 {/* Banner Ad - After 2nd row (6 items on desktop, 2 on tablet, 2 on mobile) */}

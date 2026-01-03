@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Star, TrendingUp, Target, CheckCircle, XCircle, AlertCircle, FileCheck, Briefcase } from 'lucide-react';
+import { ArrowLeft, Star, TrendingUp, Target, CheckCircle, XCircle, AlertCircle, FileCheck, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
 
@@ -144,24 +144,19 @@ export default function ATSReviewSessionPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/tools/ats-review"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft size={20} className="text-gray-600" />
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">ATS CV Review</h1>
-                <p className="text-sm text-gray-600">
-                  {session.cvName}
-                  {session.jobTitle && ` • ${session.jobTitle}`}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">{formatDate(session.timestamp)}</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/tools/ats-review"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft size={20} className="text-gray-600" />
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900">ATS CV Review</h1>
+              <p className="text-sm text-gray-600">
+                {session.cvName}
+                {session.jobTitle && ` • ${session.jobTitle}`}
+              </p>
             </div>
           </div>
         </div>
@@ -169,7 +164,7 @@ export default function ATSReviewSessionPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Overall Score Card */}
+        {/* Overall Score Card - Mobile Friendly */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Overall Score</h2>
@@ -180,7 +175,8 @@ export default function ATSReviewSessionPage() {
               {session.reviewType === 'cv-job' ? 'Job-Specific Review' : 'General ATS Review'}
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          {/* Score at top */}
+          <div className="flex justify-center mb-4">
             <div className="relative w-32 h-32">
               <svg className="transform -rotate-90 w-32 h-32">
                 <circle
@@ -208,87 +204,93 @@ export default function ATSReviewSessionPage() {
                 </span>
               </div>
             </div>
-            <div className="flex-1">
-              {analysisResult.overallExplanation && (
-                <p className="text-gray-700 leading-relaxed">{analysisResult.overallExplanation}</p>
-              )}
-              {analysisResult.summary && (
-                <p className="text-gray-600 mt-2 leading-relaxed">{analysisResult.summary}</p>
-              )}
-            </div>
+          </div>
+          {/* Text below score */}
+          <div className="text-center">
+            {analysisResult.overallExplanation && (
+              <p className="text-gray-700 leading-relaxed mb-2">{analysisResult.overallExplanation}</p>
+            )}
+            {analysisResult.summary && (
+              <p className="text-gray-600 leading-relaxed">{analysisResult.summary}</p>
+            )}
           </div>
         </div>
 
-        {/* Score Breakdown Grid */}
+        {/* Score Breakdown Accordion */}
         {analysisResult.scoreBreakdown && (
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Score Breakdown</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="space-y-3">
               {Object.entries(analysisResult.scoreBreakdown).map(([key, item]) => {
                 const Icon = getScoreIcon(item.score);
                 const color = getScoreColor(item.score);
+                const isExpanded = expandedCategory === key;
+                const categoryData = item;
+                
                 return (
                   <div
                     key={key}
-                    className="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => setExpandedCategory(expandedCategory === key ? null : key as ScoreBreakdownKey)}
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <Icon size={24} style={{ color }} />
-                      <span className="text-2xl font-bold" style={{ color }}>{item.score}%</span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                      {categoryLabels[key] || key}
-                    </h3>
-                    <p className="text-xs text-gray-600 line-clamp-2">{item.details}</p>
+                    {/* Accordion Header */}
+                    <button
+                      onClick={() => setExpandedCategory(isExpanded ? null : key as ScoreBreakdownKey)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <Icon size={24} style={{ color }} />
+                        <div className="text-left flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-gray-900">
+                              {categoryLabels[key] || key}
+                            </h3>
+                            <span className="text-xl font-bold ml-4" style={{ color }}>
+                              {item.score}%
+                            </span>
+                          </div>
+                          {!isExpanded && (
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-1">{item.details}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        {isExpanded ? (
+                          <ChevronUp size={20} className="text-gray-400" />
+                        ) : (
+                          <ChevronDown size={20} className="text-gray-400" />
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Accordion Content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+                        <div className="space-y-4 mt-4">
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
+                            <p className="text-gray-700 text-sm leading-relaxed">{categoryData.details}</p>
+                          </div>
+                          {categoryData.examples && (
+                            <div>
+                              <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
+                              <p className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
+                                {categoryData.examples}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
+                            <p className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
+                              {categoryData.recommendation}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-
-            <div className="text-center text-sm text-gray-500 mb-4">
-              Click on any category above to see detailed analysis
-            </div>
-
-            {/* Expanded Category Details */}
-            {expandedCategory && analysisResult.scoreBreakdown?.[expandedCategory] && (() => {
-              const categoryData = analysisResult.scoreBreakdown[expandedCategory];
-              return (
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {categoryLabels[expandedCategory] || expandedCategory}
-                  </h3>
-                  <button
-                    onClick={() => setExpandedCategory(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <XCircle size={20} />
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
-                      <p className="text-gray-700">{categoryData.details}</p>
-                  </div>
-                    {categoryData.examples && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
-                      <p className="text-gray-700 whitespace-pre-line">
-                          {categoryData.examples}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
-                    <p className="text-gray-700 whitespace-pre-line">
-                        {categoryData.recommendation}
-                    </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         )}
 

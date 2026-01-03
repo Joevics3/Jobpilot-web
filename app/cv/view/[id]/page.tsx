@@ -36,6 +36,7 @@ export default function CVViewPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedData, setEditedData] = useState<CVData | StructuredCoverLetter | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadDocument();
@@ -135,60 +136,106 @@ export default function CVViewPage() {
   };
 
   const handleDownload = async () => {
-    if (!renderedHTML) return;
+    if (!renderedHTML || !document) {
+      alert('Document content is not available. Please try again.');
+      return;
+    }
     
     // Guard: Ensure we're in a browser environment
-    // Use window.document explicitly to avoid shadowing with state variable 'document'
     if (typeof window === 'undefined' || !window.document?.body) {
       console.error('Browser environment is not available');
       return;
     }
 
-    // TypeScript now knows window.document exists
     const doc = window.document;
     const docBody = doc.body;
 
     setIsGeneratingPDF(true);
     try {
-      // Create a temporary container with A4 dimensions
+      // Create a temporary container with A4 dimensions and proper styling
       const element = doc.createElement('div');
-      element.innerHTML = `
-        <style>
-          @page {
-            size: A4;
-            margin: 0;
-          }
-          body {
-            margin: 0;
-            padding: 20mm;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-            background: white;
-            -webkit-print-color-adjust: exact;
-            color-adjust: exact;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-        </style>
-        ${renderedHTML}
-      `;
+      element.id = 'pdf-export-container';
+      
+      // Set container styles - make it visible but off-screen for proper rendering
       element.style.width = '210mm';
       element.style.minHeight = '297mm';
       element.style.boxSizing = 'border-box';
       element.style.backgroundColor = 'white';
-      element.style.position = 'absolute';
-      element.style.left = '-9999px';
-      element.style.top = '-9999px';
-
-      // Add to body temporarily
+      element.style.padding = '20mm';
+      element.style.position = 'fixed';
+      element.style.left = '0';
+      element.style.top = '0';
+      element.style.zIndex = '9999';
+      element.style.opacity = '0';
+      element.style.pointerEvents = 'none';
+      
+      // Create style element for proper rendering
+      const styleElement = doc.createElement('style');
+      styleElement.id = 'pdf-export-styles';
+      styleElement.textContent = `
+        #pdf-export-container {
+          font-family: Arial, sans-serif;
+          -webkit-print-color-adjust: exact;
+          color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        #pdf-export-container * {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      `;
+      
+      // Set the HTML content - use the actual rendered HTML
+      element.innerHTML = renderedHTML;
+      
+      // Add style and element to body
+      if (!doc.getElementById('pdf-export-styles')) {
+        doc.head.appendChild(styleElement);
+      }
       docBody.appendChild(element);
+
+      // Wait for content to render and images to load
+      await new Promise(resolve => {
+        // Wait for any images in the content to load
+        const images = element.getElementsByTagName('img');
+        if (images.length === 0) {
+          setTimeout(resolve, 200);
+          return;
+        }
+        
+        let loadedCount = 0;
+        const totalImages = images.length;
+        
+        const checkComplete = () => {
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            setTimeout(resolve, 100);
+          }
+        };
+        
+        Array.from(images).forEach((img) => {
+          if (img.complete) {
+            checkComplete();
+          } else {
+            img.onload = checkComplete;
+            img.onerror = checkComplete;
+          }
+        });
+        
+        // Timeout after 3 seconds
+        setTimeout(resolve, 3000);
+      });
+
+      // Verify element has content
+      if (!element.innerHTML || element.innerHTML.trim() === '' || element.textContent?.trim() === '') {
+        throw new Error('Document content is empty');
+      }
 
       // Configure PDF options
       const opt = {
-        margin: 0,
-        filename: `${document?.name || 'document'}.pdf`,
+        margin: [0, 0, 0, 0],
+        filename: `${document.name || 'document'}.pdf`,
         image: { 
           type: 'jpeg' as const,
           quality: 0.98 
@@ -198,20 +245,33 @@ export default function CVViewPage() {
           useCORS: true,
           letterRendering: true,
           allowTaint: false,
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          logging: false,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight
         },
         jsPDF: {
           unit: 'mm',
           format: 'a4',
           orientation: 'portrait' as const,
           compress: true
-        }
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
+      // Generate PDF
       await html2pdf().set(opt).from(element).save();
 
       // Clean up
-      docBody.removeChild(element);
+      if (docBody.contains(element)) {
+        docBody.removeChild(element);
+      }
+      const existingStyle = doc.getElementById('pdf-export-styles');
+      if (existingStyle) {
+        doc.head.removeChild(existingStyle);
+      }
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -369,7 +429,7 @@ export default function CVViewPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gray-50">
+      <div className="flex-1 flex items-start justify-center p-4 sm:p-6 bg-gray-50 overflow-y-auto">
         {isEditMode && editedData ? (
           <div className="w-full max-w-4xl">
             <EditForm
@@ -381,35 +441,34 @@ export default function CVViewPage() {
             />
           </div>
         ) : renderedHTML ? (
-          <div className="flex items-center justify-center min-h-[calc(100vh-200px)] w-full">
+          <div className="w-full max-w-4xl py-8">
             {/* A4 Paper Container */}
             <div
-              className="bg-white shadow-2xl relative transform scale-90 sm:scale-100"
+              className="bg-white shadow-2xl mx-auto relative"
               style={{
                 width: '210mm',
                 minHeight: '297mm',
                 maxWidth: '100%',
-                aspectRatio: '210/297',
-                paddingBottom: 'calc(297mm / 210 * 100%)', // Fallback for browsers without aspect-ratio support
                 boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                transformOrigin: 'center',
               }}
             >
               {/* Paper Shadow Effect */}
               <div
-                className="absolute inset-0 rounded-sm"
+                className="absolute inset-0 rounded-sm pointer-events-none"
                 style={{
                   background: 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(0,0,0,0.05))',
                   borderRadius: '2px',
                 }}
               />
 
-              {/* Content */}
+              {/* Content - Full height, allows overflow */}
               <div
-                className="relative z-10 w-full h-full overflow-hidden"
+                ref={contentContainerRef}
+                className="relative z-10 w-full"
                 style={{
                   padding: '20mm',
                   boxSizing: 'border-box',
+                  minHeight: '297mm',
                 }}
                 dangerouslySetInnerHTML={{ __html: renderedHTML }}
               />
@@ -421,11 +480,6 @@ export default function CVViewPage() {
                   backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(0,0,0,0.03) 26px, rgba(0,0,0,0.03) 27px)',
                 }}
               />
-            </div>
-
-            {/* Print Instructions */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm">
-              A4 Size Preview • Click Download to save as PDF
             </div>
           </div>
         ) : (
