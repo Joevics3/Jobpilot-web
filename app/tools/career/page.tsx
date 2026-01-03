@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, RefreshCw, TrendingUp, Target, Award, AlertTriangle, Lightbulb, Briefcase, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
-// import { theme } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import InlineAd from '@/components/ads/InlineAd';
 

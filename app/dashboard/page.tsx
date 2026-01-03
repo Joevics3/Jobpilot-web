@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, User, Briefcase, MapPin, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { theme } from '@/lib/theme';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);

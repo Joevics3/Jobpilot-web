@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { theme } from '@/lib/theme';
 import JobFeedHeader from '@/components/jobs/JobFeedHeader';
 import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
