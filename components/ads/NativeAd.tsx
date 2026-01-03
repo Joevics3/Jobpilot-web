@@ -11,25 +11,31 @@ interface NativeAdProps {
 export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerId] = useState(() => `native-ad-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`);
+  const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isMounted || !containerRef.current) return;
+    if (!isMounted || !containerRef.current || scriptLoadedRef.current) return;
 
     const container = containerRef.current;
+    scriptLoadedRef.current = true;
     
-    // Set up atOptions for Adsterra native ad (similar to BannerAd but with format: 'native')
+    // Clear container first
+    container.innerHTML = '';
+    
+    // Set atOptions for Adsterra native ad
+    // Note: Using iframe format for native ads (same as provided banner ad code)
     const optionsScript = document.createElement('script');
     optionsScript.type = 'text/javascript';
     optionsScript.innerHTML = `
       atOptions = {
         'key': '1e2aa34112d35cbf5a5c237b9d086461',
-        'format': 'native',
-        'container': '${containerId}',
+        'format': 'iframe',
+        'height': 250,
+        'width': 300,
         'params': {}
       };
     `;
@@ -37,7 +43,6 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
 
     // Load the invoke script into the container
     const invokeScript = document.createElement('script');
-    invokeScript.type = 'text/javascript';
     invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
     invokeScript.async = true;
     invokeScript.setAttribute('data-cfasync', 'false');
@@ -51,8 +56,9 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
       if (container.contains(invokeScript)) {
         container.removeChild(invokeScript);
       }
+      scriptLoadedRef.current = false;
     };
-  }, [isMounted, containerId]);
+  }, [isMounted]);
 
   if (!isMounted) {
     return (
@@ -79,10 +85,8 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
     >
       <div 
         ref={containerRef}
-        id={containerId} 
         style={{ minHeight: '120px', width: '100%' }}
       ></div>
     </div>
   );
 }
-

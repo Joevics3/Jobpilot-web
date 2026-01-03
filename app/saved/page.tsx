@@ -8,6 +8,7 @@ import { theme } from '@/lib/theme';
 import Link from 'next/link';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
+import BannerAd from '@/components/ads/BannerAd';
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -389,6 +390,11 @@ export default function SavedPage() {
             <RefreshCw size={20} className="text-white" />
           </button>
         </div>
+      </div>
+
+      {/* Banner Ad - Below header, above tabs */}
+      <div className="px-6 py-3">
+        <BannerAd />
       </div>
 
       {/* Tabs */}

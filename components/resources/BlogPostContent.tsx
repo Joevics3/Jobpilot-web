@@ -60,12 +60,7 @@ function MidContentAd() {
 
   return (
     <div ref={adRef} className="my-8">
-      <BannerAd 
-        mobileHeight={100}
-        mobileWidth={320}
-        desktopHeight={250}
-        desktopWidth={300}
-      />
+      <BannerAd />
     </div>
   );
 }

@@ -222,12 +222,7 @@ export default function CVListPage() {
                 {/* Banner Ad - After 2nd row (6 items on desktop, 2 on tablet, 2 on mobile) */}
                 {index === 5 && (
                   <div className="col-span-1 sm:col-span-2 lg:col-span-3 my-4">
-                    <BannerAd 
-                      mobileHeight={100}
-                      mobileWidth={320}
-                      desktopHeight={250}
-                      desktopWidth={300}
-                    />
+                    <BannerAd />
                   </div>
                 )}
               </React.Fragment>
