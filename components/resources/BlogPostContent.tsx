@@ -12,7 +12,7 @@ export default function BlogPostContent({ content }: BlogPostContentProps) {
   const [midAdPosition, setMidAdPosition] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!contentRef.current || midAdPosition !== null) return;
+    if (!contentRef.current || midAdPosition !== null || typeof window === 'undefined') return;
 
     // Find paragraphs and determine where to insert ad (after 2nd paragraph)
     const paragraphs = contentRef.current.querySelectorAll('p');

@@ -24,20 +24,31 @@ export default function InlineAd({
   desktopWidth = 728
 }: InlineAdProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
     setIsMounted(true);
+    // Check if mobile on mount
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth < 768);
+    }
   }, []);
 
   useEffect(() => {
     if (!isMounted || scriptLoadedRef.current) return;
 
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || typeof window === 'undefined') return;
 
     scriptLoadedRef.current = true;
+
+    // Determine if mobile
+    const isMobileView = window.innerWidth < 768;
+    const adKey = isMobileView ? mobileKey : desktopKey;
+    const adHeight = isMobileView ? mobileHeight : desktopHeight;
+    const adWidth = isMobileView ? mobileWidth : desktopWidth;
 
     // Clear container first
     container.innerHTML = '';
@@ -46,17 +57,17 @@ export default function InlineAd({
     const script = document.createElement('script');
     script.innerHTML = `
       atOptions = {
-        'key' : '${window.innerWidth < 768 ? mobileKey : desktopKey}',
+        'key' : '${adKey}',
         'format' : 'iframe',
-        'height' : ${window.innerWidth < 768 ? mobileHeight : desktopHeight},
-        'width' : ${window.innerWidth < 768 ? mobileWidth : desktopWidth},
+        'height' : ${adHeight},
+        'width' : ${adWidth},
         'params' : {}
       };
     `;
 
     // Create invoke script
     const invokeScript = document.createElement('script');
-    invokeScript.src = `https://www.highperformanceformat.com/${window.innerWidth < 768 ? mobileKey : desktopKey}/invoke.js`;
+    invokeScript.src = `https://www.highperformanceformat.com/${adKey}/invoke.js`;
     invokeScript.async = true;
     invokeScript.setAttribute('data-cfasync', 'false');
 
@@ -78,8 +89,8 @@ export default function InlineAd({
       <div
         className={`flex items-center justify-center bg-gray-100 ${className}`}
         style={{
-          minHeight: window?.innerWidth < 768 ? mobileHeight : desktopHeight,
-          width: window?.innerWidth < 768 ? mobileWidth : desktopWidth,
+          minHeight: `${mobileHeight}px`,
+          width: '100%',
           ...style
         }}
       >

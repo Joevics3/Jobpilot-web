@@ -30,7 +30,7 @@ export default function BannerAd({
   }, []);
 
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || typeof window === 'undefined') return;
 
     // Load mobile ad
     const loadMobileAd = () => {
@@ -61,7 +61,7 @@ export default function BannerAd({
 
     // Load desktop ad
     const loadDesktopAd = () => {
-      if (desktopScriptLoaded.current || !desktopContainerRef.current) return;
+      if (desktopScriptLoaded.current || !desktopContainerRef.current || typeof window === 'undefined') return;
       
       const isDesktop = window.innerWidth >= 768;
       if (!isDesktop) return;
@@ -92,6 +92,7 @@ export default function BannerAd({
 
     // Handle resize
     const handleResize = () => {
+      if (typeof window === 'undefined') return;
       if (window.innerWidth < 768) {
         loadMobileAd();
       } else {
@@ -99,8 +100,10 @@ export default function BannerAd({
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, [isMounted, mobileHeight, mobileWidth, desktopHeight, desktopWidth]);
 
   if (!isMounted) {
