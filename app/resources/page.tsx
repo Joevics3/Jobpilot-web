@@ -54,7 +54,7 @@ export default async function ResourcesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="text-white" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
+      <div className="text-white" style={{ backgroundColor: '#2563EB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-3 mb-4">
             <BookOpen size={32} />
