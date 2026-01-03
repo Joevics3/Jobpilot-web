@@ -688,9 +688,9 @@ export default function JobList() {
                   onApply={handleApply}
                   onShowBreakdown={handleShowBreakdown}
                 />
-                {/* In-feed native ad after every 3rd job card */}
-                {(index + 1) % 3 === 0 && index < sortedJobs.length - 1 && (
-                  <NativeAd />
+                {/* In-feed native ad after every 5th job card */}
+                {(index + 1) % 5 === 0 && index < sortedJobs.length - 1 && (
+                  <NativeAd key={`native-ad-${index}`} />
                 )}
               </React.Fragment>
             ))

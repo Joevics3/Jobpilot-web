@@ -11,7 +11,6 @@ interface NativeAdProps {
 export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptLoaded = useRef(false);
   const [containerId] = useState(() => `native-ad-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`);
 
   useEffect(() => {
@@ -19,19 +18,41 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   }, []);
 
   useEffect(() => {
-    if (!isMounted || !containerRef.current || scriptLoaded.current) return;
+    if (!isMounted || !containerRef.current) return;
 
-    const script = document.createElement('script');
-    script.src = 'https://pl28382150.effectivegatecpm.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
+    const container = containerRef.current;
     
-    script.onload = () => {
-      scriptLoaded.current = true;
-    };
+    // Set up atOptions for Adsterra native ad (similar to BannerAd but with format: 'native')
+    const optionsScript = document.createElement('script');
+    optionsScript.type = 'text/javascript';
+    optionsScript.innerHTML = `
+      atOptions = {
+        'key': '1e2aa34112d35cbf5a5c237b9d086461',
+        'format': 'native',
+        'container': '${containerId}',
+        'params': {}
+      };
+    `;
+    document.head.appendChild(optionsScript);
 
-    containerRef.current.appendChild(script);
-  }, [isMounted]);
+    // Load the invoke script into the container
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
+    invokeScript.async = true;
+    invokeScript.setAttribute('data-cfasync', 'false');
+    container.appendChild(invokeScript);
+
+    return () => {
+      // Cleanup
+      if (optionsScript.parentNode) {
+        optionsScript.parentNode.removeChild(optionsScript);
+      }
+      if (container.contains(invokeScript)) {
+        container.removeChild(invokeScript);
+      }
+    };
+  }, [isMounted, containerId]);
 
   if (!isMounted) {
     return (
