@@ -70,7 +70,7 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
         container.innerHTML = '';
       }
       // Clean up global variable
-      delete window[`atOptions_${adId}`];
+      delete (window as any)[`atOptions_${adId}`];
     };
   }, [isMounted]);
 
