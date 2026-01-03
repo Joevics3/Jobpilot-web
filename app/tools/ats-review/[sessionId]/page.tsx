@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Star, TrendingUp, Target, CheckCircle, XCircle, AlertCircle, FileCheck, Briefcase } from 'lucide-react';
 import Link from 'next/link';
+import { theme } from '@/lib/theme';
 
 type ScoreBreakdownKey = 
   | 'keywordMatch'
@@ -74,9 +75,9 @@ export default function ATSReviewSessionPage() {
   };
 
   const getScoreColor = (score: number): string => {
-    if (score >= 80) return '#10B981'; // green
-    if (score >= 60) return '#F59E0B'; // amber
-    return '#EF4444'; // red
+    if (score >= 80) return theme.colors.match.good;
+    if (score >= 60) return theme.colors.match.average;
+    return theme.colors.match.bad;
   };
 
   const getScoreIcon = (score: number) => {

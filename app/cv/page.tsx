@@ -182,43 +182,43 @@ export default function CVListPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments.map((doc, index) => (
               <React.Fragment key={doc.id}>
-                <div
-                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">{doc.name}</h3>
-                      <p className="text-xs text-gray-500">
-                        {new Date(doc.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="p-1 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 size={16} className="text-red-500" />
-                    </button>
+              <div
+                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1">{doc.name}</h3>
+                    <p className="text-xs text-gray-500">
+                      {new Date(doc.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/cv/view/${doc.id}`)}
-                      className="flex-1"
-                    >
-                      <Edit size={14} className="mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      <Download size={14} className="mr-1" />
-                      Download
-                    </Button>
-                  </div>
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="p-1 hover:bg-red-50 rounded transition-colors"
+                  >
+                    <Trash2 size={16} className="text-red-500" />
+                  </button>
                 </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/cv/view/${doc.id}`)}
+                    className="flex-1"
+                  >
+                    <Edit size={14} className="mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Download size={14} className="mr-1" />
+                    Download
+                  </Button>
+                </div>
+              </div>
                 {/* Banner Ad - After 2nd row (6 items on desktop, 2 on tablet, 2 on mobile) */}
                 {index === 5 && (
                   <div className="col-span-1 sm:col-span-2 lg:col-span-3">

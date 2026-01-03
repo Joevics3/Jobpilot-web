@@ -155,10 +155,10 @@ export async function POST(req: Request) {
 
     // Handle DOCX
     if (contentType.includes('wordprocessingml') || fileName.endsWith('.docx')) {
-      const mammoth = await import('mammoth');
-      const arrayBuffer = await file.arrayBuffer();
-      const { value } = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
-      return NextResponse.json({ text: value || '' });
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
+        return NextResponse.json({ text: value || '' });
     }
 
     // Handle PDF/Images
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
     }
 
     // Convert to base64
-    const arrayBuffer = await file.arrayBuffer();
+        const arrayBuffer = await file.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
 
     // Try Gemini models first (with fallback to OCR.space)
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ text });
       } catch (ocrError) {
         // All methods failed - return error for retry modal
-        return NextResponse.json({
+        return NextResponse.json({ 
           error: 'EXTRACTION_FAILED',
           message: 'Text extraction failed. Please try again or upload a different file.',
           details: `All extraction methods failed. Gemini: ${geminiError instanceof Error ? geminiError.message : 'Unknown'}. OCR: ${ocrError instanceof Error ? ocrError.message : 'Unknown'}`

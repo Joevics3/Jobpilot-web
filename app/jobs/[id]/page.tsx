@@ -615,7 +615,7 @@ export default function JobDetailsPage() {
         <button
           onClick={() => router.back()}
           className="mb-4 p-2 rounded-full hover:bg-white/20 transition-colors"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+          style={{ backgroundColor: theme.colors.overlay.header }}
         >
           <ArrowLeft size={20} style={{ color: theme.colors.text.light }} />
         </button>
@@ -636,7 +636,7 @@ export default function JobDetailsPage() {
             
             {/* Match Score Badge and Save Icon */}
             <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: theme.colors.overlay.header }}>
                 <div
                   className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
                   style={{
@@ -661,13 +661,13 @@ export default function JobDetailsPage() {
 
               <button
                 onClick={handleSave}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              style={{ backgroundColor: theme.colors.overlay.header }}
               >
                 {saved ? (
                   <BookmarkCheck size={20} style={{ color: theme.colors.text.light }} />
                 ) : (
-                  <Bookmark size={20} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
+                  <Bookmark size={20} style={{ color: theme.colors.overlay.headerText }} />
                 )}
               </button>
             </div>

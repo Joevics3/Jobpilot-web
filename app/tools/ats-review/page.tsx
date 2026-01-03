@@ -37,9 +37,9 @@ export default function ATSReviewPage() {
   };
 
   const getScoreColor = (score: number): string => {
-    if (score >= 80) return '#10B981'; // green
-    if (score >= 60) return '#F59E0B'; // amber
-    return '#EF4444'; // red
+    if (score >= 80) return theme.colors.match.good;
+    if (score >= 60) return theme.colors.match.average;
+    return theme.colors.match.bad;
   };
 
   return (
@@ -64,10 +64,9 @@ export default function ATSReviewPage() {
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <Plus size={20} />
-              New Review
             </button>
           </div>
         </div>

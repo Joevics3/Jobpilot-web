@@ -51,18 +51,6 @@ async function getBlogPosts(): Promise<BlogPost[]> {
 export default async function ResourcesPage() {
   const posts = await getBlogPosts();
 
-  // Group posts by category
-  const postsByCategory = posts.reduce((acc, post) => {
-    const category = post.category || 'Uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(post);
-    return acc;
-  }, {} as Record<string, BlogPost[]>);
-
-  const categories = Object.keys(postsByCategory);
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -97,37 +85,11 @@ export default async function ResourcesPage() {
           </div>
         ) : (
           <>
-            {/* Categories Navigation */}
-            {categories.length > 1 && (
-              <div className="mb-8">
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((category) => (
-                    <a
-                      key={category}
-                      href={`#${category.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="px-4 py-2 bg-white rounded-full text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors border border-gray-200"
-                    >
-                      {category}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Banner Ad - At Top */}
             <ResourcesBannerAd />
 
-            {/* Posts by Category */}
-            {categories.map((category) => (
-              <section
-                key={category}
-                id={category.toLowerCase().replace(/\s+/g, '-')}
-                className="mb-12"
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">{category}</h2>
-                <BlogPostsList posts={postsByCategory[category]} />
-              </section>
-            ))}
+            {/* All Posts Together */}
+            <BlogPostsList posts={posts} />
           </>
         )}
       </div>

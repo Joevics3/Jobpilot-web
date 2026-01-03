@@ -76,6 +76,12 @@ export const theme = {
       secondary: '#F5F5F5',
       secondaryHover: '#E0E0E0',
     },
+
+    // Overlay colors
+    overlay: {
+      header: 'rgba(255, 255, 255, 0.2)',
+      headerText: 'rgba(255, 255, 255, 0.8)',
+    },
   },
   
   // Spacing scale

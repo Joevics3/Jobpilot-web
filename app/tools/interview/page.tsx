@@ -56,10 +56,9 @@ export default function InterviewPage() {
             </div>
             <Link
               href="/tools"
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <Plus size={20} />
-              New Practice Session
             </Link>
           </div>
         </div>

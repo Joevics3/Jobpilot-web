@@ -28,15 +28,15 @@ export default function ToolsPage() {
       title: 'Interview Prep',
       description: 'Practice with personalized questions based on job descriptions',
       icon: MessageCircle,
-      color: '#3B82F6',
-      modal: 'interview',
+      color: theme.colors.accent.blue,
+      route: '/tools/interview',
     },
     {
       id: '2',
       title: 'ATS CV Review',
       description: 'Optimize your CV for ATS systems and job matching',
       icon: FileCheck,
-      color: '#10B981',
+      color: theme.colors.accent.green,
       route: '/tools/ats-review',
     },
     {
@@ -44,7 +44,7 @@ export default function ToolsPage() {
       title: 'Career Coach',
       description: 'Get personalized career guidance and skill recommendations',
       icon: GraduationCap,
-      color: '#8B5CF6',
+      color: theme.colors.accent.purple,
       modal: 'career',
     },
     {
@@ -52,7 +52,7 @@ export default function ToolsPage() {
       title: 'Resources & Blog',
       description: 'Career advice, job search tips, and professional development resources',
       icon: BookOpen,
-      color: '#F59E0B',
+      color: theme.colors.accent.gold,
       route: '/resources',
     },
   ];
@@ -88,7 +88,7 @@ export default function ToolsPage() {
             </h1>
             <p
               className="text-sm"
-              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+              style={{ color: theme.colors.text.light }}
             >
               Smart tools to boost your job search
             </p>
@@ -107,37 +107,37 @@ export default function ToolsPage() {
               const Icon = tool.icon;
               return (
                 <React.Fragment key={tool.id}>
-                  <button
-                    onClick={() => handleToolClick(tool)}
-                    className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
-                    style={{
-                      border: `1px solid ${theme.colors.border.DEFAULT}`,
-                    }}
+                <button
+                  onClick={() => handleToolClick(tool)}
+                  className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
+                  style={{
+                    border: `1px solid ${theme.colors.border.DEFAULT}`,
+                  }}
+                >
+                  {/* Icon Container */}
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${tool.color}15` }}
                   >
-                    {/* Icon Container */}
-                    <div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${tool.color}15` }}
-                    >
-                      <Icon size={28} style={{ color: tool.color }} />
-                    </div>
+                    <Icon size={28} style={{ color: tool.color }} />
+                  </div>
 
-                    {/* Tool Info */}
-                    <div className="flex-1 text-left">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
-                        {tool.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        {tool.description}
-                      </p>
-                    </div>
+                  {/* Tool Info */}
+                  <div className="flex-1 text-left">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                      {tool.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {tool.description}
+                    </p>
+                  </div>
 
-                    {/* Arrow */}
-                    <ArrowRight
-                      size={20}
-                      className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
-                    />
-                  </button>
+                  {/* Arrow */}
+                  <ArrowRight
+                    size={20}
+                    className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                  />
+                </button>
                   
                   {/* Banner Ad - After ATS CV Review (2nd tool) */}
                   {index === 1 && (

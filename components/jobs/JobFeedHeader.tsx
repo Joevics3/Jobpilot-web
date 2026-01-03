@@ -39,7 +39,7 @@ export default function JobFeedHeader({
           <div className="flex-1">
             <p
               className="text-base font-medium mb-1"
-              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+              style={{ color: theme.colors.text.light }}
             >
               {userName ? `${getGreeting()},` : `${getGreeting()}!`}
             </p>
@@ -53,7 +53,7 @@ export default function JobFeedHeader({
             )}
             <p
               className="text-sm"
-              style={{ color: 'rgba(255, 255, 255, 0.8)' }}
+              style={{ color: theme.colors.text.light, opacity: 0.8 }}
             >
               Ready to find your dream job?
             </p>
