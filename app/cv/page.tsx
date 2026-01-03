@@ -119,7 +119,7 @@ export default function CVListPage() {
       </div>
 
       {/* Banner Ad - Below header, above tabs */}
-      <div className="px-6 py-3">
+      <div className="px-6">
         <BannerAd />
       </div>
 
@@ -221,7 +221,7 @@ export default function CVListPage() {
                 </div>
                 {/* Banner Ad - After 2nd row (6 items on desktop, 2 on tablet, 2 on mobile) */}
                 {index === 5 && (
-                  <div className="col-span-1 sm:col-span-2 lg:col-span-3 my-4">
+                  <div className="col-span-1 sm:col-span-2 lg:col-span-3">
                     <BannerAd />
                   </div>
                 )}

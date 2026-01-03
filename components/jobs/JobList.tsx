@@ -631,7 +631,7 @@ export default function JobList() {
         )}
 
         {/* Top Banner Ad - Below header, above sort bar */}
-        <div className="px-6 py-3">
+        <div className="px-6">
           <BannerAd />
         </div>
 

@@ -662,7 +662,7 @@ export default function JobDetailsPage() {
       </div>
 
       {/* Banner Ad - Before Key Information Grid */}
-      <div className="px-6 py-3 mt-4">
+      <div className="px-6">
         <BannerAd />
       </div>
 
@@ -801,7 +801,7 @@ export default function JobDetailsPage() {
         })()}
 
         {/* Banner Ad - After Key Responsibilities */}
-        <div className="mb-6">
+        <div>
           <BannerAd />
         </div>
 
@@ -937,7 +937,7 @@ export default function JobDetailsPage() {
         )}
 
         {/* Banner Ad - At Bottom */}
-        <div className="mb-32">
+        <div>
           <BannerAd />
         </div>
       </div>

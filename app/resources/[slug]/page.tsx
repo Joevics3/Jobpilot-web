@@ -256,7 +256,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           )}
 
           {/* Banner Ad - Below Featured Image */}
-          <div className="mb-8">
+          <div>
             <BannerAd />
           </div>
 

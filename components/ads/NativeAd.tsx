@@ -12,51 +12,82 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
+  const optionsScriptRef = useRef<HTMLScriptElement | null>(null);
+  const invokeScriptRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isMounted || !containerRef.current || scriptLoadedRef.current) return;
+    if (!isMounted || scriptLoadedRef.current) return;
 
-    const container = containerRef.current;
-    scriptLoadedRef.current = true;
-    
-    // Clear container first
-    container.innerHTML = '';
-    
-    // Set atOptions for Adsterra native ad
-    // Note: Using iframe format for native ads (same as provided banner ad code)
-    const optionsScript = document.createElement('script');
-    optionsScript.type = 'text/javascript';
-    optionsScript.innerHTML = `
-      atOptions = {
-        'key': '1e2aa34112d35cbf5a5c237b9d086461',
-        'format': 'iframe',
-        'height': 250,
-        'width': 300,
-        'params': {}
-      };
-    `;
-    document.head.appendChild(optionsScript);
+    // Wait for container to be fully rendered in DOM
+    // Use double requestAnimationFrame to ensure container is in DOM
+    const loadAd = () => {
+      if (scriptLoadedRef.current) return;
+      
+      const container = containerRef.current;
+      if (!container || !container.parentNode) {
+        // Container not ready, try again
+        requestAnimationFrame(loadAd);
+        return;
+      }
 
-    // Load the invoke script into the container
-    const invokeScript = document.createElement('script');
-    invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
-    invokeScript.async = true;
-    invokeScript.setAttribute('data-cfasync', 'false');
-    container.appendChild(invokeScript);
+      scriptLoadedRef.current = true;
+      
+      // Clear container first
+      container.innerHTML = '';
+      
+      // Set atOptions for Adsterra native ad
+      // Note: Using iframe format for native ads
+      const optionsScript = document.createElement('script');
+      optionsScript.type = 'text/javascript';
+      optionsScript.innerHTML = `
+        atOptions = {
+          'key': '1e2aa34112d35cbf5a5c237b9d086461',
+          'format': 'iframe',
+          'height': 250,
+          'width': 300,
+          'params': {}
+        };
+      `;
+      document.head.appendChild(optionsScript);
+      optionsScriptRef.current = optionsScript;
+
+      // Small delay to ensure atOptions is set before loading invoke script
+      setTimeout(() => {
+        if (!container || !container.parentNode) return;
+        
+        // Load the invoke script into the container
+        const invokeScript = document.createElement('script');
+        invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
+        invokeScript.async = true;
+        invokeScript.setAttribute('data-cfasync', 'false');
+        container.appendChild(invokeScript);
+        invokeScriptRef.current = invokeScript;
+      }, 50);
+    };
+
+    // Use double requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        loadAd();
+      });
+    });
 
     return () => {
       // Cleanup
-      if (optionsScript.parentNode) {
-        optionsScript.parentNode.removeChild(optionsScript);
-      }
-      if (container.contains(invokeScript)) {
-        container.removeChild(invokeScript);
-      }
       scriptLoadedRef.current = false;
+      if (optionsScriptRef.current && optionsScriptRef.current.parentNode) {
+        optionsScriptRef.current.parentNode.removeChild(optionsScriptRef.current);
+      }
+      if (invokeScriptRef.current && invokeScriptRef.current.parentNode) {
+        invokeScriptRef.current.parentNode.removeChild(invokeScriptRef.current);
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
   }, [isMounted]);
 

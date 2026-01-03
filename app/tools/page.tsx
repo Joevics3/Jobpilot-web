@@ -96,7 +96,7 @@ export default function ToolsPage() {
         </div>
 
         {/* Top Banner Ad - Before Interview Prep */}
-        <div className="px-6 py-3">
+        <div className="px-6">
           <BannerAd />
         </div>
 
@@ -141,7 +141,7 @@ export default function ToolsPage() {
                   
                   {/* Banner Ad - After ATS CV Review (2nd tool) */}
                   {index === 1 && (
-                    <div className="my-4">
+                    <div>
                       <BannerAd />
                     </div>
                   )}

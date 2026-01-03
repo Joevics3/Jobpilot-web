@@ -393,7 +393,7 @@ export default function SavedPage() {
       </div>
 
       {/* Banner Ad - Below header, above tabs */}
-      <div className="px-6 py-3">
+      <div className="px-6">
         <BannerAd />
       </div>
 

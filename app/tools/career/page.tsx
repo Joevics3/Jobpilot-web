@@ -239,7 +239,7 @@ export default function CareerPage() {
                 </div>
                 
                 {/* Banner Ad - End of Career Paths Tab */}
-                <div className="mt-8">
+                <div>
                   <BannerAd />
                 </div>
               </div>
@@ -294,7 +294,7 @@ export default function CareerPage() {
                 </div>
                 
                 {/* Banner Ad - End of Skill Gaps Tab */}
-                <div className="mt-8">
+                <div>
                   <BannerAd />
                 </div>
               </div>
@@ -375,7 +375,7 @@ export default function CareerPage() {
                 </div>
                 
                 {/* Banner Ad - End of Insights Tab */}
-                <div className="mt-8">
+                <div>
                   <BannerAd />
                 </div>
               </div>

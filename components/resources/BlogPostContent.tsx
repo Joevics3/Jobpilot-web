@@ -59,7 +59,7 @@ function MidContentAd() {
   }, []);
 
   return (
-    <div ref={adRef} className="my-8">
+    <div ref={adRef}>
       <BannerAd />
     </div>
   );
