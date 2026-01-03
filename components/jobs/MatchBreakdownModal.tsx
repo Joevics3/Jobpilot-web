@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { theme } from '@/lib/theme';
-import { theme } from '@/lib/theme';
 
 export interface MatchBreakdown {
   rolesScore: number;
