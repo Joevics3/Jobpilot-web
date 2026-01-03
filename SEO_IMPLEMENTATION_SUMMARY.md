@@ -186,3 +186,4 @@ After deployment, test using:
 - All metadata is configured in `app/layout.tsx` and will apply to all pages
 - The robots.txt already disallows private pages (auth, dashboard, etc.)
 
+

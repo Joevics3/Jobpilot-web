@@ -465,15 +465,10 @@ export default function JobList() {
   };
 
   const handleSave = (jobId: string) => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
-
     const newSaved = savedJobs.includes(jobId)
       ? savedJobs.filter(id => id !== jobId)
       : [...savedJobs, jobId];
-    
+
     setSavedJobs(newSaved);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
@@ -481,15 +476,10 @@ export default function JobList() {
   };
 
   const handleApply = (jobId: string) => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
-
     const newApplied = appliedJobs.includes(jobId)
       ? appliedJobs.filter(id => id !== jobId)
       : [...appliedJobs, jobId];
-    
+
     setAppliedJobs(newApplied);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
@@ -544,11 +534,6 @@ export default function JobList() {
   };
 
   const handleShowBreakdown = (job: JobUI) => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
-
     const breakdown = job.breakdown || {
       rolesScore: 0,
       skillsScore: 0,
@@ -595,13 +580,9 @@ export default function JobList() {
           refreshingMatches={refreshingMatches}
           onRefreshMatches={handleRefreshMatches}
           onCreateCV={() => {
-            if (user) {
-              router.push('/cv?tab=cv');
-            } else {
-              setAuthModalOpen(true);
-            }
+            router.push('/cv?tab=cv');
           }}
-          onSubmitJob={() => user ? router.push('/submit') : router.push('/auth')}
+          onSubmitJob={() => router.push('/submit')}
         />
 
         {/* Sign in notification banner - only show if not authenticated */}

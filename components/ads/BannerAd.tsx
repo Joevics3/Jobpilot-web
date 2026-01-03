@@ -11,11 +11,11 @@ interface BannerAdProps {
   desktopWidth?: number;
 }
 
-export default function BannerAd({ 
-  className = "", 
+export default function BannerAd({
+  className = "",
   style,
-  mobileHeight = 250,
-  mobileWidth = 300,
+  mobileHeight = 50,
+  mobileWidth = 320,
   desktopHeight = 90,
   desktopWidth = 728
 }: BannerAdProps) {
@@ -43,7 +43,7 @@ export default function BannerAd({
       script.type = 'text/javascript';
       script.innerHTML = `
         atOptions = {
-          'key' : '14a5e6902f465e9bb13c618ea719978c',
+          'key' : 'ba9eda152cc4aabce02876418a7aaaa6',
           'format' : 'iframe',
           'height' : ${mobileHeight},
           'width' : ${mobileWidth},
@@ -53,7 +53,7 @@ export default function BannerAd({
       document.head.appendChild(script);
 
       const invokeScript = document.createElement('script');
-      invokeScript.src = 'https://www.highperformanceformat.com/14a5e6902f465e9bb13c618ea719978c/invoke.js';
+      invokeScript.src = 'https://www.highperformanceformat.com/ba9eda152cc4aabce02876418a7aaaa6/invoke.js';
       invokeScript.async = true;
       mobileContainerRef.current.appendChild(invokeScript);
       mobileScriptLoaded.current = true;

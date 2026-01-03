@@ -10,8 +10,11 @@ interface NativeAdProps {
 
 export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [containerId] = useState(() => `native-ad-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
+  const optionsScriptRef = useRef<HTMLScriptElement | null>(null);
+  const invokeScriptRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -20,45 +23,70 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   useEffect(() => {
     if (!isMounted || scriptLoadedRef.current) return;
 
-    const container = containerRef.current;
-    if (!container) return;
+    const loadAd = () => {
+      const container = containerRef.current;
+      if (!container) return;
 
-    scriptLoadedRef.current = true;
+      scriptLoadedRef.current = true;
+      container.innerHTML = '';
 
-    // Clear container first
-    container.innerHTML = '';
+      const optionsScript = document.createElement('script');
+      optionsScript.type = 'text/javascript';
+      optionsScript.innerHTML = `
+        atOptions = {
+          'key': '1e2aa34112d35cbf5a5c237b9d086461',
+          'format': 'iframe',
+          'height': 250,
+          'width': 300,
+          'params': {}
+        };
+      `;
+      document.head.appendChild(optionsScript);
+      optionsScriptRef.current = optionsScript;
 
-    // Set the container ID as per Adsterra format
-    container.id = 'container-1e2aa34112d35cbf5a5c237b9d086461';
+      setTimeout(() => {
+        const invokeScript = document.createElement('script');
+        invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
+        invokeScript.async = true;
+        invokeScript.setAttribute('data-cfasync', 'false');
+        container.appendChild(invokeScript);
+        invokeScriptRef.current = invokeScript;
+      }, 50);
+    };
 
-    // Create and append the script tag
-    const script = document.createElement('script');
-    script.src = 'https://pl28382150.effectivegatecpm.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
-
-    // Append script to container (as per official format)
-    container.appendChild(script);
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      requestAnimationFrame(loadAd);
+    });
 
     return () => {
       // Cleanup
       scriptLoadedRef.current = false;
+      if (optionsScriptRef.current && optionsScriptRef.current.parentNode) {
+        optionsScriptRef.current.parentNode.removeChild(optionsScriptRef.current);
+      }
+      if (invokeScriptRef.current && invokeScriptRef.current.parentNode) {
+        invokeScriptRef.current.parentNode.removeChild(invokeScriptRef.current);
+      }
+      const container = containerRef.current;
       if (container) {
         container.innerHTML = '';
       }
+      // Clean up global variable
+      delete (window as any)[`atOptions_${containerId}`];
     };
-  }, [isMounted]);
+  }, [isMounted, containerId]);
 
   if (!isMounted) {
     return (
-      <div 
+      <div
         className={`bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-100 ${className}`}
-        style={{ 
-          minHeight: '120px',
-          ...style 
+        style={{
+          minHeight: '250px',
+          ...style
         }}
       >
-        {/* Placeholder matching job card style */}
+        {/* Placeholder matching native ad style */}
       </div>
     );
   }
@@ -69,14 +97,15 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
       style={{
         borderColor: theme.colors.border.light,
         backgroundColor: theme.colors.card.DEFAULT,
-        minHeight: '120px',
+        minHeight: '250px',
         ...style
       }}
     >
       <div
         ref={containerRef}
+        id={containerId}
         style={{
-          minHeight: '120px',
+          minHeight: '250px',
           width: '100%',
           display: 'block'
         }}

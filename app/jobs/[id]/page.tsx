@@ -634,28 +634,42 @@ export default function JobDetailsPage() {
               {getCompanyName()}
             </p>
             
-            {/* Match Score Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-              <div
-                className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
-                style={{
-                  borderColor: theme.colors.text.light,
-                  backgroundColor: 'transparent',
-                }}
-              >
+            {/* Match Score Badge and Save Icon */}
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+                <div
+                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
+                  style={{
+                    borderColor: theme.colors.text.light,
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: theme.colors.text.light }}
+                  >
+                    {matchScore}%
+                  </span>
+                </div>
                 <span
-                  className="text-sm font-bold"
+                  className="font-medium"
                   style={{ color: theme.colors.text.light }}
                 >
-                  {matchScore}%
+                  Match
                 </span>
               </div>
-              <span
-                className="font-medium"
-                style={{ color: theme.colors.text.light }}
+
+              <button
+                onClick={handleSave}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
               >
-                Match
-              </span>
+                {saved ? (
+                  <BookmarkCheck size={20} style={{ color: theme.colors.text.light }} />
+                ) : (
+                  <Bookmark size={20} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -944,24 +958,13 @@ export default function JobDetailsPage() {
 
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-4 border-t bg-white border-gray-200">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            className="p-3 rounded-xl hover:bg-gray-100 transition-colors bg-gray-50"
-          >
-            {saved ? (
-              <BookmarkCheck size={24} style={{ color: theme.colors.primary.DEFAULT }} />
-            ) : (
-              <Bookmark size={24} className="text-gray-500" />
-            )}
-          </button>
-
+        <div className="flex items-center gap-2">
           {/* Auto Apply Button - Only show if job has email application method */}
           {(job.application?.email || job.application_email) && (
             <button
               onClick={handleAutoApply}
               disabled={!user || applied}
-              className={`flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-colors ${
+              className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm transition-colors ${
                 applied
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -970,6 +973,19 @@ export default function JobDetailsPage() {
               {applied ? 'Applied' : 'Auto Apply'}
             </button>
           )}
+
+          <button
+            onClick={handleApply}
+            className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
+              applied ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''
+            }`}
+            style={{
+              backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
+            }}
+            disabled={applied}
+          >
+            {applied ? 'Applied' : 'Apply Now'}
+          </button>
 
           <button
             onClick={() => {
@@ -985,19 +1001,9 @@ export default function JobDetailsPage() {
               }
               setCvModalOpen(true);
             }}
-            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 transition-colors"
+            className="flex-1 px-2 py-3 rounded-xl font-semibold text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 transition-colors"
           >
             Create CV
-          </button>
-
-          <button
-            onClick={handleApply}
-            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-colors"
-            style={{
-              backgroundColor: theme.colors.primary.DEFAULT,
-            }}
-          >
-            {applied ? 'Applied' : 'Apply Now'}
           </button>
         </div>
       </div>

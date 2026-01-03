@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { User, Bell, LogOut, ChevronRight, Mail, Shield, HelpCircle } from 'lucide-react';
+import { User, Bell, LogOut, ChevronRight, Mail, Shield, HelpCircle, LogIn } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import AuthModal from '@/components/AuthModal';
 
 interface ProfileData {
   full_name: string | null;
@@ -20,6 +22,7 @@ export default function SettingsPage() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [emailUpdates, setEmailUpdates] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -237,17 +240,27 @@ export default function SettingsPage() {
             </button>
           </div>
         ) : (
-          /* Sign In Bar - Show when not signed in */
-          <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
-            <div className="text-center py-4">
-              <p className="text-gray-700 mb-4">Sign in to access your settings</p>
-              <Link
-                href="/auth"
-                className="inline-block px-6 py-2 rounded-lg font-semibold text-white"
+          /* Sign In Bar - Show when not signed in - Same as homepage */
+          <div
+            className="mb-6 border-b"
+            style={{
+              backgroundColor: theme.colors.primary.DEFAULT + '10',
+              borderColor: theme.colors.border.DEFAULT,
+            }}
+          >
+            <div className="flex items-center justify-between gap-4 p-4">
+              <span className="text-sm font-medium flex-1" style={{ color: theme.colors.primary.DEFAULT }}>
+                Sign in to access your settings and personalized features.
+              </span>
+              <Button
+                onClick={() => setAuthModalOpen(true)}
+                size="sm"
                 style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+                className="flex-shrink-0"
               >
+                <LogIn size={16} className="mr-2" />
                 Sign In
-              </Link>
+              </Button>
             </div>
           </div>
         )}
@@ -420,6 +433,11 @@ export default function SettingsPage() {
           <p className="text-xs text-gray-400">Your smart career companion</p>
         </div>
       </div>
+
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+      />
     </div>
   );
 }
