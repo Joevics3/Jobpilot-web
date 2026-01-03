@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
 // import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
-import BannerAd from '@/components/ads/BannerAd';
+import InlineAd from '@/components/ads/InlineAd';
 
 type TabType = 'paths' | 'skills' | 'insights';
 
@@ -136,7 +136,7 @@ export default function CareerPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-4" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">85</div>
                 <div className="text-xs text-white/80">Score</div>
@@ -149,6 +149,11 @@ export default function CareerPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Inline Ad - Under Career Readiness Score */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <InlineAd />
       </div>
 
       {/* Main Content with Tabs */}
@@ -359,13 +364,13 @@ export default function CareerPage() {
 
                     <div className="border border-gray-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Lightbulb size={20} className="text-purple-600" />
+                        <Lightbulb size={20} className="text-blue-600" />
                         Tips
                       </h3>
                       <div className="space-y-3">
                         {analysis.insights.tips.map((tip, index) => (
                           <div key={index} className="flex items-start gap-3">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                             <p className="text-gray-600">{tip}</p>
                           </div>
                         ))}

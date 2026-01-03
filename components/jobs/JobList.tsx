@@ -17,7 +17,7 @@ import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
-import NativeAd from '@/components/ads/NativeAd';
+import InlineAd from '@/components/ads/InlineAd';
 import Script from 'next/script';
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
@@ -669,9 +669,9 @@ export default function JobList() {
                   onApply={handleApply}
                   onShowBreakdown={handleShowBreakdown}
                 />
-                {/* In-feed native ad after every 5th job card */}
+                {/* In-feed inline ad after every 5th job card */}
                 {(index + 1) % 5 === 0 && index < sortedJobs.length - 1 && (
-                  <NativeAd key={`native-ad-${index}-${Date.now()}`} />
+                  <InlineAd key={`inline-ad-${index}-${Date.now()}`} />
                 )}
               </React.Fragment>
             ))

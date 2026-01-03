@@ -136,7 +136,7 @@ export default function CareerCoachModal({ isOpen, onClose }: CareerCoachModalPr
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-md w-full">
-              <Target size={64} className="mx-auto text-purple-600 mb-4" />
+              <Target size={64} className="mx-auto text-blue-600 mb-4" />
               
               {hasExistingAnalysis ? (
                 <>
@@ -150,7 +150,7 @@ export default function CareerCoachModal({ isOpen, onClose }: CareerCoachModalPr
                         router.push('/tools/career');
                         onClose();
                       }}
-                      className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-6 py-3 text-white rounded-lg font-medium hover:opacity-90 transition-colors flex items-center justify-center gap-2" style={{ backgroundColor: '#2563EB' }}
                     >
                       <Target size={20} />
                       View Existing Analysis
@@ -158,7 +158,7 @@ export default function CareerCoachModal({ isOpen, onClose }: CareerCoachModalPr
                     <button
                       onClick={handleGenerate}
                       disabled={loading}
-                      className="w-full px-6 py-3 border-2 border-purple-600 text-purple-600 rounded-lg font-medium hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <>
@@ -187,7 +187,7 @@ export default function CareerCoachModal({ isOpen, onClose }: CareerCoachModalPr
                   <button
                     onClick={handleGenerate}
                     disabled={loading || !onboardingData}
-                    className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full px-6 py-3 text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={{ backgroundColor: '#2563EB' }}
                   >
                     {loading ? (
                       <>

@@ -5,11 +5,11 @@
 
 export const theme = {
   colors: {
-    // Primary brand colors
+    // Primary brand colors - Blue from old homepage
     primary: {
-      DEFAULT: '#009688', // Teal - main brand color
-      light: '#26A69A',
-      dark: '#00695C',
+      DEFAULT: '#2563EB', // Blue-600 - main brand color from old homepage
+      light: '#3B82F6',   // Blue-500 - lighter shade
+      dark: '#1D4ED8',    // Blue-700 - darker shade
       foreground: '#FFFFFF',
     },
     
@@ -53,7 +53,6 @@ export const theme = {
       red: '#EF4444',
       gold: '#F59E0B',
       blue: '#3B82F6',
-      purple: '#8B5CF6',
       green: '#10B981',
     },
     
@@ -71,8 +70,8 @@ export const theme = {
     
     // Button colors
     button: {
-      primary: '#009688',
-      primaryHover: '#00796B',
+      primary: '#2563EB',
+      primaryHover: '#1D4ED8',
       secondary: '#F5F5F5',
       secondaryHover: '#E0E0E0',
     },

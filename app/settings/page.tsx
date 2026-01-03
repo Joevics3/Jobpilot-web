@@ -192,7 +192,7 @@ export default function SettingsPage() {
       <div
         className="pt-12 pb-8 px-6"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.dark} 100%)`,
+          backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
         <h1 className="text-xl font-bold mb-2 text-white">Settings</h1>

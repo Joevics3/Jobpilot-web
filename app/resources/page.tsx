@@ -54,13 +54,13 @@ export default async function ResourcesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+      <div className="text-white" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-3 mb-4">
             <BookOpen size={32} />
             <h1 className="text-4xl font-bold">Career Resources</h1>
           </div>
-          <p className="text-lg text-purple-100 max-w-3xl">
+          <p className="text-lg text-white max-w-3xl">
             Discover expert career advice, job search strategies, interview tips, and professional development resources to help you succeed.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default async function ResourcesPage() {
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <nav className="flex items-center gap-2 text-sm text-gray-600">
-          <Link href="/" className="hover:text-purple-600">Home</Link>
+          <Link href="/" className="hover:text-blue-600">Home</Link>
           <span>/</span>
           <span className="text-gray-900 font-medium">Resources</span>
         </nav>

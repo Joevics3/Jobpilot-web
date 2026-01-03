@@ -44,7 +44,7 @@ export default function ToolsPage() {
       title: 'Career Coach',
       description: 'Get personalized career guidance and skill recommendations',
       icon: GraduationCap,
-      color: theme.colors.accent.purple,
+      color: theme.colors.accent.blue,
       modal: 'career',
     },
     {
@@ -76,7 +76,7 @@ export default function ToolsPage() {
         <div
           className="pt-12 pb-8 px-6"
           style={{
-            background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.dark} 100%)`,
+            backgroundColor: theme.colors.primary.DEFAULT,
           }}
         >
           <div className="flex flex-col gap-2">
@@ -138,13 +138,6 @@ export default function ToolsPage() {
                     className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
                   />
                 </button>
-                  
-                  {/* Banner Ad - After ATS CV Review (2nd tool) */}
-                  {index === 1 && (
-                    <div>
-                      <BannerAd />
-                    </div>
-                  )}
                 </React.Fragment>
               );
             })}

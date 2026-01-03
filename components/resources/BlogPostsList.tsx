@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Eye, ArrowRight } from 'lucide-react';
-import NativeAd from '@/components/ads/NativeAd';
+import InlineAd from '@/components/ads/InlineAd';
 import React from 'react';
 
 interface BlogPost {
@@ -57,14 +57,14 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
           <div className="p-6 flex-1 flex flex-col">
             {/* Category */}
             {post.category && (
-              <span className="inline-block text-xs font-semibold text-purple-600 mb-2">
+              <span className="inline-block text-xs font-semibold text-blue-600 mb-2">
                 {post.category}
               </span>
             )}
 
             {/* Title */}
             <Link href={`/resources/${post.slug}`}>
-              <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-purple-600 transition-colors line-clamp-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
                 {post.title}
               </h3>
             </Link>
@@ -106,7 +106,7 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
               </div>
               <Link
                 href={`/resources/${post.slug}`}
-                className="flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium text-sm"
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
               >
                 Read more
                 <ArrowRight size={16} />
@@ -114,10 +114,10 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
             </div>
           </div>
         </article>
-        {/* In-feed Native Ad - After every 6th post */}
-        {(index + 1) % 6 === 0 && index < posts.length - 1 && (
+        {/* In-feed Inline Ad - After every 4th post */}
+        {(index + 1) % 4 === 0 && index < posts.length - 1 && (
           <div className="col-span-1 md:col-span-2 lg:col-span-3">
-            <NativeAd />
+            <InlineAd />
           </div>
         )}
       </React.Fragment>

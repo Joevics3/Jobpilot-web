@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
@@ -64,16 +64,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
                 <Briefcase className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">JobMeter</h1>
+              <h1 className="text-2xl font-bold text-gray-900">JobPilot</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">Welcome, {user?.user_metadata?.full_name || user?.email}</span>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-blue-600" />
+                <MapPin className="h-5 w-5 text-purple-600" />
                 Job Preferences
               </CardTitle>
             </CardHeader>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             
         {/* Success Message */}
         <div className="mt-8">
-          <Card className="border-0 shadow-lg bg-green-50">
+          <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50">
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-semibold text-green-800">Onboarding Complete!</h3>
                   <p className="text-green-700">
                     Your profile has been successfully created and all your information has been saved. 
-                    You&apos;re now ready to start your job search journey with JobMeter!
+                    You're now ready to start your job search journey with JobPilot!
                   </p>
                   </div>
                 </div>

@@ -1520,7 +1520,7 @@ export default function OnboardingPage() {
                     <Button 
                       onClick={handleSignUp}
                       disabled={isLoading || isSavingData || isRedirecting}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3"
+                      className="w-full text-white py-3" style={{ backgroundColor: theme.colors.primary.DEFAULT }}
                     >
                       {isLoading ? (
                         <>
@@ -1567,7 +1567,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
 
 
@@ -2432,13 +2432,13 @@ Skills: ${manualData.skills}`.trim();
               </h3>
               <div className="space-y-3">
                 {extractedProfile.projects.map((p: any, idx: number) => (
-                  <div key={idx} className="border-l-4 border-purple-500 pl-4">
+                  <div key={idx} className="border-l-4 border-blue-500 pl-4">
                     <p className="font-semibold text-slate-800">{p.name || '—'}</p>
                     {p.description && <p className="text-slate-700 text-sm mt-1 leading-relaxed">{p.description}</p>}
                     {p.technologies && p.technologies.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {p.technologies.map((tech: string, techIdx: number) => (
-                          <span key={techIdx} className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">
+                          <span key={techIdx} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">
                             {tech}
                           </span>
                         ))}

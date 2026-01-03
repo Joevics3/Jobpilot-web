@@ -35,7 +35,7 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 text-sm text-gray-500 hover:text-purple-600 transition-colors"
+      className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
     >
       <Share2 size={16} />
       <span>Share</span>

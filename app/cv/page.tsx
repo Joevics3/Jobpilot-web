@@ -109,13 +109,24 @@ export default function CVListPage() {
     <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
       {/* Header */}
       <div
-        className="pt-12 pb-8 px-6"
+        className="pt-12 pb-8 px-6 relative"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.light} 100%)`,
+          backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
-        <h1 className="text-3xl font-bold mb-2 text-white">CV & Cover Letters</h1>
-        <p className="text-white/80">Manage your professional documents</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 text-white">CV & Cover Letters</h1>
+            <p className="text-white/80">Manage your professional documents</p>
+          </div>
+          <Button
+            onClick={() => activeTab === 'cv' ? setCvModalOpen(true) : setCoverLetterModalOpen(true)}
+            className="bg-white text-primary hover:bg-gray-100 px-3 py-2 text-sm"
+          >
+            <Plus size={16} className="mr-1" />
+            Create {activeTab === 'cv' ? 'CV' : 'Cover Letter'}
+          </Button>
+        </div>
       </div>
 
       {/* Banner Ad - Below header, above tabs */}
@@ -170,13 +181,7 @@ export default function CVListPage() {
             <p className="text-gray-600 mb-6">
               Create your first {activeTab === 'cv' ? 'CV' : 'cover letter'} to get started
             </p>
-            <Button
-              onClick={() => activeTab === 'cv' ? setCvModalOpen(true) : setCoverLetterModalOpen(true)}
-              style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-            >
-              <Plus size={16} className="mr-2" />
-              Create {activeTab === 'cv' ? 'CV' : 'Cover Letter'}
-            </Button>
+            <p className="text-sm text-gray-500">Use the button in the header to create your first document</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -230,17 +235,6 @@ export default function CVListPage() {
           </div>
         )}
 
-        {/* Create Button - Fixed at bottom on mobile */}
-        <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 sm:hidden">
-          <Button
-            onClick={() => activeTab === 'cv' ? setCvModalOpen(true) : setCoverLetterModalOpen(true)}
-            className="w-full shadow-lg"
-            style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-          >
-            <Plus size={20} className="mr-2" />
-            Create {activeTab === 'cv' ? 'CV' : 'Cover Letter'}
-          </Button>
-        </div>
 
         {/* Desktop Create Button */}
         <div className="hidden sm:block mt-6">

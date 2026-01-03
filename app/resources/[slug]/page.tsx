@@ -5,7 +5,7 @@ import BlogPostContent from '@/components/resources/BlogPostContent';
 import ShareButton from '@/components/resources/ShareButton';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Eye } from 'lucide-react';
-import BannerAd from '@/components/ads/BannerAd';
+import InlineAd from '@/components/ads/InlineAd';
 
 interface BlogPost {
   id: string;
@@ -184,9 +184,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <nav className="flex items-center gap-2 text-sm text-gray-600">
-              <Link href="/" className="hover:text-purple-600">Home</Link>
+              <Link href="/" className="hover:text-blue-600">Home</Link>
               <span>/</span>
-              <Link href="/resources" className="hover:text-purple-600">Resources</Link>
+              <Link href="/resources" className="hover:text-blue-600">Resources</Link>
               <span>/</span>
               <span className="text-gray-900 font-medium line-clamp-1">{post.title}</span>
             </nav>
@@ -198,7 +198,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           {/* Back Button */}
           <Link
             href="/resources"
-            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6 font-medium"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
           >
             <ArrowLeft size={20} />
             Back to Resources
@@ -207,7 +207,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           {/* Header */}
           <header className="mb-8">
             {post.category && (
-              <span className="inline-block text-sm font-semibold text-purple-600 mb-4">
+              <span className="inline-block text-sm font-semibold text-blue-600 mb-4">
                 {post.category}
               </span>
             )}
@@ -255,10 +255,8 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             </div>
           )}
 
-          {/* Banner Ad - Below Featured Image */}
-          <div>
-            <BannerAd />
-          </div>
+          {/* Inline Ad - Below Featured Image */}
+          <InlineAd />
 
           {/* Content */}
           <BlogPostContent content={post.content} />

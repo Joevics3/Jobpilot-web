@@ -226,7 +226,7 @@ export default function CVCreatePage() {
       <div
         className="pt-12 pb-6 px-6 sticky top-0 z-10"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.dark} 100%)`,
+          backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
         <div className="flex items-center gap-4 mb-4">

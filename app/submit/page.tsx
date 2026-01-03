@@ -324,7 +324,7 @@ Posted Date: ${new Date().toISOString().split('T')[0]}`;
       <div
         className="pt-12 pb-8 px-6"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.light} 100%)`,
+          backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
         <div className="flex items-center gap-4 mb-4">

@@ -13,6 +13,7 @@ import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useCredits } from '@/hooks/useCredits';
 import BannerAd from '@/components/ads/BannerAd';
+import InlineAd from '@/components/ads/InlineAd';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 const STORAGE_KEYS = {
@@ -605,11 +606,11 @@ export default function JobDetailsPage() {
         />
       )}
     <div className="min-h-screen bg-gray-50">
-      {/* Gradient Header */}
+      {/* Header */}
       <div
         className="relative pt-12 pb-8 px-6"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.primary.dark} 100%)`,
+          backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
         <button
@@ -788,6 +789,9 @@ export default function JobDetailsPage() {
             </div>
           </section>
         )}
+
+        {/* Inline Ad - After Required Skills */}
+        <InlineAd />
 
         {/* Responsibilities */}
         {(() => {
