@@ -234,7 +234,7 @@ export default function CVViewPage() {
 
       // Configure PDF options
       const opt = {
-        margin: [0, 0, 0, 0],
+        margin: [0, 0, 0, 0] as [number, number, number, number],
         filename: `${document.name || 'document'}.pdf`,
         image: { 
           type: 'jpeg' as const,
