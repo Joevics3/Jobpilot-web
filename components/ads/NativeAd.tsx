@@ -22,59 +22,40 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   useEffect(() => {
     if (!isMounted || scriptLoadedRef.current) return;
 
-    // Wait for container to be fully rendered in DOM
-    // Use double requestAnimationFrame to ensure container is in DOM
-    const loadAd = () => {
-      if (scriptLoadedRef.current) return;
-      
-      const container = containerRef.current;
-      if (!container || !container.parentNode) {
-        // Container not ready, try again
-        requestAnimationFrame(loadAd);
-        return;
-      }
+    const container = containerRef.current;
+    if (!container) return;
 
-      scriptLoadedRef.current = true;
-      
-      // Clear container first
-      container.innerHTML = '';
-      
-      // Set atOptions for Adsterra native ad
-      // Note: Using iframe format for native ads
-      const optionsScript = document.createElement('script');
-      optionsScript.type = 'text/javascript';
-      optionsScript.innerHTML = `
-        atOptions = {
-          'key': '1e2aa34112d35cbf5a5c237b9d086461',
-          'format': 'iframe',
-          'height': 250,
-          'width': 300,
-          'params': {}
-        };
-      `;
-      document.head.appendChild(optionsScript);
-      optionsScriptRef.current = optionsScript;
+    scriptLoadedRef.current = true;
 
-      // Small delay to ensure atOptions is set before loading invoke script
-      setTimeout(() => {
-        if (!container || !container.parentNode) return;
-        
-        // Load the invoke script into the container
-        const invokeScript = document.createElement('script');
-        invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
-        invokeScript.async = true;
-        invokeScript.setAttribute('data-cfasync', 'false');
-        container.appendChild(invokeScript);
-        invokeScriptRef.current = invokeScript;
-      }, 50);
-    };
+    // Clear container first
+    container.innerHTML = '';
 
-    // Use double requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        loadAd();
-      });
-    });
+    // Create a unique ID for this ad instance
+    const adId = `adsterra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Set atOptions for Adsterra native ad
+    const optionsScript = document.createElement('script');
+    optionsScript.type = 'text/javascript';
+    optionsScript.innerHTML = `
+      window.atOptions_${adId} = {
+        'key': '1e2aa34112d35cbf5a5c237b9d086461',
+        'format': 'iframe',
+        'height': 250,
+        'width': 300,
+        'params': {}
+      };
+      window.atOptions = window.atOptions_${adId};
+    `;
+    document.head.appendChild(optionsScript);
+    optionsScriptRef.current = optionsScript;
+
+    // Load the invoke script
+    const invokeScript = document.createElement('script');
+    invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
+    invokeScript.async = true;
+    invokeScript.setAttribute('data-cfasync', 'false');
+    container.appendChild(invokeScript);
+    invokeScriptRef.current = invokeScript;
 
     return () => {
       // Cleanup
@@ -85,9 +66,11 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
       if (invokeScriptRef.current && invokeScriptRef.current.parentNode) {
         invokeScriptRef.current.parentNode.removeChild(invokeScriptRef.current);
       }
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      if (container) {
+        container.innerHTML = '';
       }
+      // Clean up global variable
+      delete window[`atOptions_${adId}`];
     };
   }, [isMounted]);
 

@@ -690,7 +690,7 @@ export default function JobList() {
                 />
                 {/* In-feed native ad after every 5th job card */}
                 {(index + 1) % 5 === 0 && index < sortedJobs.length - 1 && (
-                  <NativeAd key={`native-ad-${index}`} />
+                  <NativeAd key={`native-ad-${index}-${Date.now()}`} />
                 )}
               </React.Fragment>
             ))

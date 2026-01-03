@@ -118,23 +118,24 @@ export default function BannerAd({
   }
 
   return (
-    <div 
-      className={`flex items-center justify-center ${className}`}
-      style={{ 
-        minHeight: `${mobileHeight}px`,
-        ...style 
+    <div
+      className={`${className}`}
+      style={{
+        paddingTop: '3px',
+        paddingBottom: '3px',
+        ...style
       }}
     >
       {/* Responsive Banner: Mobile 320x50, Desktop 728x90 */}
       <div className="w-full max-w-full overflow-hidden">
         {/* Mobile Banner (320x50) */}
         <div className="block md:hidden">
-          <div 
+          <div
             ref={mobileContainerRef}
-            style={{ 
-              minHeight: `${mobileHeight}px`, 
-              width: '100%', 
-              maxWidth: `${mobileWidth}px`, 
+            style={{
+              minHeight: `${mobileHeight}px`,
+              width: '100%',
+              maxWidth: `${mobileWidth}px`,
               margin: '0 auto',
               textAlign: 'center'
             }}
@@ -143,12 +144,12 @@ export default function BannerAd({
 
         {/* Desktop Banner */}
         <div className="hidden md:block">
-          <div 
+          <div
             ref={desktopContainerRef}
-            style={{ 
-              minHeight: `${desktopHeight}px`, 
-              width: '100%', 
-              maxWidth: `${desktopWidth}px`, 
+            style={{
+              minHeight: `${desktopHeight}px`,
+              width: '100%',
+              maxWidth: `${desktopWidth}px`,
               margin: '0 auto',
               textAlign: 'center'
             }}
