@@ -12,8 +12,6 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
-  const optionsScriptRef = useRef<HTMLScriptElement | null>(null);
-  const invokeScriptRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -30,47 +28,24 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
     // Clear container first
     container.innerHTML = '';
 
-    // Create a unique ID for this ad instance
-    const adId = `adsterra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Set the container ID as per Adsterra format
+    container.id = 'container-1e2aa34112d35cbf5a5c237b9d086461';
 
-    // Set atOptions for Adsterra native ad
-    const optionsScript = document.createElement('script');
-    optionsScript.type = 'text/javascript';
-    optionsScript.innerHTML = `
-      window.atOptions_${adId} = {
-        'key': '1e2aa34112d35cbf5a5c237b9d086461',
-        'format': 'iframe',
-        'height': 250,
-        'width': 300,
-        'params': {}
-      };
-      window.atOptions = window.atOptions_${adId};
-    `;
-    document.head.appendChild(optionsScript);
-    optionsScriptRef.current = optionsScript;
+    // Create and append the script tag
+    const script = document.createElement('script');
+    script.src = 'https://pl28382150.effectivegatecpm.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
+    script.async = true;
+    script.setAttribute('data-cfasync', 'false');
 
-    // Load the invoke script
-    const invokeScript = document.createElement('script');
-    invokeScript.src = 'https://www.highperformanceformat.com/1e2aa34112d35cbf5a5c237b9d086461/invoke.js';
-    invokeScript.async = true;
-    invokeScript.setAttribute('data-cfasync', 'false');
-    container.appendChild(invokeScript);
-    invokeScriptRef.current = invokeScript;
+    // Append script to container (as per official format)
+    container.appendChild(script);
 
     return () => {
       // Cleanup
       scriptLoadedRef.current = false;
-      if (optionsScriptRef.current && optionsScriptRef.current.parentNode) {
-        optionsScriptRef.current.parentNode.removeChild(optionsScriptRef.current);
-      }
-      if (invokeScriptRef.current && invokeScriptRef.current.parentNode) {
-        invokeScriptRef.current.parentNode.removeChild(invokeScriptRef.current);
-      }
       if (container) {
         container.innerHTML = '';
       }
-      // Clean up global variable
-      delete (window as any)[`atOptions_${adId}`];
     };
   }, [isMounted]);
 
@@ -89,17 +64,22 @@ export default function NativeAd({ className = "", style }: NativeAdProps) {
   }
 
   return (
-    <div 
+    <div
       className={`bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-100 ${className}`}
-      style={{ 
+      style={{
         borderColor: theme.colors.border.light,
         backgroundColor: theme.colors.card.DEFAULT,
-        ...style 
+        minHeight: '120px',
+        ...style
       }}
     >
-      <div 
+      <div
         ref={containerRef}
-        style={{ minHeight: '120px', width: '100%' }}
+        style={{
+          minHeight: '120px',
+          width: '100%',
+          display: 'block'
+        }}
       ></div>
     </div>
   );
