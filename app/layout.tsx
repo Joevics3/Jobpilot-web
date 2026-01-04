@@ -95,6 +95,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="admaven-placement" content="Bqjw8rHw7" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://qyuzuooxenyjqnjplrya.supabase.co" />
