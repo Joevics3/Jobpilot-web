@@ -747,7 +747,7 @@ export default function JobDetailsPage() {
               <div className="flex items-center gap-2">
                 <Calendar size={18} className="text-gray-500" />
                 <div>
-                  <p className="text-xs text-gray-500">Application Deadline</p>
+                  <p className="text-xs text-gray-500">Valid Through</p>
                   <p className="text-sm font-medium text-gray-900">
                     {new Date(job.deadline).toLocaleDateString()}
                   </p>
