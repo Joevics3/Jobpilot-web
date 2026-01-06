@@ -1007,8 +1007,7 @@ function renderTemplate5(data: CVData): string {
             ${publications.map(pub => `
                 <div class="entry">
                     <div class="entry-title">${pub.title || ''}</div>
-                    <div class="entry-subtitle">${pub.organization || pub.publisher || ''}</div>
-                    ${pub.description ? `<div class="entry-description">${pub.description}</div>` : ''}
+                    <div class="entry-subtitle">${pub.journal ? `${pub.journal}${pub.year ? ` (${pub.year})` : ''}` : pub.year || ''}</div>
                 </div>
             `).join('')}
         </div>
@@ -1483,8 +1482,7 @@ function renderTemplate6(data: CVData): string {
                     ${publications.map(pub => `
                         <div class="publication-item">
                             <div class="work-title">${pub.title || ''}</div>
-                            <div class="work-company">${pub.organization || pub.publisher || ''}</div>
-                            ${pub.description ? `<p style="font-size: 10.5px; margin-top: 4px;">${pub.description}</p>` : ''}
+                            <div class="work-company">${pub.journal ? `${pub.journal}${pub.year ? ` (${pub.year})` : ''}` : pub.year || ''}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -1969,7 +1967,6 @@ function renderResponsiveTemplate5(data: CVData): string {
         ${data.publications.map(pub => `
           <div class="mb-3">
             <p class="text-sm leading-relaxed">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
-            ${pub.organization ? `<p class="text-sm text-gray-600">${htmlEscape(pub.organization)}</p>` : ''}
           </div>
         `).join('')}
       </section>
@@ -2191,7 +2188,6 @@ function renderResponsiveTemplate6(data: CVData): string {
           ${data.publications.map(pub => `
             <div class="mb-3">
               <p class="text-sm leading-relaxed">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
-              ${pub.organization ? `<p class="text-sm text-gray-600">${htmlEscape(pub.organization)}</p>` : ''}
             </div>
           `).join('')}
         </section>
