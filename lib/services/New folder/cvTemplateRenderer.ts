@@ -2115,7 +2115,7 @@ export const renderTemplate14 = (data: CVData): string => {
 
 
 // Template 11 Renderer - Academic Single Column
-export const renderTemplate = (data: CVData): string => {
+export const renderTemplate11 = (data: CVData): string => {
   const { 
     personalDetails, 
     education, 
@@ -2510,8 +2510,14 @@ export const renderTemplate = (data: CVData): string => {
 </html>`;
 };
 
-// Template 11 Renderer - Two-Column Modern Layout
-export const renderTemplate = (data: CVData): string => {
+// Template 8 Renderer - Executive Blue
+export const renderTemplate8 = (data: CVData): string => {
+  // Fallback to template 1 for now
+  return renderTemplate1(data);
+};
+
+// Template 6 Renderer - Two-Column Modern Layout
+export const renderTemplate6 = (data: CVData): string => {
   const { 
     personalDetails, 
     about,
