@@ -2344,7 +2344,7 @@ export const renderTemplate11 = (data: CVData): string => {
             ${experience.map(exp => `
                 <div class="entry">
                     <div class="entry-header">
-                        <div class="entry-title">${exp.title || exp.role || ''}</div>
+                        <div class="entry-title">${exp.role || ''}</div>
                         <div class="entry-date">${exp.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${exp.company || ''}</div>

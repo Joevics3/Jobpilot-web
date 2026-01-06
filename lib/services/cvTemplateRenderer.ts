@@ -925,7 +925,7 @@ function renderTemplate5(data: CVData): string {
             ${experience.map(exp => `
                 <div class="entry">
                     <div class="entry-header">
-                        <div class="entry-title">${exp.title || exp.role || ''}</div>
+                        <div class="entry-title">${exp.role || ''}</div>
                         <div class="entry-date">${exp.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${exp.company || ''}</div>
@@ -1921,7 +1921,7 @@ function renderResponsiveTemplate5(data: CVData): string {
         ${data.experience.map(exp => `
           <div class="mb-6">
             <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(exp.title || exp.role)}</h3>
+              <h3 class="font-bold text-base">${htmlEscape(exp.role)}</h3>
               <span class="text-sm italic">${htmlEscape(exp.years)}</span>
             </div>
             <p class="italic text-sm mb-3">${htmlEscape(exp.company)}</p>
@@ -2171,7 +2171,7 @@ function renderResponsiveTemplate6(data: CVData): string {
           <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Work Experience</h2>
           ${data.experience.map(exp => `
             <div class="mb-6">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.title || exp.role)}</h3>
+              <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.role)}</h3>
               <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.years ? `(${htmlEscape(exp.years)})` : ''}</p>
               ${exp.responsibilities && exp.responsibilities.length > 0 ?
                 `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` :
