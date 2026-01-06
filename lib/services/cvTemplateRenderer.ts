@@ -929,11 +929,7 @@ function renderTemplate5(data: CVData): string {
                         <div class="entry-date">${exp.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${exp.company || ''}</div>
-                    ${exp.responsibilities && exp.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${exp.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : exp.bullets && exp.bullets.length > 0 ? `
+                    ${exp.bullets && exp.bullets.length > 0 ? `
                         <ul class="entry-list">
                             ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
                         </ul>
@@ -1925,9 +1921,7 @@ function renderResponsiveTemplate5(data: CVData): string {
               <span class="text-sm italic">${htmlEscape(exp.years)}</span>
             </div>
             <p class="italic text-sm mb-3">${htmlEscape(exp.company)}</p>
-            ${exp.responsibilities && exp.responsibilities.length > 0 ? 
-              `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` : 
-              exp.bullets && exp.bullets.length > 0 ?
+            ${exp.bullets && exp.bullets.length > 0 ?
               `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
           </div>
         `).join('')}
@@ -2173,9 +2167,7 @@ function renderResponsiveTemplate6(data: CVData): string {
             <div class="mb-6">
               <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.role)}</h3>
               <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.years ? `(${htmlEscape(exp.years)})` : ''}</p>
-              ${exp.responsibilities && exp.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` :
-                exp.bullets && exp.bullets.length > 0 ?
+              ${exp.bullets && exp.bullets.length > 0 ?
                 `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
             </div>
           `).join('')}
