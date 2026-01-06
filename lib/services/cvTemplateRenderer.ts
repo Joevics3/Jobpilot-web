@@ -952,16 +952,11 @@ function renderTemplate5(data: CVData): string {
         </div>
         ` : ''}
 
-        <!-- Technical Skills -->
-        ${technicalSkills && Object.keys(technicalSkills).length > 0 ? `
+        <!-- Skills -->
+        ${skills && skills.length > 0 ? `
         <div class="section">
-            <div class="section-title">Technical Skills</div>
-            <div class="skills-grid">
-                ${Object.entries(technicalSkills).map(([category, skills]) => `
-                    <div class="skill-category">${category}:</div>
-                    <div class="skill-items">${skills}</div>
-                `).join('')}
-            </div>
+            <div class="section-title">Skills</div>
+            <div class="skills-list">${skills.join(', ')}</div>
         </div>
         ` : ''}
 
