@@ -2345,7 +2345,7 @@ export const renderTemplate11 = (data: CVData): string => {
                 <div class="entry">
                     <div class="entry-header">
                         <div class="entry-title">${exp.title || exp.role || ''}</div>
-                        <div class="entry-date">${exp.period || exp.years || ''}</div>
+                        <div class="entry-date">${exp.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${exp.company || ''}</div>
                     ${exp.responsibilities && exp.responsibilities.length > 0 ? `
@@ -2859,7 +2859,7 @@ export const renderTemplate6 = (data: CVData): string => {
                     ${experience.map(work => `
                         <div class="work-item">
                             <div class="work-title">${work.title || work.role || ''}</div>
-                            <div class="work-company">${work.company || ''} ${work.period || work.years ? `(${work.period || work.years})` : ''}</div>
+                            <div class="work-company">${work.company || ''} ${work.years ? `(${work.years})` : ''}</div>
                             ${work.responsibilities && work.responsibilities.length > 0 ? `
                                 <ul class="work-list">
                                     ${work.responsibilities.map(resp => `<li>${resp}</li>`).join('')}

@@ -697,21 +697,20 @@ function renderTemplate3(data: CVData): string {
 
 function renderTemplate5(data: CVData): string {
   // Template 5: Academic Single Column
-  const { 
-    personalDetails, 
-    education, 
-    experience, 
-    projects, 
-    technicalSkills, 
-    achievements, 
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo, 
-    references 
+  const {
+    personalDetails,
+    education,
+    experience,
+    projects,
+    skills,
+    accomplishments,
+    certifications,
+    awards,
+    publications,
+    volunteerWork,
+    languages,
+    interests,
+    additionalSections
   } = data;
 
   return `<!DOCTYPE html>
@@ -911,10 +910,9 @@ function renderTemplate5(data: CVData): string {
                 <div class="entry">
                     <div class="entry-header">
                         <div class="entry-title">${edu.institution || ''}</div>
-                        <div class="entry-date">${edu.period || edu.years || ''}</div>
+                        <div class="entry-date">${edu.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${edu.degree || ''}</div>
-                    ${edu.gpa ? `<div class="entry-description">${edu.gpa}</div>` : ''}
                 </div>
             `).join('')}
         </div>
@@ -928,7 +926,7 @@ function renderTemplate5(data: CVData): string {
                 <div class="entry">
                     <div class="entry-header">
                         <div class="entry-title">${exp.title || exp.role || ''}</div>
-                        <div class="entry-date">${exp.period || exp.years || ''}</div>
+                        <div class="entry-date">${exp.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${exp.company || ''}</div>
                     ${exp.responsibilities && exp.responsibilities.length > 0 ? `
@@ -1070,11 +1068,11 @@ function renderTemplate5(data: CVData): string {
         ` : ''}
 
         <!-- Additional Information -->
-        ${additionalInfo && additionalInfo.length > 0 ? `
+        ${additionalSections && additionalSections.length > 0 ? `
         <div class="section">
             <div class="section-title">Additional Information</div>
             <ul class="achievements-list">
-                ${additionalInfo.map(info => `<li>${info}</li>`).join('')}
+                ${additionalSections.map(section => `<li><strong>${section.sectionName}:</strong> ${section.content}</li>`).join('')}
             </ul>
         </div>
         ` : ''}
@@ -1359,7 +1357,7 @@ function renderTemplate6(data: CVData): string {
                             <div class="education-title">${edu.institution || ''}</div>
                             <div class="education-details">
                                 ${edu.degree || ''}<br>
-                                ${edu.period || edu.years || ''}
+                                ${edu.years || ''}
                             </div>
                         </div>
                     `).join('')}
@@ -1425,11 +1423,11 @@ function renderTemplate6(data: CVData): string {
                 ` : ''}
 
                 <!-- Additional Information -->
-                ${additionalInfo && additionalInfo.length > 0 ? `
+                ${additionalSections && additionalSections.length > 0 ? `
                 <div class="section">
                     <h2 class="section-title">ADDITIONAL INFORMATION</h2>
                     <div class="additional-info">
-                        ${additionalInfo.map(info => `<p>• ${info}</p>`).join('')}
+                        ${additionalSections.map(section => `<p>• <strong>${section.sectionName}:</strong> ${section.content}</p>`).join('')}
                     </div>
                 </div>
                 ` : ''}
@@ -1452,7 +1450,7 @@ function renderTemplate6(data: CVData): string {
                     ${experience.map(work => `
                         <div class="work-item">
                             <div class="work-title">${work.title || work.role || ''}</div>
-                            <div class="work-company">${work.company || ''} ${work.period || work.years ? `(${work.period || work.years})` : ''}</div>
+                            <div class="work-company">${work.company || ''} ${work.years ? `(${work.years})` : ''}</div>
                             ${work.responsibilities && work.responsibilities.length > 0 ? `
                                 <ul class="work-list">
                                     ${work.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
@@ -1909,10 +1907,9 @@ function renderResponsiveTemplate5(data: CVData): string {
           <div class="mb-4">
             <div class="flex justify-between items-baseline mb-1">
               <h3 class="font-bold text-base">${htmlEscape(edu.institution)}</h3>
-              <span class="text-sm italic">${htmlEscape(edu.period || edu.years)}</span>
+              <span class="text-sm italic">${htmlEscape(edu.years)}</span>
             </div>
             <p class="italic text-sm mb-2">${htmlEscape(edu.degree)}</p>
-            ${edu.gpa ? `<p class="text-sm">${htmlEscape(edu.gpa)}</p>` : ''}
           </div>
         `).join('')}
       </section>
@@ -1925,7 +1922,7 @@ function renderResponsiveTemplate5(data: CVData): string {
           <div class="mb-6">
             <div class="flex justify-between items-baseline mb-1">
               <h3 class="font-bold text-base">${htmlEscape(exp.title || exp.role)}</h3>
-              <span class="text-sm italic">${htmlEscape(exp.period || exp.years)}</span>
+              <span class="text-sm italic">${htmlEscape(exp.years)}</span>
             </div>
             <p class="italic text-sm mb-3">${htmlEscape(exp.company)}</p>
             ${exp.responsibilities && exp.responsibilities.length > 0 ? 
@@ -2095,7 +2092,7 @@ function renderResponsiveTemplate6(data: CVData): string {
           ${data.education.map(edu => `
             <div class="mb-4">
               <h3 class="font-semibold text-base mb-1">${htmlEscape(edu.institution)}</h3>
-              <p class="text-sm text-gray-600">${htmlEscape(edu.degree)} - ${htmlEscape(edu.period || edu.years)}</p>
+              <p class="text-sm text-gray-600">${htmlEscape(edu.degree)} - ${htmlEscape(edu.years)}</p>
             </div>
           `).join('')}
         </section>
@@ -2150,11 +2147,11 @@ function renderResponsiveTemplate6(data: CVData): string {
         </section>
         ` : ''}
 
-        ${data.additionalInfo && data.additionalInfo.length > 0 ? `
+        ${data.additionalSections && data.additionalSections.length > 0 ? `
         <section>
           <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Additional Information</h2>
           <ul class="text-sm space-y-1">
-            ${data.additionalInfo.map(info => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(info)}</li>`).join('')}
+            ${data.additionalSections.map(section => `<li class="flex items-start"><span class="mr-2">•</span><strong>${htmlEscape(section.sectionName)}:</strong> ${htmlEscape(section.content)}</li>`).join('')}
           </ul>
         </section>
         ` : ''}
@@ -2175,7 +2172,7 @@ function renderResponsiveTemplate6(data: CVData): string {
           ${data.experience.map(exp => `
             <div class="mb-6">
               <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.title || exp.role)}</h3>
-              <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.period || exp.years ? `(${htmlEscape(exp.period || exp.years)})` : ''}</p>
+              <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.years ? `(${htmlEscape(exp.years)})` : ''}</p>
               ${exp.responsibilities && exp.responsibilities.length > 0 ?
                 `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` :
                 exp.bullets && exp.bullets.length > 0 ?
@@ -2233,12 +2230,6 @@ function renderResponsiveTemplate6(data: CVData): string {
         </section>
         ` : ''}
 
-        ${data.references ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">References</h2>
-          <p class="text-sm leading-relaxed">${htmlEscape(data.references)}</p>
-        </section>
-        ` : ''}
       </div>
     </div>
   </div>
