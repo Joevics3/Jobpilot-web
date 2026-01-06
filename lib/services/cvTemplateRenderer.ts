@@ -1056,14 +1056,6 @@ function renderTemplate5(data: CVData): string {
             </ul>
         </div>
         ` : ''}
-
-        <!-- References -->
-        ${references ? `
-        <div class="section">
-            <div class="section-title">References</div>
-            <div class="entry-description">${references}</div>
-        </div>
-        ` : ''}
     </div>
 </body>
 </html>`;
@@ -1072,21 +1064,20 @@ function renderTemplate5(data: CVData): string {
 
 function renderTemplate6(data: CVData): string {
   // Template 6: Two-Column Modern Layout
-  const { 
-    personalDetails, 
+  const {
+    personalDetails,
     about,
-    education, 
-    experience, 
-    projects, 
+    education,
+    experience,
+    projects,
     skills,
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo, 
-    references 
+    certifications,
+    awards,
+    publications,
+    volunteerWork,
+    languages,
+    interests,
+    additionalInfo
   } = data;
 
   return `<!DOCTYPE html>
@@ -1480,15 +1471,6 @@ function renderTemplate6(data: CVData): string {
                 </div>
                 ` : ''}
 
-                <!-- References -->
-                ${references ? `
-                <div class="section">
-                    <h2 class="section-title">REFERENCES</h2>
-                    <div class="reference-item">
-                        <div class="reference-name">${references}</div>
-                    </div>
-                </div>
-                ` : ''}
             </div>
         </div>
     </div>
