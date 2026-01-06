@@ -2129,8 +2129,7 @@ export const renderTemplate11 = (data: CVData): string => {
     volunteerWork,
     languages,
     interests,
-    additionalSections,
-    references
+    additionalSections
   } = data;
 
   return `<!DOCTYPE html>
@@ -2491,13 +2490,6 @@ export const renderTemplate11 = (data: CVData): string => {
         </div>
         `).join('') : ''}
 
-        <!-- References -->
-        ${references ? `
-        <div class="section">
-            <div class="section-title">References</div>
-            <div class="entry-description">${references}</div>
-        </div>
-        ` : ''}
     </div>
 </body>
 </html>`;
@@ -2511,21 +2503,20 @@ export const renderTemplate8 = (data: CVData): string => {
 
 // Template 6 Renderer - Two-Column Modern Layout
 export const renderTemplate6 = (data: CVData): string => {
-  const { 
-    personalDetails, 
-    about,
-    education, 
-    experience, 
-    projects, 
+  const {
+    personalDetails,
+    summary,
+    education,
+    experience,
+    projects,
     skills,
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalSections, 
-    references 
+    certifications,
+    awards,
+    publications,
+    volunteerWork,
+    languages,
+    interests,
+    additionalSections
   } = data;
 
   return `<!DOCTYPE html>
@@ -2855,10 +2846,10 @@ export const renderTemplate6 = (data: CVData): string => {
             <!-- Right Column -->
             <div class="right-column">
                 <!-- About Me -->
-                ${about ? `
+                ${summary ? `
                 <div class="section">
                     <h2 class="section-title">ABOUT ME</h2>
-                    <p class="about-text">${about}</p>
+                    <p class="about-text">${summary}</p>
                 </div>
                 ` : ''}
 
@@ -2930,15 +2921,6 @@ export const renderTemplate6 = (data: CVData): string => {
                 </div>
                 ` : ''}
 
-                <!-- References -->
-                ${references ? `
-                <div class="section">
-                    <h2 class="section-title">REFERENCES</h2>
-                    <div class="reference-item">
-                        <div class="reference-name">${references}</div>
-                    </div>
-                </div>
-                ` : ''}
             </div>
         </div>
     </div>
