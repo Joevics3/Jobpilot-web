@@ -807,6 +807,7 @@ function renderTemplate4(data: CVData): string {
                 </div>
                 ` : ''}
 
+                ${skills && skills.length > 0 ? `
                 <div class="section">
                     <div class="section-title">SKILLS</div>
                     <div class="section-content">
@@ -815,6 +816,7 @@ function renderTemplate4(data: CVData): string {
                         </ul>
                     </div>
                 </div>
+                ` : ''}
 
                 ${certifications && certifications.length > 0 ? `
                 <div class="section">
@@ -851,6 +853,7 @@ function renderTemplate4(data: CVData): string {
             <div class="divider"></div>
 
             <div class="right-column">
+                ${experience && experience.length > 0 ? `
                 <div class="section">
                     <div class="section-title">WORK EXPERIENCE</div>
                     <div class="section-content">
@@ -861,12 +864,16 @@ function renderTemplate4(data: CVData): string {
                                     <div class="work-location-date">${personalDetails.location}<br>${exp.years}</div>
                                 </div>
                                 <div class="work-position">${exp.role}</div>
+                                ${exp.bullets && exp.bullets.length > 0 ? `
                                 <ul>
                                     ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
                                 </ul>
+                                ` : ''}
                             </div>
                         `).join('')}
                     </div>
+                </div>
+                ` : ''}
                 </div>
 
                 ${projects && projects.length > 0 ? `
@@ -1027,6 +1034,7 @@ export const renderTemplate5 = (data: CVData): string => {
                 <div class="section-content">${summary}</div>
             </div>
 
+        ${experience && experience.length > 0 ? `
         <div class="section">
             <div class="section-title">Work History</div>
             <div class="section-content">
@@ -1037,14 +1045,18 @@ export const renderTemplate5 = (data: CVData): string => {
                             <div class="job-dates">${exp.years}</div>
                         </div>
                         <div class="company-name">${exp.company}</div>
+                        ${exp.bullets && exp.bullets.length > 0 ? `
                         <ul>
                             ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
                         </ul>
+                        ` : ''}
                     </div>
                 `).join('')}
             </div>
         </div>
+        ` : ''}
 
+        ${skills && skills.length > 0 ? `
         <div class="section">
             <div class="section-title">Skills</div>
             <div class="section-content">
@@ -1058,7 +1070,9 @@ export const renderTemplate5 = (data: CVData): string => {
                 </div>
             </div>
         </div>
+        ` : ''}
 
+        ${education && education.length > 0 ? `
         <div class="section">
             <div class="section-title">Education</div>
             <div class="section-content">
@@ -1071,6 +1085,7 @@ export const renderTemplate5 = (data: CVData): string => {
                 `).join('')}
             </div>
         </div>
+        ` : ''}
 
         ${projects && projects.length > 0 ? `
         <div class="section">
