@@ -1032,7 +1032,7 @@ function renderTemplate5(data: CVData): string {
         <div class="section">
             <div class="section-title">Languages</div>
             <div class="entry-description">
-                ${languages.map(lang => typeof lang === 'string' ? lang : `${lang.language || ''} (${lang.proficiency || ''})`).join(', ')}
+                ${languages.join(', ')}
             </div>
         </div>
         ` : ''}
@@ -1369,7 +1369,7 @@ function renderTemplate6(data: CVData): string {
                 <div class="section">
                     <h2 class="section-title">LANGUAGES</h2>
                     <ul class="lang-list">
-                        ${languages.map(lang => typeof lang === 'string' ? `<li>${lang}</li>` : `<li>${lang.language || ''} - ${lang.proficiency || ''}</li>`).join('')}
+                        ${languages.map(lang => `<li>${lang}</li>`).join('')}
                     </ul>
                 </div>
                 ` : ''}
@@ -1968,7 +1968,7 @@ function renderResponsiveTemplate5(data: CVData): string {
       <section>
         <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Languages</h2>
         <div class="text-sm leading-relaxed">
-          ${data.languages.map(lang => typeof lang === 'string' ? lang : `${lang.language || ''} (${lang.proficiency || ''})`).join(', ')}
+          ${data.languages.join(', ')}
         </div>
       </section>
       ` : ''}
@@ -2080,7 +2080,7 @@ function renderResponsiveTemplate6(data: CVData): string {
         <section>
           <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Languages</h2>
           <ul class="text-sm space-y-1">
-            ${data.languages.map(lang => `<li class="flex items-start"><span class="mr-2">•</span> ${typeof lang === 'string' ? lang : `${lang.language || ''} - ${lang.proficiency || ''}`}</li>`).join('')}
+            ${data.languages.map(lang => `<li class="flex items-start"><span class="mr-2">•</span> ${lang}</li>`).join('')}
           </ul>
         </section>
         ` : ''}
