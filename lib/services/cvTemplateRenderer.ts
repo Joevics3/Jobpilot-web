@@ -980,9 +980,7 @@ function renderTemplate5(data: CVData): string {
         <div class="section">
             <div class="section-title">Certifications</div>
             <ul class="achievements-list">
-                ${certifications.map(cert => typeof cert === 'string' ? `<li>${cert}</li>` : `
-                    <li><strong>${cert.name}</strong>${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}</li>
-                `).join('')}
+                ${certifications.map(cert => `<li><strong>${cert.name}</strong>${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}</li>`).join('')}
             </ul>
         </div>
         ` : ''}
@@ -1350,7 +1348,7 @@ function renderTemplate6(data: CVData): string {
                 <div class="section">
                     <h2 class="section-title">CERTIFICATION</h2>
                     <ul class="cert-list">
-                        ${certifications.map(cert => typeof cert === 'string' ? `<li>${cert}</li>` : `<li>${cert.name || cert.title || ''}</li>`).join('')}
+                        ${certifications.map(cert => `<li>${cert.name}</li>`).join('')}
                     </ul>
                 </div>
                 ` : ''}
@@ -1416,13 +1414,9 @@ function renderTemplate6(data: CVData): string {
                     <h2 class="section-title">WORK EXPERIENCE</h2>
                     ${experience.map(work => `
                         <div class="work-item">
-                            <div class="work-title">${work.title || work.role || ''}</div>
+                            <div class="work-title">${work.role || ''}</div>
                             <div class="work-company">${work.company || ''} ${work.years ? `(${work.years})` : ''}</div>
-                            ${work.responsibilities && work.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${work.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                                </ul>
-                            ` : work.bullets && work.bullets.length > 0 ? `
+                            ${work.bullets && work.bullets.length > 0 ? `
                                 <ul class="work-list">
                                     ${work.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
                                 </ul>
@@ -1909,7 +1903,7 @@ function renderResponsiveTemplate5(data: CVData): string {
         <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Certifications</h2>
         ${data.certifications.map(cert => `
           <div class="mb-2">
-            <p class="text-sm">${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</p>
+            <p class="text-sm">${htmlEscape(cert.name)}</p>
           </div>
         `).join('')}
       </section>
@@ -2053,7 +2047,7 @@ function renderResponsiveTemplate6(data: CVData): string {
         <section>
           <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Certification</h2>
           <ul class="text-sm space-y-1">
-            ${data.certifications.map(cert => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</li>`).join('')}
+            ${data.certifications.map(cert => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(cert.name)}</li>`).join('')}
           </ul>
         </section>
         ` : ''}
