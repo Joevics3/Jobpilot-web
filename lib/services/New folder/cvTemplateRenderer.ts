@@ -2329,10 +2329,9 @@ export const renderTemplate11 = (data: CVData): string => {
                 <div class="entry">
                     <div class="entry-header">
                         <div class="entry-title">${edu.institution || ''}</div>
-                        <div class="entry-date">${edu.period || edu.years || ''}</div>
+                        <div class="entry-date">${edu.years || ''}</div>
                     </div>
                     <div class="entry-subtitle">${edu.degree || ''}</div>
-                    ${edu.gpa ? `<div class="entry-description">${edu.gpa}</div>` : ''}
                 </div>
             `).join('')}
         </div>
@@ -2767,7 +2766,7 @@ export const renderTemplate6 = (data: CVData): string => {
                             <div class="education-title">${edu.institution || ''}</div>
                             <div class="education-details">
                                 ${edu.degree || ''}<br>
-                                ${edu.period || edu.years || ''}
+                                ${edu.years || ''}
                             </div>
                         </div>
                     `).join('')}
