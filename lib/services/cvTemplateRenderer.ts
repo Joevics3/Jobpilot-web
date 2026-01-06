@@ -981,7 +981,7 @@ function renderTemplate5(data: CVData): string {
             <div class="section-title">Certifications</div>
             <ul class="achievements-list">
                 ${certifications.map(cert => typeof cert === 'string' ? `<li>${cert}</li>` : `
-                    <li><strong>${cert.name || cert.title || ''}</strong>${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.date ? ` (${cert.date})` : ''}</li>
+                    <li><strong>${cert.name}</strong>${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}</li>
                 `).join('')}
             </ul>
         </div>
