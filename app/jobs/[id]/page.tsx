@@ -125,7 +125,7 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           __html: JSON.stringify(schema),
         }}
       />
-      
+
       {/* Client component handles all interactivity */}
       <JobClient job={job} />
     </>
