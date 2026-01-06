@@ -22,7 +22,12 @@ export default function InterviewPage() {
   const loadSessionHistory = () => {
     try {
       const history = InterviewPrepService.getHistory();
-      setSessionHistory(history);
+      // Ensure all sessions have a chat array (migration for old sessions)
+      const cleanedHistory = history.map(session => ({
+        ...session,
+        chat: session.chat || [],
+      }));
+      setSessionHistory(cleanedHistory);
     } catch (error) {
       console.error('Error loading session history:', error);
     }
@@ -81,8 +86,9 @@ export default function InterviewPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sessionHistory.map((session) => {
-                const totalQuestions = session.chat.filter(m => m.type === 'question').length;
-                const completedAnswers = session.chat.filter(m => m.type === 'answer').length;
+                const chat = session.chat || [];
+                const totalQuestions = chat.filter(m => m.type === 'question').length;
+                const completedAnswers = chat.filter(m => m.type === 'answer').length;
                 const progressPercent = totalQuestions > 0 ? (completedAnswers / totalQuestions) * 100 : 0;
 
                 return (

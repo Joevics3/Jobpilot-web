@@ -78,14 +78,16 @@ export default function InterviewPrepModal({ isOpen, onClose }: InterviewPrepMod
     onClose();
   };
 
-  // Load CV documents from localStorage
+  // Load CV documents from localStorage (only CVs, not cover letters)
   const loadCVDocuments = () => {
     try {
       const cvDocs = localStorage.getItem('cv_documents');
       if (cvDocs) {
         const docs = JSON.parse(cvDocs);
-        setCvDocuments(docs);
-        setFilteredCVDocuments(docs);
+        // Filter to only show CVs, not cover letters
+        const cvsOnly = docs.filter((doc: any) => doc.type === 'cv' || !doc.type);
+        setCvDocuments(cvsOnly);
+        setFilteredCVDocuments(cvsOnly);
       }
     } catch (error) {
       console.error('Error loading CV documents:', error);

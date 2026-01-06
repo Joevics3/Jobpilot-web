@@ -5,13 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Edit, FileText, Check, X, Save, Trash2 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { renderCVTemplate } from '@/lib/services/cvTemplateRenderer';
 import { renderCoverLetterTemplate } from '@/lib/services/coverLetterTemplateRenderer';
 import { CV_TEMPLATES } from '@/lib/types/cv';
 import { COVER_LETTER_TEMPLATES } from '@/lib/types/coverLetter';
 import { CVData } from '@/lib/types/cv';
 import { StructuredCoverLetter } from '@/lib/types/coverLetter';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface CVDocument {
   id: string;
@@ -77,9 +79,11 @@ export default function CVViewPage() {
     try {
       let html = '';
       if (doc.type === 'cv') {
-        html = renderCVTemplate(templateId, doc.structuredData as CVData);
+        // Use 'view' mode for responsive templates in viewer
+        html = renderCVTemplate(templateId, doc.structuredData as CVData, 'view');
       } else if (doc.type === 'cover-letter') {
-        html = renderCoverLetterTemplate(templateId, doc.structuredData as StructuredCoverLetter);
+        // Use 'view' mode for responsive templates in viewer
+        html = renderCoverLetterTemplate(templateId, doc.structuredData as StructuredCoverLetter, 'view');
       }
       setRenderedHTML(html);
     } catch (error) {
@@ -113,9 +117,9 @@ export default function CVViewPage() {
           // Re-render content with current template
           let html = '';
           if (document.type === 'cv') {
-            html = renderCVTemplate(currentTemplateId, editedData as CVData);
+            html = renderCVTemplate(currentTemplateId, editedData as CVData, 'view');
           } else {
-            html = renderCoverLetterTemplate(currentTemplateId, editedData as StructuredCoverLetter);
+            html = renderCoverLetterTemplate(currentTemplateId, editedData as StructuredCoverLetter, 'view');
           }
           docs[docIndex].content = html;
           
@@ -152,125 +156,79 @@ export default function CVViewPage() {
 
     setIsGeneratingPDF(true);
     try {
-      // Create a temporary container with A4 dimensions and proper styling
-      const element = doc.createElement('div');
-      element.id = 'pdf-export-container';
+      // Create a temporary container for PDF generation (like old-code.txt)
+      const printableContent = doc.createElement('div');
+      printableContent.id = 'printable-content';
+      printableContent.style.position = 'absolute';
+      printableContent.style.left = '0';
+      printableContent.style.zIndex = '-1';
+      printableContent.style.width = '210mm'; // A4 width for rendering
+      printableContent.style.padding = '20mm'; // Add margins for clean canvas capture
+      printableContent.style.backgroundColor = 'white';
       
-      // Set container styles - make it visible but off-screen for proper rendering
-      element.style.width = '210mm';
-      element.style.minHeight = '297mm';
-      element.style.boxSizing = 'border-box';
-      element.style.backgroundColor = 'white';
-      element.style.padding = '20mm';
-      element.style.position = 'fixed';
-      element.style.left = '0';
-      element.style.top = '0';
-      element.style.zIndex = '9999';
-      element.style.opacity = '0';
-      element.style.pointerEvents = 'none';
+      // Create inner container for CV content
+      const cvPreviewTemp = doc.createElement('div');
+      cvPreviewTemp.id = 'cv-preview-temp';
       
-      // Create style element for proper rendering
-      const styleElement = doc.createElement('style');
-      styleElement.id = 'pdf-export-styles';
-      styleElement.textContent = `
-        #pdf-export-container {
-          font-family: Arial, sans-serif;
-          -webkit-print-color-adjust: exact;
-          color-adjust: exact;
-          print-color-adjust: exact;
+      // Use the actual rendered DOM content (with Tailwind styles already applied)
+      // This matches the old-code.txt approach where it copies from the visible preview
+      if (contentContainerRef.current) {
+        // Clone the rendered content with all styles
+        cvPreviewTemp.innerHTML = contentContainerRef.current.innerHTML;
+      } else {
+        // Fallback: extract body content from HTML string
+        let contentHTML = renderedHTML;
+        if (renderedHTML.includes('<body>')) {
+          const bodyMatch = renderedHTML.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+          if (bodyMatch && bodyMatch[1]) {
+            contentHTML = bodyMatch[1].trim();
+          }
         }
-        #pdf-export-container * {
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-      `;
-      
-      // Set the HTML content - use the actual rendered HTML
-      element.innerHTML = renderedHTML;
-      
-      // Add style and element to body
-      if (!doc.getElementById('pdf-export-styles')) {
-        doc.head.appendChild(styleElement);
+        cvPreviewTemp.innerHTML = contentHTML;
       }
-      docBody.appendChild(element);
+      
+      printableContent.appendChild(cvPreviewTemp);
+      docBody.appendChild(printableContent);
 
-      // Wait for content to render and images to load
-      await new Promise(resolve => {
-        // Wait for any images in the content to load
-        const images = element.getElementsByTagName('img');
-        if (images.length === 0) {
-          setTimeout(resolve, 200);
-          return;
-        }
-        
-        let loadedCount = 0;
-        const totalImages = images.length;
-        
-        const checkComplete = () => {
-          loadedCount++;
-          if (loadedCount === totalImages) {
-            setTimeout(resolve, 100);
-          }
-        };
-        
-        Array.from(images).forEach((img) => {
-          if (img.complete) {
-            checkComplete();
-          } else {
-            img.onload = checkComplete;
-            img.onerror = checkComplete;
-          }
-        });
-        
-        // Timeout after 3 seconds
-        setTimeout(resolve, 3000);
+      // Wait a bit for content to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Generate the canvas from the content (like old-code.txt)
+      const canvas = await html2canvas(printableContent, {
+        scale: 3, // Higher scale for better resolution
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        windowWidth: 794, // Simulate A4 width in pixels (794px at 96dpi for 210mm)
+        backgroundColor: '#ffffff',
       });
 
-      // Verify element has content
-      if (!element.innerHTML || element.innerHTML.trim() === '' || element.textContent?.trim() === '') {
-        throw new Error('Document content is empty');
+      // Initialize jsPDF (A4 dimensions)
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add content with page breaks
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
 
-      // Configure PDF options
-      const opt = {
-        margin: [0, 0, 0, 0] as [number, number, number, number],
-        filename: `${document.name || 'document'}.pdf`,
-        image: { 
-          type: 'jpeg' as const,
-          quality: 0.98 
-        },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          allowTaint: false,
-          backgroundColor: '#ffffff',
-          logging: false,
-          width: element.scrollWidth,
-          height: element.scrollHeight,
-          windowWidth: element.scrollWidth,
-          windowHeight: element.scrollHeight
-        },
-        jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'portrait' as const,
-          compress: true
-        },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      // Generate PDF
-      await html2pdf().set(opt).from(element).save();
+      // Save the PDF
+      pdf.save(`${document.name || 'document'}.pdf`);
 
       // Clean up
-      if (docBody.contains(element)) {
-        docBody.removeChild(element);
-      }
-      const existingStyle = doc.getElementById('pdf-export-styles');
-      if (existingStyle) {
-        doc.head.removeChild(existingStyle);
+      if (docBody.contains(printableContent)) {
+        docBody.removeChild(printableContent);
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -373,7 +331,25 @@ export default function CVViewPage() {
           >
             <ArrowLeft size={20} className="text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 flex-1">{document.name}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex-1">{document.name}</h1>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {!isEditMode && (
+            <div className="block md:hidden">
+              <Select value={currentTemplateId} onValueChange={handleTemplateSwitch}>
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {isEditMode ? (
               <>
@@ -403,7 +379,7 @@ export default function CVViewPage() {
 
         {/* Template Switcher */}
         {!isEditMode && (
-          <div className="mt-4">
+          <div className="mt-4 hidden md:block">
             <h3 className="text-sm font-semibold mb-3 text-gray-700">Switch Template</h3>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {templates.map((template) => (
@@ -429,9 +405,9 @@ export default function CVViewPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-start justify-center p-4 sm:p-6 bg-gray-50 overflow-y-auto">
+      <div className="flex-1 p-4 sm:p-6 bg-gray-50">
         {isEditMode && editedData ? (
-          <div className="w-full max-w-4xl">
+          <div className="w-full max-w-4xl mx-auto">
             <EditForm
               data={editedData}
               type={document.type}
@@ -441,46 +417,12 @@ export default function CVViewPage() {
             />
           </div>
         ) : renderedHTML ? (
-          <div className="w-full max-w-4xl py-8">
-            {/* A4 Paper Container */}
+          <div className="w-full max-w-4xl mx-auto">
             <div
-              className="bg-white shadow-2xl mx-auto relative"
-              style={{
-                width: '210mm',
-                minHeight: '297mm',
-                maxWidth: '100%',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-              }}
-            >
-              {/* Paper Shadow Effect */}
-              <div
-                className="absolute inset-0 rounded-sm pointer-events-none"
-                style={{
-                  background: 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(0,0,0,0.05))',
-                  borderRadius: '2px',
-                }}
-              />
-
-              {/* Content - Full height, allows overflow */}
-              <div
-                ref={contentContainerRef}
-                className="relative z-10 w-full"
-                style={{
-                  padding: '20mm',
-                  boxSizing: 'border-box',
-                  minHeight: '297mm',
-                }}
-                dangerouslySetInnerHTML={{ __html: renderedHTML }}
-              />
-
-              {/* Paper Lines (optional subtle effect) */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-10"
-                style={{
-                  backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(0,0,0,0.03) 26px, rgba(0,0,0,0.03) 27px)',
-                }}
-              />
-            </div>
+              ref={contentContainerRef}
+              className="bg-white rounded-xl shadow-2xl overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: renderedHTML }}
+            />
           </div>
         ) : (
           <div className="text-center">
@@ -554,12 +496,12 @@ function CVEditForm({
   
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm space-y-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Edit CV</h2>
+      <h2 className="text-xl font-bold mb-6">Edit CV</h2>
       
       {/* Personal Details */}
       {hasPersonalDetailsContent(data.personalDetails) && (
         <div className="border-b pb-6 space-y-4">
-          <h3 className="text-lg font-semibold">Personal Details</h3>
+          <h3 className="text-base font-semibold">Personal Details</h3>
           {hasContent(data.personalDetails?.name) && (
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
@@ -654,7 +596,7 @@ function CVEditForm({
       {/* Summary */}
       {hasContent(data.summary) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Professional Summary</h3>
+          <h3 className="text-base font-semibold mb-3">Professional Summary</h3>
           <textarea
             value={data.summary}
             onChange={(e) => onFieldChange(['summary'], e.target.value)}
@@ -667,7 +609,7 @@ function CVEditForm({
       {/* Roles */}
       {hasContent(data.roles) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Professional Roles</h3>
+          <h3 className="text-base font-semibold mb-3">Professional Roles</h3>
           {(data.roles ?? []).map((role, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
@@ -698,7 +640,7 @@ function CVEditForm({
       {/* Skills */}
       {hasContent(data.skills) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Skills</h3>
+          <h3 className="text-base font-semibold mb-3">Skills</h3>
           <div className="space-y-2">
             {(data.skills ?? []).map((skill, index) => (
               <div key={index} className="flex gap-2">
@@ -731,7 +673,7 @@ function CVEditForm({
       {/* Experience */}
       {hasContent(data.experience) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Work Experience</h3>
+          <h3 className="text-base font-semibold mb-3">Work Experience</h3>
           <div className="space-y-4">
             {(data.experience ?? []).map((exp, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
@@ -807,7 +749,7 @@ function CVEditForm({
       {/* Education */}
       {hasContent(data.education) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Education</h3>
+          <h3 className="text-base font-semibold mb-3">Education</h3>
           <div className="space-y-4">
             {(data.education ?? []).map((edu, index) => (
               <div key={index} className="border rounded p-4 space-y-3">
@@ -1029,12 +971,12 @@ function CoverLetterEditForm({
   
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm space-y-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Edit Cover Letter</h2>
+      <h2 className="text-xl font-bold mb-6">Edit Cover Letter</h2>
       
       {/* Personal Info */}
       {hasPersonalInfoContent(data.personalInfo) && (
         <div className="border-b pb-6 space-y-4">
-          <h3 className="text-lg font-semibold">Personal Information</h3>
+          <h3 className="text-base font-semibold">Personal Information</h3>
           {hasContent(data.personalInfo?.name) && (
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
@@ -1071,7 +1013,7 @@ function CoverLetterEditForm({
       {/* Recipient Info */}
       {hasRecipientInfoContent(data.recipientInfo) && (
         <div className="border-b pb-6 space-y-4">
-          <h3 className="text-lg font-semibold">Recipient Information</h3>
+          <h3 className="text-base font-semibold">Recipient Information</h3>
           {hasContent(data.recipientInfo?.name) && (
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
@@ -1102,7 +1044,7 @@ function CoverLetterEditForm({
       {/* Subject */}
       {hasContent(data.subject) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Subject</h3>
+          <h3 className="text-base font-semibold mb-3">Subject</h3>
           <input type="text" value={data.subject} onChange={(e) => onFieldChange(['subject'], e.target.value)} className="w-full p-2 border rounded" />
         </div>
       )}
@@ -1110,7 +1052,7 @@ function CoverLetterEditForm({
       {/* Opening */}
       {hasContent(data.opening) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Opening</h3>
+          <h3 className="text-base font-semibold mb-3">Opening</h3>
           <textarea value={data.opening} onChange={(e) => onFieldChange(['opening'], e.target.value)} className="w-full p-2 border rounded" rows={4} />
         </div>
       )}
@@ -1118,7 +1060,7 @@ function CoverLetterEditForm({
       {/* Body 1 */}
       {hasContent(data.body1) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Body Paragraph 1</h3>
+          <h3 className="text-base font-semibold mb-3">Body Paragraph 1</h3>
           <textarea value={data.body1} onChange={(e) => onFieldChange(['body1'], e.target.value)} className="w-full p-2 border rounded" rows={6} />
         </div>
       )}
@@ -1126,7 +1068,7 @@ function CoverLetterEditForm({
       {/* Body 2 */}
       {hasContent(data.body2) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Body Paragraph 2</h3>
+          <h3 className="text-base font-semibold mb-3">Body Paragraph 2</h3>
           <textarea value={data.body2} onChange={(e) => onFieldChange(['body2'], e.target.value)} className="w-full p-2 border rounded" rows={6} />
         </div>
       )}
@@ -1134,7 +1076,7 @@ function CoverLetterEditForm({
       {/* Body 3 */}
       {hasContent(data.body3) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Body Paragraph 3</h3>
+          <h3 className="text-base font-semibold mb-3">Body Paragraph 3</h3>
           <textarea value={data.body3} onChange={(e) => onFieldChange(['body3'], e.target.value)} className="w-full p-2 border rounded" rows={6} />
         </div>
       )}
@@ -1142,7 +1084,7 @@ function CoverLetterEditForm({
       {/* Highlights */}
       {hasContent(data.highlights) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Highlights</h3>
+          <h3 className="text-base font-semibold mb-3">Highlights</h3>
           <div className="space-y-2">
             {(data.highlights ?? []).map((highlight, index) => (
               <div key={index} className="flex gap-2">
@@ -1157,7 +1099,7 @@ function CoverLetterEditForm({
       {/* Closing */}
       {hasContent(data.closing) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Closing</h3>
+          <h3 className="text-base font-semibold mb-3">Closing</h3>
           <textarea value={data.closing} onChange={(e) => onFieldChange(['closing'], e.target.value)} className="w-full p-2 border rounded" rows={4} />
         </div>
       )}
@@ -1165,7 +1107,7 @@ function CoverLetterEditForm({
       {/* Signoff */}
       {hasContent(data.signoff) && (
         <div className="border-b pb-6">
-          <h3 className="text-lg font-semibold mb-3">Signoff</h3>
+          <h3 className="text-base font-semibold mb-3">Signoff</h3>
           <input type="text" value={data.signoff} onChange={(e) => onFieldChange(['signoff'], e.target.value)} className="w-full p-2 border rounded" />
         </div>
       )}
@@ -1173,7 +1115,7 @@ function CoverLetterEditForm({
       {/* Meta */}
       {hasMetaContent(data.meta) && (
         <div className="pb-6">
-          <h3 className="text-lg font-semibold mb-3">Metadata</h3>
+          <h3 className="text-base font-semibold mb-3">Metadata</h3>
           {hasContent(data.meta?.jobTitle) && (
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1">Job Title</label>

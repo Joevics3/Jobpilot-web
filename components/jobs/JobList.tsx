@@ -17,7 +17,7 @@ import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
-import InlineAd from '@/components/ads/InlineAd';
+import AdsterraNative from '@/components/ads/AdsterraNative';
 import Script from 'next/script';
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
@@ -669,11 +669,9 @@ export default function JobList() {
                   onApply={handleApply}
                   onShowBreakdown={handleShowBreakdown}
                 />
-                {/* In-feed inline ad after every 5th job card (300x250 for mobile, 728x90 for desktop) */}
+                {/* In-feed native ad after every 5th job card */}
                 {(index + 1) % 5 === 0 && (
-                  <div key={`inline-ad-${index}`} className="my-4">
-                    <InlineAd />
-                  </div>
+                  <AdsterraNative key={`native-ad-${index}`} slotId={`feed-${index}`} />
                 )}
               </React.Fragment>
             ))

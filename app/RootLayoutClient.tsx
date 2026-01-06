@@ -17,7 +17,8 @@ export default function RootLayoutClient({
     (pathname?.startsWith('/jobs/') && pathname !== '/jobs') ||
     pathname?.startsWith('/auth') ||
     pathname?.startsWith('/onboarding') ||
-    pathname?.startsWith('/dashboard');
+    pathname?.startsWith('/dashboard') ||
+    (pathname?.startsWith('/tools/interview/') && pathname !== '/tools/interview');
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.colors.background.DEFAULT }}>

@@ -25,6 +25,13 @@ export interface ChatMessage {
   type: 'question' | 'answer' | 'feedback';
   content: string;
   timestamp: number;
+  score?: number; // Score for feedback messages (0-100)
+  evaluation?: {
+    score: number;
+    strengths: string[];
+    improvements: string[];
+    tips: string[];
+  };
 }
 
 export interface InterviewSession {
@@ -195,36 +202,30 @@ Generate interview questions that are relevant, challenging, and help the candid
     totalQuestions?: number,
     previousAnswers?: Array<{ question: string; answer: string; feedback: string }>
   ): string {
-    const ANSWER_EVALUATION_PROMPT = `You are an expert interview coach evaluating a candidate's answer to an interview question.
+    const ANSWER_EVALUATION_PROMPT = `You are an expert interview coach providing concise feedback to help a candidate improve their interview performance. Your role is to COACH the candidate, not interview them.
+
+CRITICAL: You are the AI COACH. Rate the answer on a scale of 0-100% and provide BRIEF coaching feedback (50-70 words maximum).
 
 Your response must be valid JSON only, matching this exact structure:
 
 {
   "score": 85,
-  "feedback": "Overall feedback on the answer",
-  "strengths": [
-    "Strength 1",
-    "Strength 2"
-  ],
-  "improvements": [
-    "Improvement area 1",
-    "Improvement area 2"
-  ],
-  "suggestedAnswer": "A well-structured example answer for reference",
-  "tips": [
-    "Tip 1 for improving",
-    "Tip 2 for improving"
-  ]
+  "feedback": "Brief coaching feedback (50-70 words max) - concise summary of what was good and what needs improvement",
+  "strengths": [],
+  "improvements": [],
+  "suggestedAnswer": "",
+  "tips": []
 }
 
 Requirements:
-- Score should be 0-100 based on answer quality
-- Provide specific, actionable feedback
-- Highlight what the candidate did well
-- Suggest concrete improvements
-- Provide a model answer for learning
-- Be encouraging but constructive
-- Return ONLY valid JSON, no markdown formatting, no code blocks`;
+- Score should be 0-100 based on answer quality (be strict but fair)
+- Feedback must be 50-70 words maximum - be concise and to the point
+- Include all coaching information in the feedback field only
+- The feedback should cover: what was good, what needs improvement, and how to improve
+- Be encouraging but constructive - focus on helping them improve
+- Rate answers strictly: excellent (80-100), good (60-79), average (40-59), needs work (20-39), poor (0-19)
+- Return ONLY valid JSON, no markdown formatting, no code blocks
+- Keep strengths, improvements, suggestedAnswer, and tips as empty arrays/strings (they are not used)`;
 
     let cvText = '';
     if (cvContent) {
@@ -331,36 +332,66 @@ Evaluate this answer and provide constructive feedback.`;
   }
 
   /**
-   * Process user answer and get next question (chat-based)
+   * Process user answer: get AI Coach feedback, then get next question from interviewer
    */
   static async processChatResponse(
     session: InterviewSession,
     userAnswer: string
-  ): Promise<{ feedback: string; nextQuestion: string | null }> {
+  ): Promise<{ 
+    coachFeedback: {
+      score: number;
+      feedback: string;
+    };
+    nextQuestion: string | null;
+  }> {
     try {
-      const prompt = this.buildChatPrompt(session, userAnswer);
+      // Get the last question from the chat
+      const chat = session.chat || [];
+      const lastQuestion = chat.filter(msg => msg.type === 'question').pop();
+      
+      if (!lastQuestion) {
+        throw new Error('No question found to evaluate answer against');
+      }
 
-      // Call Supabase function
-      const { data, error } = await supabase.functions.invoke('interview-prep', {
-        body: {
-          prompt,
-          temperature: 0.7,
-          maxTokens: 1000, // Shorter responses for chat
+      // Extract CV content if available
+      let cvText = '';
+      if (session.cvUsed) {
+        try {
+          const cvDocs = localStorage.getItem('cv_documents');
+          if (cvDocs) {
+            const docs = JSON.parse(cvDocs);
+            const latestCV = docs.find((doc: any) => doc.type === 'cv');
+            if (latestCV) {
+              cvText = this.extractCVText(latestCV.content || latestCV.structured_data || '');
+            }
+          }
+        } catch (e) {
+          console.error('Error extracting CV:', e);
+        }
+      }
+
+      // Step 1: Get AI Coach evaluation with score
+      const evaluation = await this.evaluateAnswer(
+        lastQuestion.content,
+        userAnswer,
+        session.jobDescription,
+        session.jobTitle,
+        cvText,
+        chat.filter(msg => msg.type === 'question').length,
+        10, // Assume ~10 questions total
+        [] // Could extract previous Q&A pairs if needed
+      );
+
+      // Step 2: Get next question from interviewer
+      const nextQuestion = await this.getNextQuestion(session, userAnswer);
+
+      return {
+        coachFeedback: {
+          score: evaluation.score,
+          feedback: evaluation.feedback,
         },
-      });
-
-      if (error) {
-        throw new Error(`Failed to process chat response: ${error.message}`);
-      }
-
-      if (!data || !data.success) {
-        throw new Error(data?.error || 'Failed to process chat response');
-      }
-
-      // Parse response
-      const result = this.parseAIResponse<{ feedback: string; nextQuestion: string | null }>(data.data);
-
-      return result;
+        nextQuestion,
+      };
     } catch (error: any) {
       console.error('Error processing chat response:', error);
       throw new Error(error.message || 'Failed to process your answer. Please try again.');
@@ -368,9 +399,47 @@ Evaluate this answer and provide constructive feedback.`;
   }
 
   /**
-   * Build prompt for chat-based interview responses
+   * Get next question from interviewer (separate from coaching)
    */
-  static buildChatPrompt(session: InterviewSession, userAnswer: string): string {
+  static async getNextQuestion(
+    session: InterviewSession,
+    userAnswer: string
+  ): Promise<string | null> {
+    try {
+      const prompt = this.buildNextQuestionPrompt(session, userAnswer);
+
+      // Call Supabase function
+      const { data, error } = await supabase.functions.invoke('interview-prep', {
+        body: {
+          prompt,
+          temperature: 0.7,
+          maxTokens: 500, // Shorter for just the question
+        },
+      });
+
+      if (error) {
+        throw new Error(`Failed to get next question: ${error.message}`);
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to get next question');
+      }
+
+      // Parse response
+      const result = this.parseAIResponse<{ nextQuestion: string | null }>(data.data);
+
+      return result.nextQuestion;
+    } catch (error: any) {
+      console.error('Error getting next question:', error);
+      // Return null if we can't get next question (interview might be ending)
+      return null;
+    }
+  }
+
+  /**
+   * Build prompt for getting next question from interviewer
+   */
+  static buildNextQuestionPrompt(session: InterviewSession, userAnswer: string): string {
     // Extract CV content if available
     let cvText = '';
     if (session.cvUsed) {
@@ -389,14 +458,13 @@ Evaluate this answer and provide constructive feedback.`;
       }
     }
 
-    const CHAT_PROMPT = `You are a professional interviewer conducting a job interview. Your role is to act as the interviewer and ask relevant interview questions based on the job description and the candidate's CV/resume.
+    const INTERVIEWER_PROMPT = `You are a professional interviewer conducting a job interview. Your role is to act as the interviewer and ask relevant interview questions based on the job description and the candidate's CV/resume.
 
-IMPORTANT: You are the INTERVIEWER, not a coach. Ask interview questions as if you are interviewing the candidate for the position. Do not provide coaching feedback - just ask the next question naturally.
+IMPORTANT: You are ONLY the INTERVIEWER. Your job is to ask the next interview question. Do NOT provide feedback or coaching - just ask the next question naturally.
 
 Your response must be valid JSON only, matching this exact structure:
 
 {
-  "feedback": "Brief acknowledgment of their answer (1-2 sentences, interviewer style)",
   "nextQuestion": "The next interview question, or null if interview should end"
 }
 
@@ -409,11 +477,14 @@ Guidelines:
 - Ask about: technical skills, experience, problem-solving, teamwork, motivation, behavioral situations
 - Keep questions specific to the role and candidate's background
 - Ask only ONE question per response
-- End interview after 8-10 questions total
+- End interview after 8-10 questions total (return null)
 - Return ONLY valid JSON, no markdown, no explanations`;
 
-    // Build conversation history
-    const recentMessages = session.chat.slice(-6); // Last 6 messages for context
+    // Build conversation history (only questions and answers, not feedback)
+    const chat = session.chat || [];
+    const recentMessages = chat
+      .filter(msg => msg.type === 'question' || msg.type === 'answer')
+      .slice(-6); // Last 6 Q&A pairs for context
     const conversationHistory = recentMessages.map(msg =>
       `${msg.type === 'question' ? 'Interviewer' : 'Candidate'}: ${msg.content}`
     ).join('\n');
@@ -421,7 +492,7 @@ Guidelines:
     const jobDesc = session.jobDescription.substring(0, 1500);
     const jobDescSuffix = session.jobDescription.length > 1500 ? '...' : '';
 
-    return `${CHAT_PROMPT}
+    return `${INTERVIEWER_PROMPT}
 
 Job Details:
 - Title: ${session.jobTitle || 'Not specified'}
@@ -431,12 +502,12 @@ Job Details:
 ${cvText ? `Candidate's CV/Resume:
 ${cvText.substring(0, 1500)}${cvText.length > 1500 ? '...' : ''}` : 'Note: No CV/resume provided. Ask general questions based on the job description.'}
 
-Conversation History:
+Conversation History (Questions Asked):
 ${conversationHistory}
 
 Candidate's latest answer: "${userAnswer}"
 
-As the interviewer, acknowledge their answer briefly and ask the next relevant interview question based on the job requirements and their background.`;
+As the interviewer, ask the next relevant interview question based on the job requirements and their background. Do NOT provide feedback - just ask the next question.`;
   }
 
   /**

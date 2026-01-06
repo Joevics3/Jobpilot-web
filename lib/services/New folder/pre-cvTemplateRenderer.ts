@@ -3,7 +3,7 @@
 
 import { CVData } from '@/lib/types/cv';
 
-// Base CSS for A4 page (strict 1 page) - optimized for PDF conversion and responsive viewing
+// Base CSS for A4 page (strict 1 page) - optimized for PDF conversion
 const baseCss = `
   @page { 
     size: A4;
@@ -13,7 +13,7 @@ const baseCss = `
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { 
       width: 210mm;
-      min-height: 297mm;
+      height: 297mm;
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -40,13 +40,8 @@ const baseCss = `
     max-width: 210mm;
     margin: 0 auto;
     background: #ffffff;
-    padding: 20px;
+    padding: 10mm 8mm;
     position: relative;
-  }
-  @media (min-width: 768px) {
-    .page {
-      padding: 50px;
-    }
   }
 `;
 
@@ -694,841 +689,290 @@ function renderTemplate3(data: CVData): string {
   </body></html>`;
 }
 
-
-function renderTemplate5(data: CVData): string {
-  // Template 5: Academic Single Column
-  const { 
-    personalDetails, 
-    education, 
-    experience, 
-    projects, 
-    technicalSkills, 
-    achievements, 
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo, 
-    references 
-  } = data;
-
+// Template 4: Black Bold (Tech style)
+function renderTemplate4(data: CVData): string {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages, interests, publications, volunteerWork, additionalSections } = data;
+  
+  // Calculate smart spacing based on actual content height
+  const { spacing, useDistribution } = calculateSpacing(data);
+  
+  // Build CSS content justification property
+  const contentJustify = useDistribution ? 'justify-content: space-between;' : 'justify-content: flex-start;';
+  
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional CV</title>
+    <title>CV Template</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
-        body {
-            font-family: 'Computer Modern', 'Latin Modern Roman', serif;
-            color: #000;
-            background: white;
-            line-height: 1.4;
-        }
-
-        .page {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            background: white;
-            padding: 20mm 18mm;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            font-weight: 400;
-            letter-spacing: 2px;
-            margin-bottom: 6px;
-        }
-
-        .header .contact-info {
-            font-size: 10px;
-            color: #333;
-        }
-
-        .header .contact-info a {
-            color: #333;
-            text-decoration: none;
-        }
-
-        .section {
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 2px;
-            margin-bottom: 8px;
-        }
-
-        .entry {
-            margin-bottom: 12px;
-        }
-
-        .entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 2px;
-        }
-
-        .entry-title {
-            font-weight: 700;
-            font-size: 11px;
-        }
-
-        .entry-date {
-            font-size: 10px;
-            font-style: italic;
-            white-space: nowrap;
-        }
-
-        .entry-subtitle {
-            font-style: italic;
-            font-size: 10px;
-            margin-bottom: 4px;
-        }
-
-        .entry-description {
-            font-size: 10px;
-            line-height: 1.4;
-            margin-bottom: 2px;
-        }
-
-        .entry-list {
-            list-style: none;
-            padding-left: 0;
-            margin-top: 4px;
-        }
-
-        .entry-list li {
-            font-size: 10px;
-            line-height: 1.4;
-            margin-bottom: 3px;
-            padding-left: 12px;
-            position: relative;
-        }
-
-        .entry-list li::before {
-            content: '–';
-            position: absolute;
-            left: 0;
-        }
-
-        .skills-grid {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 4px 8px;
-            font-size: 10px;
-        }
-
-        .skill-category {
-            font-weight: 700;
-        }
-
-        .skill-items {
-            line-height: 1.4;
-        }
-
-        .achievements-list {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .achievements-list li {
-            font-size: 10px;
-            line-height: 1.4;
-            margin-bottom: 4px;
-            padding-left: 12px;
-            position: relative;
-        }
-
-        .achievements-list li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            font-weight: bold;
-        }
-
-        .achievements-list strong {
-            font-weight: 700;
-        }
-
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            .page {
-                margin: 0;
-                page-break-after: always;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="page">
-        <!-- Header -->
-        <div class="header">
-            <h1>${personalDetails.name || ''}</h1>
-            <div class="contact-info">
-                ${personalDetails.email ? `<a href="mailto:${personalDetails.email}">${personalDetails.email}</a>` : ''}
-                ${personalDetails.phone ? ` | ${personalDetails.phone}` : ''}
-                ${personalDetails.location ? ` | ${personalDetails.location}` : ''}
-                ${personalDetails.github ? ` | <a href="${personalDetails.github}">GitHub</a>` : ''}
-                ${personalDetails.linkedin ? ` | <a href="${personalDetails.linkedin}">LinkedIn</a>` : ''}
-                ${personalDetails.portfolio ? ` | <a href="${personalDetails.portfolio}">Portfolio</a>` : ''}
-            </div>
-        </div>
-
-        <!-- Education -->
-        ${education && education.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Education</div>
-            ${education.map(edu => `
-                <div class="entry">
-                    <div class="entry-header">
-                        <div class="entry-title">${edu.institution || ''}</div>
-                        <div class="entry-date">${edu.period || edu.years || ''}</div>
-                    </div>
-                    <div class="entry-subtitle">${edu.degree || ''}</div>
-                    ${edu.gpa ? `<div class="entry-description">${edu.gpa}</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Experience -->
-        ${experience && experience.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Experience</div>
-            ${experience.map(exp => `
-                <div class="entry">
-                    <div class="entry-header">
-                        <div class="entry-title">${exp.title || exp.role || ''}</div>
-                        <div class="entry-date">${exp.period || exp.years || ''}</div>
-                    </div>
-                    <div class="entry-subtitle">${exp.company || ''}</div>
-                    ${exp.responsibilities && exp.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${exp.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : exp.bullets && exp.bullets.length > 0 ? `
-                        <ul class="entry-list">
-                            ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
-                        </ul>
-                    ` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Projects -->
-        ${projects && projects.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Projects</div>
-            ${projects.map(project => `
-                <div class="entry">
-                    <div class="entry-title">${project.title || ''} ${project.technologies ? `| <span style="font-style: italic; font-weight: 400;">${project.technologies}</span>` : ''}</div>
-                    ${project.description ? `<div class="entry-subtitle">${project.description}</div>` : ''}
-                    ${project.responsibilities && project.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${project.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Technical Skills -->
-        ${technicalSkills && Object.keys(technicalSkills).length > 0 ? `
-        <div class="section">
-            <div class="section-title">Technical Skills</div>
-            <div class="skills-grid">
-                ${Object.entries(technicalSkills).map(([category, skills]) => `
-                    <div class="skill-category">${category}:</div>
-                    <div class="skill-items">${skills}</div>
-                `).join('')}
-            </div>
-        </div>
-        ` : ''}
-
-        <!-- Achievements -->
-        ${achievements && achievements.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Achievements</div>
-            <ul class="achievements-list">
-                ${achievements.map(achievement => {
-                    const formattedAchievement = achievement
-                        .replace(/(\d+\+?)/g, '<strong>$1</strong>')
-                        .replace(/(LeetCode|Codeforces|CodeChef|AtCoder|ICPC|Meta Hacker Cup|Smart India Hackathon|SIH)/g, '<strong>$1</strong>');
-                    return `<li>${formattedAchievement}</li>`;
-                }).join('')}
-            </ul>
-        </div>
-        ` : ''}
-
-        <!-- Certifications -->
-        ${certifications && certifications.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Certifications</div>
-            <ul class="achievements-list">
-                ${certifications.map(cert => typeof cert === 'string' ? `<li>${cert}</li>` : `
-                    <li><strong>${cert.name || cert.title || ''}</strong>${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.date ? ` (${cert.date})` : ''}</li>
-                `).join('')}
-            </ul>
-        </div>
-        ` : ''}
-
-        <!-- Awards -->
-        ${awards && awards.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Awards & Accomplishments</div>
-            ${awards.map(award => `
-                <div class="entry">
-                    <div class="entry-title">${award.title || ''}</div>
-                    <div class="entry-subtitle">${award.organization || ''}</div>
-                    ${award.description ? `<div class="entry-description">${award.description}</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Publications -->
-        ${publications && publications.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Publications</div>
-            ${publications.map(pub => `
-                <div class="entry">
-                    <div class="entry-title">${pub.title || ''}</div>
-                    <div class="entry-subtitle">${pub.organization || pub.publisher || ''}</div>
-                    ${pub.description ? `<div class="entry-description">${pub.description}</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Volunteer Work -->
-        ${volunteerWork && volunteerWork.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Volunteer Work</div>
-            ${volunteerWork.map(vol => `
-                <div class="entry">
-                    <div class="entry-title">${vol.title || vol.role || ''}</div>
-                    <div class="entry-subtitle">${vol.organization || ''}</div>
-                    ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${vol.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : ''}
-                </div>
-            `).join('')}
-        </div>
-        ` : ''}
-
-        <!-- Languages -->
-        ${languages && languages.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Languages</div>
-            <div class="entry-description">
-                ${languages.map(lang => typeof lang === 'string' ? lang : `${lang.language || ''} (${lang.proficiency || ''})`).join(', ')}
-            </div>
-        </div>
-        ` : ''}
-
-        <!-- Interests -->
-        ${interests && interests.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Interests</div>
-            <div class="entry-description">
-                ${interests.join(', ')}
-            </div>
-        </div>
-        ` : ''}
-
-        <!-- Additional Information -->
-        ${additionalInfo && additionalInfo.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Additional Information</div>
-            <ul class="achievements-list">
-                ${additionalInfo.map(info => `<li>${info}</li>`).join('')}
-            </ul>
-        </div>
-        ` : ''}
-
-        <!-- References -->
-        ${references ? `
-        <div class="section">
-            <div class="section-title">References</div>
-            <div class="entry-description">${references}</div>
-        </div>
-        ` : ''}
-    </div>
-</body>
-</html>`;
-};
-
-
-function renderTemplate6(data: CVData): string {
-  // Template 6: Two-Column Modern Layout
-  const { 
-    personalDetails, 
-    about,
-    education, 
-    experience, 
-    projects, 
-    skills,
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo, 
-    references 
-  } = data;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional CV</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
-        body {
-            font-family: 'Georgia', serif;
-            color: #333;
-            background: white;
-            line-height: 1.6;
-        }
-
-        .page {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            background: white;
-            padding: 15mm 12mm;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            font-size: 38px;
-            letter-spacing: 8px;
-            font-weight: 400;
-            color: #2c2c2c;
-        }
-
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 25px;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Arial', 'Helvetica', sans-serif; background: white; margin: 0; padding: 0; }
+        .page { width: 100%; max-width: 210mm; margin: 0 auto;  background: white; margin: 0; padding: 20px 0; position: relative; overflow: hidden; }
+        .header { text-align: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 3px solid #000; }
+        .name { font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 6px; }
+        .job-title { font-size: 12px; color: #000; text-transform: uppercase; letter-spacing: 1.5px; }
+        .about-contact-section { display: grid; grid-template-columns: 1fr auto; gap: 30px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 3px solid #000; align-items: start; }
+        .about-me { flex: 1; }
+        .contact-info { display: flex; flex-direction: column; gap: 8px; }
+        .contact-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+        .main-section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+        .about-content { font-size: 10px; line-height: 1.5; text-align: justify; color: #333; }
+        .two-column-layout { display: grid; grid-template-columns: 1fr 2px 2fr; gap: 20px; margin-bottom: 15px; }
+        .divider { background: #000; width: 2px; }
+        .left-column { padding-right: 8px; }
+        .right-column { padding-left: 8px; }
         .left-column, .right-column {
-            font-size: 11px;
-        }
-
-        .section {
-            margin-bottom: 22px;
-        }
-
-        .section-title {
-            font-size: 15px;
-            letter-spacing: 4px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #2c2c2c;
-        }
-
-        .contact-item {
+            --section-spacing: ${spacing}mm;
+            height: 207mm;
+            max-height: 207mm;
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 10px;
-            font-size: 11px;
+            flex-direction: column;
+            ${contentJustify}
+            overflow: hidden;
         }
-
-        .contact-item::before {
-            content: '';
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-
-        .contact-item.phone::before {
-            content: '📞';
-        }
-
-        .contact-item.location::before {
-            content: '📍';
-        }
-
-        .contact-item.email::before {
-            content: '✉';
-        }
-
-        .education-item {
-            margin-bottom: 15px;
-        }
-
-        .education-title {
-            font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 3px;
-        }
-
-        .education-details {
-            font-size: 10.5px;
-            color: #555;
-            line-height: 1.5;
-        }
-
-        .skills-list, .cert-list, .lang-list {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .skills-list li, .cert-list li, .lang-list li {
-            margin-bottom: 8px;
-            padding-left: 15px;
-            position: relative;
-            font-size: 10.5px;
-            line-height: 1.5;
-        }
-
-        .skills-list li::before, .cert-list li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            font-weight: bold;
-        }
-
-        .about-text {
-            font-size: 10.5px;
-            text-align: justify;
-            line-height: 1.6;
-            color: #444;
-        }
-
-        .work-item, .project-item, .volunteer-item, .award-item, .publication-item {
-            margin-bottom: 18px;
-        }
-
-        .work-title {
-            font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 2px;
-        }
-
-        .work-company {
-            font-size: 10.5px;
-            color: #555;
-            margin-bottom: 6px;
-        }
-
-        .work-list {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .work-list li {
-            margin-bottom: 6px;
-            padding-left: 15px;
-            position: relative;
-            font-size: 10.5px;
-            line-height: 1.5;
-        }
-
-        .work-list li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-        }
-
-        .interests-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .interest-tag {
-            background: #f0f0f0;
-            padding: 4px 10px;
-            border-radius: 3px;
-            font-size: 10px;
-        }
-
-        .additional-info {
-            font-size: 10.5px;
-            line-height: 1.6;
-        }
-
-        .reference-item {
-            margin-bottom: 12px;
-        }
-
-        .reference-name {
-            font-weight: 600;
-            font-size: 11px;
-        }
-
-        .reference-details {
-            font-size: 10px;
-            color: #555;
-            line-height: 1.5;
-        }
-
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            .page {
-                margin: 0;
-                page-break-after: always;
-            }
+        .section { margin-bottom: var(--section-spacing); page-break-inside: avoid; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #000; }
+        .section-content { font-size: 10px; line-height: 1.4; color: #333; }
+        .work-entry { margin-bottom: 14px; }
+        .work-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+        .company-name { font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .work-location-date { font-size: 9px; text-align: right; white-space: nowrap; margin-left: 12px; }
+        .work-position { font-size: 10px; font-style: italic; margin-bottom: 6px; }
+        .work-entry ul { margin-left: 16px; }
+        .work-entry li { margin-bottom: 4px; font-size: 10px; line-height: 1.4; }
+        .education-entry { margin-bottom: 14px; }
+        .education-degree { font-weight: bold; font-size: 10px; margin-bottom: 4px; }
+        .education-dates { font-size: 9px; margin-bottom: 6px; }
+        .skills-list { list-style: none; padding: 0; }
+        .skills-list li { padding-left: 12px; position: relative; margin-bottom: 6px; font-size: 10px; }
+        .skills-list li:before { content: "•"; position: absolute; left: 0; font-weight: bold; }
+        .project-entry, .cert-entry, .award-entry { margin-bottom: 6px; font-size: 10px; line-height: 1.3; }
+        .project-title, .cert-name, .award-title { font-weight: bold; }
+        .list-item { margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .volunteer-entry { margin-bottom: 8px; font-size: 10px; }
+        .volunteer-header { font-weight: bold; margin-bottom: 2px; }
+        @media (min-width: 768px) {
+          .page { padding: 15mm 0; }
         }
     </style>
 </head>
 <body>
     <div class="page">
-        <!-- Header -->
         <div class="header">
-            <h1>${personalDetails.name || ''}</h1>
+            <div class="name">${personalDetails.name.toUpperCase()}</div>
+            <div class="job-title">${personalDetails.title.toUpperCase()}</div>
         </div>
 
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Left Column -->
+        <div class="about-contact-section">
+            <div class="about-me">
+                <div class="main-section-title">ABOUT ME</div>
+                <div class="about-content">${summary}</div>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div>📞</div>
+                    <div>${personalDetails.phone}</div>
+                </div>
+                <div class="contact-item">
+                    <div>✉</div>
+                    <div>${personalDetails.email}</div>
+                </div>
+                <div class="contact-item">
+                    <div>📍</div>
+                    <div>${personalDetails.location}</div>
+                </div>
+                ${personalDetails.linkedin ? `<div class="contact-item"><div>💼</div><div>${personalDetails.linkedin}</div></div>` : ''}
+                ${personalDetails.github ? `<div class="contact-item"><div>🔗</div><div>${personalDetails.github}</div></div>` : ''}
+                ${personalDetails.portfolio ? `<div class="contact-item"><div>🌐</div><div>${personalDetails.portfolio}</div></div>` : ''}
+            </div>
+        </div>
+
+        <div class="two-column-layout">
             <div class="left-column">
-                <!-- Contact -->
                 <div class="section">
-                    <h2 class="section-title">CONTACT</h2>
-                    ${personalDetails.phone ? `<div class="contact-item phone">${personalDetails.phone}</div>` : ''}
-                    ${personalDetails.location ? `<div class="contact-item location">${personalDetails.location}</div>` : ''}
-                    ${personalDetails.email ? `<div class="contact-item email">${personalDetails.email}</div>` : ''}
-                </div>
-
-                <!-- Education -->
-                ${education && education.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">EDUCATION</h2>
-                    ${education.map(edu => `
-                        <div class="education-item">
-                            <div class="education-title">${edu.institution || ''}</div>
-                            <div class="education-details">
-                                ${edu.degree || ''}<br>
-                                ${edu.period || edu.years || ''}
+                    <div class="section-title">EDUCATION</div>
+                    <div class="section-content">
+                        ${education.map(edu => `
+                            <div class="education-entry">
+                                <div class="education-degree">${edu.degree}</div>
+                                <div class="education-dates">${edu.years}</div>
+                                <div>${edu.institution}</div>
                             </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
-                ` : ''}
 
-                <!-- Skills -->
-                ${skills && skills.length > 0 ? `
                 <div class="section">
-                    <h2 class="section-title">SKILLS</h2>
-                    <ul class="skills-list">
-                        ${skills.map(skill => `<li>${skill}</li>`).join('')}
-                    </ul>
+                    <div class="section-title">SKILLS</div>
+                    <div class="section-content">
+                        <ul class="skills-list">
+                            ${skills.map(skill => `<li>${skill}</li>`).join('')}
+                        </ul>
+                    </div>
                 </div>
-                ` : ''}
 
-                <!-- Certifications -->
                 ${certifications && certifications.length > 0 ? `
                 <div class="section">
-                    <h2 class="section-title">CERTIFICATION</h2>
-                    <ul class="cert-list">
-                        ${certifications.map(cert => typeof cert === 'string' ? `<li>${cert}</li>` : `<li>${cert.name || cert.title || ''}</li>`).join('')}
-                    </ul>
-                </div>
-                ` : ''}
-
-                <!-- Languages -->
-                ${languages && languages.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">LANGUAGES</h2>
-                    <ul class="lang-list">
-                        ${languages.map(lang => typeof lang === 'string' ? `<li>${lang}</li>` : `<li>${lang.language || ''} - ${lang.proficiency || ''}</li>`).join('')}
-                    </ul>
-                </div>
-                ` : ''}
-
-                <!-- Interests -->
-                ${interests && interests.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">INTERESTS</h2>
-                    <div class="interests-list">
-                        ${interests.map(interest => `<span class="interest-tag">${interest}</span>`).join('')}
+                    <div class="section-title">CERTIFICATIONS</div>
+                    <div class="section-content">
+                        ${certifications.map(cert => `
+                            <div class="cert-entry">
+                                <span class="cert-name">${cert.name}</span>${cert.issuer ? ` – ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
                 ` : ''}
 
-                <!-- Volunteer Work -->
-                ${volunteerWork && volunteerWork.length > 0 ? `
+                ${languages && languages.length > 0 ? `
                 <div class="section">
-                    <h2 class="section-title">VOLUNTEER WORK</h2>
-                    ${volunteerWork.map(vol => `
-                        <div class="volunteer-item">
-                            <div class="work-title">${vol.title || vol.role || ''}</div>
-                            <div class="work-company">${vol.organization || ''}</div>
-                            ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${vol.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                                </ul>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                    <div class="section-title">LANGUAGES</div>
+                    <div class="section-content">
+                        ${languages.join(' • ')}
+                    </div>
                 </div>
                 ` : ''}
 
-                <!-- Additional Information -->
-                ${additionalInfo && additionalInfo.length > 0 ? `
+                ${interests && interests.length > 0 ? `
                 <div class="section">
-                    <h2 class="section-title">ADDITIONAL INFORMATION</h2>
-                    <div class="additional-info">
-                        ${additionalInfo.map(info => `<p>• ${info}</p>`).join('')}
+                    <div class="section-title">INTERESTS</div>
+                    <div class="section-content">
+                        ${interests.join(' • ')}
                     </div>
                 </div>
                 ` : ''}
             </div>
 
-            <!-- Right Column -->
+            <div class="divider"></div>
+
             <div class="right-column">
-                <!-- About Me -->
-                ${about ? `
                 <div class="section">
-                    <h2 class="section-title">ABOUT ME</h2>
-                    <p class="about-text">${about}</p>
-                </div>
-                ` : ''}
-
-                <!-- Work Experience -->
-                ${experience && experience.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">WORK EXPERIENCE</h2>
-                    ${experience.map(work => `
-                        <div class="work-item">
-                            <div class="work-title">${work.title || work.role || ''}</div>
-                            <div class="work-company">${work.company || ''} ${work.period || work.years ? `(${work.period || work.years})` : ''}</div>
-                            ${work.responsibilities && work.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${work.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
+                    <div class="section-title">WORK EXPERIENCE</div>
+                    <div class="section-content">
+                        ${experience.map(exp => `
+                            <div class="work-entry">
+                                <div class="work-header">
+                                    <div class="company-name">${exp.company}</div>
+                                    <div class="work-location-date">${personalDetails.location}<br>${exp.years}</div>
+                                </div>
+                                <div class="work-position">${exp.role}</div>
+                                <ul>
+                                    ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
                                 </ul>
-                            ` : work.bullets && work.bullets.length > 0 ? `
-                                <ul class="work-list">
-                                    ${work.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
-                                </ul>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                ` : ''}
 
-                <!-- Projects -->
                 ${projects && projects.length > 0 ? `
                 <div class="section">
-                    <h2 class="section-title">PROJECTS</h2>
-                    ${projects.map(project => `
-                        <div class="project-item">
-                            <div class="work-title">${project.title || ''}</div>
-                            <div class="work-company">${project.organization || project.description || ''}</div>
-                            ${project.responsibilities && project.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${project.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                                </ul>
-                            ` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-
-                <!-- Awards & Accomplishments -->
-                ${awards && awards.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">AWARDS & ACCOMPLISHMENTS</h2>
-                    ${awards.map(award => `
-                        <div class="award-item">
-                            <div class="work-title">${award.title || ''}</div>
-                            <div class="work-company">${award.organization || ''}</div>
-                            ${award.description ? `<p style="font-size: 10.5px; margin-top: 4px;">${award.description}</p>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-
-                <!-- Publications -->
-                ${publications && publications.length > 0 ? `
-                <div class="section">
-                    <h2 class="section-title">PUBLICATIONS</h2>
-                    ${publications.map(pub => `
-                        <div class="publication-item">
-                            <div class="work-title">${pub.title || ''}</div>
-                            <div class="work-company">${pub.organization || pub.publisher || ''}</div>
-                            ${pub.description ? `<p style="font-size: 10.5px; margin-top: 4px;">${pub.description}</p>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-
-                <!-- References -->
-                ${references ? `
-                <div class="section">
-                    <h2 class="section-title">REFERENCES</h2>
-                    <div class="reference-item">
-                        <div class="reference-name">${references}</div>
+                    <div class="section-title">PROJECTS</div>
+                    <div class="section-content">
+                        ${projects.map(proj => `
+                            <div class="project-entry">
+                                <span class="project-title">${proj.title}</span> – ${proj.description}
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
                 ` : ''}
+
+                ${accomplishments && accomplishments.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">ACCOMPLISHMENTS</div>
+                    <div class="section-content">
+                        ${accomplishments.map(acc => `<div class="list-item">• ${acc}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${awards && awards.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">AWARDS</div>
+                    <div class="section-content">
+                        ${awards.map(award => `
+                            <div class="award-entry">
+                                <span class="award-title">${award.title}</span>${award.issuer ? ` – ${award.issuer}` : ''}${award.year ? ` (${award.year})` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${publications && publications.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">PUBLICATIONS</div>
+                    <div class="section-content">
+                        ${publications.map(pub => `
+                            <div class="list-item">${pub.title}${pub.journal ? ` – ${pub.journal}` : ''}${pub.year ? ` (${pub.year})` : ''}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${volunteerWork && volunteerWork.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">VOLUNTEER WORK</div>
+                    <div class="section-content">
+                        ${volunteerWork.map(vol => `
+                            <div class="volunteer-entry">
+                                <div class="volunteer-header">${vol.organization}${vol.role ? ` – ${vol.role}` : ''}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                                ${vol.description ? `<div style="margin-top: 2px; font-size: 9px;">${vol.description}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
+                <div class="section">
+                    <div class="section-title">${section.sectionName.toUpperCase()}</div>
+                    <div class="section-content">
+                        ${section.content.split('\n').map(line => `<div class="list-item">${line}</div>`).join('')}
+                    </div>
+                </div>
+                `).join('') : ''}
             </div>
         </div>
     </div>
 </body>
 </html>`;
-};
+}
 
+// Template 5 Renderer
+
+function renderTemplate5(data: CVData): string {
+  // Template 5: Blue Professional - TODO: Full implementation
+  return renderTemplate1(data);
+}
+
+function renderTemplate6(data: CVData): string {
+  // Template 6: Clean Professional - TODO: Full implementation
+  return renderTemplate1(data);
+}
+
+function renderTemplate7(data: CVData): string {
+  // Template 7: Gray Serif - TODO: Full implementation
+  return renderTemplate1(data);
+}
+
+function renderTemplate8(data: CVData): string {
+  // Template 8: Executive Blue - TODO: Full implementation
+  return renderTemplate1(data);
+}
+
+function renderTemplate9(data: CVData): string {
+  // Template 9: Modern Minimal - TODO: Full implementation
+  return renderTemplate1(data);
+}
+
+function renderTemplate10(data: CVData): string {
+  // Template 10: Teal Contemporary - TODO: Full implementation
+  return renderTemplate1(data);
+}
 
 // Responsive Tailwind templates for view mode
 function renderResponsiveTemplate1(data: CVData): string {
@@ -1809,406 +1253,25 @@ function renderResponsiveTemplate3(data: CVData): string {
 </html>`;
 }
 
-function renderResponsiveTemplate5(data: CVData): string {
-  // Academic Single Column - Responsive Version
-  const formatBullets = (bullets: string[]) => bullets.filter(Boolean).map(b => `<li class="list-disc ml-5 mb-1">${htmlEscape(b)}</li>`).join('');
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Computer+Modern:wght@400;700&display=swap');
-    body { font-family: 'Computer Modern', serif; }
-  </style>
-</head>
-<body class="bg-white">
-  <div class="max-w-4xl mx-auto p-8">
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-normal tracking-wider mb-2">${htmlEscape(data.personalDetails.name)}</h1>
-      <div class="text-sm text-gray-600 space-x-2">
-        ${data.personalDetails.email ? `<a href="mailto:${htmlEscape(data.personalDetails.email)}" class="hover:text-blue-600">${htmlEscape(data.personalDetails.email)}</a>` : ''}
-        ${data.personalDetails.phone ? `<span>| ${htmlEscape(data.personalDetails.phone)}</span>` : ''}
-        ${data.personalDetails.location ? `<span>| ${htmlEscape(data.personalDetails.location)}</span>` : ''}
-      </div>
-    </div>
-
-    <!-- Content Sections -->
-    <div class="space-y-6">
-      ${data.education && data.education.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Education</h2>
-        ${data.education.map(edu => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(edu.institution)}</h3>
-              <span class="text-sm italic">${htmlEscape(edu.period || edu.years)}</span>
-            </div>
-            <p class="italic text-sm mb-2">${htmlEscape(edu.degree)}</p>
-            ${edu.gpa ? `<p class="text-sm">${htmlEscape(edu.gpa)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.experience && data.experience.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Experience</h2>
-        ${data.experience.map(exp => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(exp.title || exp.role)}</h3>
-              <span class="text-sm italic">${htmlEscape(exp.period || exp.years)}</span>
-            </div>
-            <p class="italic text-sm mb-3">${htmlEscape(exp.company)}</p>
-            ${exp.responsibilities && exp.responsibilities.length > 0 ? 
-              `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` : 
-              exp.bullets && exp.bullets.length > 0 ?
-              `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.projects && data.projects.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Projects</h2>
-        ${data.projects.map(project => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(project.title)}</h3>
-              ${project.technologies ? `<span class="text-sm italic">${htmlEscape(project.technologies)}</span>` : ''}
-            </div>
-            ${project.description ? `<p class="text-sm mb-3">${htmlEscape(project.description)}</p>` : ''}
-            ${project.responsibilities && project.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.skills && data.skills.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Skills</h2>
-        <div class="text-sm leading-relaxed">${data.skills.map(s => htmlEscape(s)).join(' • ')}</div>
-      </section>
-      ` : ''}
-
-      ${data.certifications && data.certifications.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Certifications</h2>
-        ${data.certifications.map(cert => `
-          <div class="mb-2">
-            <p class="text-sm">${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</p>
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.accomplishments && data.accomplishments.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Achievements</h2>
-        <ul class="text-sm leading-relaxed">
-          ${data.accomplishments.map(acc => `<li class="list-disc ml-5 mb-1">${htmlEscape(acc)}</li>`).join('')}
-        </ul>
-      </section>
-      ` : ''}
-
-      ${data.awards && data.awards.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Awards</h2>
-        ${data.awards.map(award => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(award.title)}</h3>
-              ${award.year ? `<span class="text-sm italic">(${htmlEscape(award.year)})</span>` : ''}
-            </div>
-            ${award.organization ? `<p class="italic text-sm mb-2">${htmlEscape(award.organization)}</p>` : ''}
-            ${award.description ? `<p class="text-sm">${htmlEscape(award.description)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.publications && data.publications.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Publications</h2>
-        ${data.publications.map(pub => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(pub.title)}</h3>
-              ${pub.year ? `<span class="text-sm italic">(${htmlEscape(pub.year)})</span>` : ''}
-            </div>
-            ${pub.journal ? `<p class="italic text-sm mb-2">${htmlEscape(pub.journal)}</p>` : ''}
-            ${pub.description ? `<p class="text-sm">${htmlEscape(pub.description)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.languages && data.languages.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Languages</h2>
-        <div class="text-sm leading-relaxed">
-          ${data.languages.map(lang => typeof lang === 'string' ? lang : `${lang.language || ''} (${lang.proficiency || ''})`).join(', ')}
-        </div>
-      </section>
-      ` : ''}
-
-      ${data.interests && data.interests.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Interests</h2>
-        <div class="text-sm leading-relaxed">
-          ${data.interests.join(', ')}
-        </div>
-      </section>
-      ` : ''}
-
-      ${data.volunteerWork && data.volunteerWork.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Volunteer Work</h2>
-        ${data.volunteerWork.map(vol => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
-              ${vol.duration ? `<span class="text-sm italic">${htmlEscape(vol.duration)}</span>` : ''}
-            </div>
-            <p class="italic text-sm mb-3">${htmlEscape(vol.organization)}</p>
-            ${vol.description ? `<p class="text-sm mb-3">${htmlEscape(vol.description)}</p>` : ''}
-            ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(vol.responsibilities)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.additionalSections && data.additionalSections.length > 0 ? data.additionalSections.map(section => `
-        <section>
-          <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">${htmlEscape(section.sectionName)}</h2>
-          <p class="text-sm leading-relaxed">${htmlEscape(section.content)}</p>
-        </section>
-      `).join('') : ''}
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-function renderResponsiveTemplate6(data: CVData): string {
-  // Two-Column Modern Layout - Responsive Version
-  const formatBullets = (bullets: string[]) => bullets.filter(Boolean).map(b => `<li class="list-disc ml-5 mb-1">${htmlEscape(b)}</li>`).join('');
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&display=swap');
-    body { font-family: Georgia, serif; }
-  </style>
-</head>
-<body class="bg-white">
-  <div class="max-w-6xl mx-auto p-8">
-    <!-- Header -->
-    <div class="text-center mb-8 border-b-2 border-gray-800 pb-6">
-      <h1 class="text-5xl tracking-widest font-normal text-gray-900">${htmlEscape(data.personalDetails.name)}</h1>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <!-- Left Column -->
-      <div class="md:col-span-1 space-y-6">
-        ${data.personalDetails.phone || data.personalDetails.location || data.personalDetails.email ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Contact</h2>
-          <div class="space-y-2 text-sm">
-            ${data.personalDetails.phone ? `<div class="flex items-start"><span class="mr-2">📞</span> ${htmlEscape(data.personalDetails.phone)}</div>` : ''}
-            ${data.personalDetails.location ? `<div class="flex items-start"><span class="mr-2">📍</span> ${htmlEscape(data.personalDetails.location)}</div>` : ''}
-            ${data.personalDetails.email ? `<div class="flex items-start"><span class="mr-2">✉</span> ${htmlEscape(data.personalDetails.email)}</div>` : ''}
-          </div>
-        </section>
-        ` : ''}
-
-        ${data.education && data.education.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Education</h2>
-          ${data.education.map(edu => `
-            <div class="mb-4">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(edu.institution)}</h3>
-              <p class="text-sm text-gray-600">${htmlEscape(edu.degree)} - ${htmlEscape(edu.period || edu.years)}</p>
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.skills && data.skills.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Skills</h2>
-          <ul class="text-sm space-y-1">
-            ${data.skills.map(skill => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(skill)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.certifications && data.certifications.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Certification</h2>
-          <ul class="text-sm space-y-1">
-            ${data.certifications.map(cert => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.languages && data.languages.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Languages</h2>
-          <ul class="text-sm space-y-1">
-            ${data.languages.map(lang => `<li class="flex items-start"><span class="mr-2">•</span> ${typeof lang === 'string' ? lang : `${lang.language || ''} - ${lang.proficiency || ''}`}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.interests && data.interests.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Interests</h2>
-          <div class="text-sm leading-relaxed">
-            ${data.interests.join(', ')}
-          </div>
-        </section>
-        ` : ''}
-
-        ${data.volunteerWork && data.volunteerWork.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Volunteer Work</h2>
-          ${data.volunteerWork.map(vol => `
-            <div class="mb-4">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${htmlEscape(vol.organization)}</p>
-              ${vol.description ? `<p class="text-sm leading-relaxed">${htmlEscape(vol.description)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.additionalInfo && data.additionalInfo.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Additional Information</h2>
-          <ul class="text-sm space-y-1">
-            ${data.additionalInfo.map(info => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(info)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-      </div>
-
-      <!-- Right Column -->
-      <div class="md:col-span-2 space-y-6">
-        ${data.summary ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">About Me</h2>
-          <p class="text-sm leading-relaxed text-gray-700">${htmlEscape(data.summary)}</p>
-        </section>
-        ` : ''}
-
-        ${data.experience && data.experience.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Work Experience</h2>
-          ${data.experience.map(exp => `
-            <div class="mb-6">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.title || exp.role)}</h3>
-              <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.period || exp.years ? `(${htmlEscape(exp.period || exp.years)})` : ''}</p>
-              ${exp.responsibilities && exp.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` :
-                exp.bullets && exp.bullets.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.projects && data.projects.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Projects</h2>
-          ${data.projects.map(project => `
-            <div class="mb-6">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(project.title)}</h3>
-              ${project.organization ? `<p class="text-sm text-gray-600 mb-2">${htmlEscape(project.organization)}</p>` : ''}
-              ${project.description ? `<p class="text-sm leading-relaxed mb-2">${htmlEscape(project.description)}</p>` : ''}
-              ${project.responsibilities && project.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.accomplishments && data.accomplishments.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Achievements</h2>
-          <ul class="text-sm space-y-1">
-            ${data.accomplishments.map(acc => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(acc)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.awards && data.awards.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Awards</h2>
-          ${data.awards.map(award => `
-            <div class="mb-3">
-              <p class="text-sm leading-relaxed">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
-              ${award.organization ? `<p class="text-sm text-gray-600">${htmlEscape(award.organization)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.publications && data.publications.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Publications</h2>
-          ${data.publications.map(pub => `
-            <div class="mb-3">
-              <p class="text-sm leading-relaxed">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
-              ${pub.organization ? `<p class="text-sm text-gray-600">${htmlEscape(pub.organization)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.references ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">References</h2>
-          <p class="text-sm leading-relaxed">${htmlEscape(data.references)}</p>
-        </section>
-        ` : ''}
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
 // Main renderer function - supports both PDF mode (default) and view mode
 export function renderCVTemplate(templateId: string, data: CVData, mode: 'view' | 'pdf' = 'pdf'): string {
   // Use responsive templates for view mode
-if (mode === 'view') {
-  switch (templateId) {
-    case 'template-1':
-      return renderResponsiveTemplate1(data);
-    case 'template-2':
-      return renderResponsiveTemplate2(data);
-    case 'template-3':
-      return renderResponsiveTemplate3(data);
-    case 'template-5':
-      return renderResponsiveTemplate5(data);
-    case 'template-6':
-      return renderResponsiveTemplate6(data);
-    default:
-      return renderResponsiveTemplate1(data);
+  if (mode === 'view') {
+    switch (templateId) {
+      case 'template-1':
+        return renderResponsiveTemplate1(data);
+      case 'template-2':
+        return renderResponsiveTemplate2(data);
+      case 'template-3':
+        return renderResponsiveTemplate3(data);
+      case 'template-4':
+        return renderResponsiveTemplate2(data); // Use modern template for template-4
+      case 'template-5':
+        return renderResponsiveTemplate1(data); // Use professional template for template-5
+      default:
+        return renderResponsiveTemplate1(data); // Default fallback
+    }
   }
-}
   
   // Use PDF-optimized templates for PDF mode (default)
   switch (templateId) {
@@ -2218,11 +1281,25 @@ if (mode === 'view') {
       return renderTemplate2(data);
     case 'template-3':
       return renderTemplate3(data);
+    case 'template-4':
+      return renderTemplate4(data);
     case 'template-5':
       return renderTemplate5(data);
     case 'template-6':
       return renderTemplate6(data);
+    case 'template-7':
+      return renderTemplate7(data);
+    case 'template-8':
+      return renderTemplate8(data);
+    case 'template-9':
+      return renderTemplate9(data);
+    case 'template-10':
+      return renderTemplate10(data);
     default:
       return renderTemplate1(data); // Default fallback
   }
 }
+
+
+
+

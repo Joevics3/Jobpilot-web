@@ -66,7 +66,7 @@ export interface CVTemplate {
   category: string;
 }
 
-// CV Templates (10 templates)
+// CV Templates (6 templates)
 export const CV_TEMPLATES: CVTemplate[] = [
   {
     id: 'template-1',
@@ -87,12 +87,6 @@ export const CV_TEMPLATES: CVTemplate[] = [
     category: 'Minimal'
   },
   {
-    id: 'template-4',
-    name: 'Black Bold',
-    description: 'Sleek design with tech-inspired elements',
-    category: 'Tech'
-  },
-  {
     id: 'template-5',
     name: 'Blue Professional',
     description: 'Sophisticated layout for senior leadership',
@@ -103,30 +97,6 @@ export const CV_TEMPLATES: CVTemplate[] = [
     name: 'Clean Professional',
     description: 'Academic-focused design',
     category: 'Academic'
-  },
-  {
-    id: 'template-7',
-    name: 'Gray Serif',
-    description: 'Energetic, modern design for startups',
-    category: 'Startup'
-  },
-  {
-    id: 'template-8',
-    name: 'Executive Blue',
-    description: 'Formal corporate styling',
-    category: 'Corporate'
-  },
-  {
-    id: 'template-9',
-    name: 'Modern Minimal',
-    description: 'Unique, personal design',
-    category: 'Freelance'
-  },
-  {
-    id: 'template-10',
-    name: 'Teal Contemporary',
-    description: 'Fresh, modern professional style',
-    category: 'Modern'
   }
 ];
 

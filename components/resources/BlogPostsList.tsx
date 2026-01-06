@@ -36,9 +36,9 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {posts.map((post, index) => (
         <React.Fragment key={post.id}>
-          <article
-            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
-          >
+        <article
+          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
+        >
           {/* Featured Image */}
           {post.featured_image_url && (
             <Link href={`/resources/${post.slug}`}>

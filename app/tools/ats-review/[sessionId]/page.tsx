@@ -144,19 +144,19 @@ export default function ATSReviewSessionPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/tools/ats-review"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} className="text-gray-600" />
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/tools/ats-review"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+              </Link>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">ATS CV Review</h1>
-              <p className="text-sm text-gray-600">
-                {session.cvName}
-                {session.jobTitle && ` • ${session.jobTitle}`}
-              </p>
+                <h1 className="text-2xl font-bold text-gray-900">ATS CV Review</h1>
+                <p className="text-sm text-gray-600">
+                  {session.cvName}
+                  {session.jobTitle && ` • ${session.jobTitle}`}
+                </p>
             </div>
           </div>
         </div>
@@ -207,12 +207,12 @@ export default function ATSReviewSessionPage() {
           </div>
           {/* Text below score */}
           <div className="text-center">
-            {analysisResult.overallExplanation && (
+              {analysisResult.overallExplanation && (
               <p className="text-gray-700 leading-relaxed mb-2">{analysisResult.overallExplanation}</p>
-            )}
-            {analysisResult.summary && (
+              )}
+              {analysisResult.summary && (
               <p className="text-gray-600 leading-relaxed">{analysisResult.summary}</p>
-            )}
+              )}
           </div>
         </div>
 
@@ -238,12 +238,12 @@ export default function ATSReviewSessionPage() {
                       className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <Icon size={24} style={{ color }} />
+                      <Icon size={24} style={{ color }} />
                         <div className="text-left flex-1">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-gray-900">
-                              {categoryLabels[key] || key}
-                            </h3>
+                      {categoryLabels[key] || key}
+                    </h3>
                             <span className="text-xl font-bold ml-4" style={{ color }}>
                               {item.score}%
                             </span>
@@ -251,42 +251,42 @@ export default function ATSReviewSessionPage() {
                           {!isExpanded && (
                             <p className="text-xs text-gray-600 mt-1 line-clamp-1">{item.details}</p>
                           )}
-                        </div>
-                      </div>
+                  </div>
+            </div>
                       <div className="ml-4">
                         {isExpanded ? (
                           <ChevronUp size={20} className="text-gray-400" />
                         ) : (
                           <ChevronDown size={20} className="text-gray-400" />
                         )}
-                      </div>
+            </div>
                     </button>
                     
                     {/* Accordion Content */}
                     {isExpanded && (
                       <div className="px-4 pb-4 pt-0 border-t border-gray-100">
                         <div className="space-y-4 mt-4">
-                          <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Analysis</h4>
                             <p className="text-gray-700 text-sm leading-relaxed">{categoryData.details}</p>
-                          </div>
+                  </div>
                           {categoryData.examples && (
-                            <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
                               <p className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
                                 {categoryData.examples}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Recommendation</h4>
                             <p className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
                               {categoryData.recommendation}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
                   </div>
                 );
               })}

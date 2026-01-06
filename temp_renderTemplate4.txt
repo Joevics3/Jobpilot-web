@@ -1,0 +1,254 @@
+function renderTemplate4(data: CVData): string {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages, interests, publications, volunteerWork, additionalSections } = data;
+  
+  // Calculate smart spacing based on actual content height
+  const { spacing, useDistribution } = calculateSpacing(data);
+  
+  // Build CSS content justification property
+  const contentJustify = useDistribution ? 'justify-content: space-between;' : 'justify-content: flex-start;';
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Arial', 'Helvetica', sans-serif; background: white; margin: 0; padding: 0; }
+        .page { width: 100%; max-width: 210mm; margin: 0 auto;  background: white; margin: 0; padding: 20px 0; position: relative; overflow: hidden; }
+        .header { text-align: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 3px solid #000; }
+        .name { font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 6px; }
+        .job-title { font-size: 12px; color: #000; text-transform: uppercase; letter-spacing: 1.5px; }
+        .about-contact-section { display: grid; grid-template-columns: 1fr auto; gap: 30px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 3px solid #000; align-items: start; }
+        .about-me { flex: 1; }
+        .contact-info { display: flex; flex-direction: column; gap: 8px; }
+        .contact-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+        .main-section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+        .about-content { font-size: 10px; line-height: 1.5; text-align: justify; color: #333; }
+        .two-column-layout { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 15px; }
+        @media (min-width: 768px) {
+          .two-column-layout { grid-template-columns: 1fr 2px 2fr; }
+        }
+        .divider { background: #000; width: 2px; }
+        .left-column { padding-right: 8px; }
+        .right-column { padding-left: 8px; }
+        .left-column, .right-column {
+            --section-spacing: ${spacing}mm;
+            display: flex;
+            flex-direction: column;
+            ${contentJustify}
+            overflow: hidden;
+        }
+        .section { margin-bottom: var(--section-spacing); page-break-inside: avoid; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #000; }
+        .section-content { font-size: 10px; line-height: 1.4; color: #333; }
+        .work-entry { margin-bottom: 14px; }
+        .work-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+        .company-name { font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .work-location-date { font-size: 9px; text-align: right; white-space: nowrap; margin-left: 12px; }
+        .work-position { font-size: 10px; font-style: italic; margin-bottom: 6px; }
+        .work-entry ul { margin-left: 16px; }
+        .work-entry li { margin-bottom: 4px; font-size: 10px; line-height: 1.4; }
+        .education-entry { margin-bottom: 14px; }
+        .education-degree { font-weight: bold; font-size: 10px; margin-bottom: 4px; }
+        .education-dates { font-size: 9px; margin-bottom: 6px; }
+        .skills-list { list-style: none; padding: 0; }
+        .skills-list li { padding-left: 12px; position: relative; margin-bottom: 6px; font-size: 10px; }
+        .skills-list li:before { content: "•"; position: absolute; left: 0; font-weight: bold; }
+        .project-entry, .cert-entry, .award-entry { margin-bottom: 6px; font-size: 10px; line-height: 1.3; }
+        .project-title, .cert-name, .award-title { font-weight: bold; }
+        .list-item { margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .volunteer-entry { margin-bottom: 8px; font-size: 10px; }
+        .volunteer-header { font-weight: bold; margin-bottom: 2px; }
+        @media (min-width: 768px) {
+          .page { padding: 15mm 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="name">${personalDetails.name.toUpperCase()}</div>
+            <div class="job-title">${personalDetails.title.toUpperCase()}</div>
+        </div>
+
+        <div class="about-contact-section">
+            <div class="about-me">
+                <div class="main-section-title">ABOUT ME</div>
+                <div class="about-content">${summary}</div>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div>📞</div>
+                    <div>${personalDetails.phone}</div>
+                </div>
+                <div class="contact-item">
+                    <div>✉</div>
+                    <div>${personalDetails.email}</div>
+                </div>
+                <div class="contact-item">
+                    <div>📍</div>
+                    <div>${personalDetails.location}</div>
+                </div>
+                ${personalDetails.linkedin ? `<div class="contact-item"><div>💼</div><div>${personalDetails.linkedin}</div></div>` : ''}
+                ${personalDetails.github ? `<div class="contact-item"><div>🔗</div><div>${personalDetails.github}</div></div>` : ''}
+                ${personalDetails.portfolio ? `<div class="contact-item"><div>🌐</div><div>${personalDetails.portfolio}</div></div>` : ''}
+            </div>
+        </div>
+
+        <div class="two-column-layout">
+            <div class="left-column">
+                <div class="section">
+                    <div class="section-title">EDUCATION</div>
+                    <div class="section-content">
+                        ${education.map(edu => `
+                            <div class="education-entry">
+                                <div class="education-degree">${edu.degree}</div>
+                                <div class="education-dates">${edu.years}</div>
+                                <div>${edu.institution}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">SKILLS</div>
+                    <div class="section-content">
+                        <ul class="skills-list">
+                            ${skills.map(skill => `<li>${skill}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                ${certifications && certifications.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">CERTIFICATIONS</div>
+                    <div class="section-content">
+                        ${certifications.map(cert => `
+                            <div class="cert-entry">
+                                <span class="cert-name">${cert.name}</span>${cert.issuer ? ` – ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${languages && languages.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">LANGUAGES</div>
+                    <div class="section-content">
+                        ${languages.join(' • ')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${interests && interests.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">INTERESTS</div>
+                    <div class="section-content">
+                        ${interests.join(' • ')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="right-column">
+                <div class="section">
+                    <div class="section-title">WORK EXPERIENCE</div>
+                    <div class="section-content">
+                        ${experience.map(exp => `
+                            <div class="work-entry">
+                                <div class="work-header">
+                                    <div class="company-name">${exp.company}</div>
+                                    <div class="work-location-date">${personalDetails.location}<br>${exp.years}</div>
+                                </div>
+                                <div class="work-position">${exp.role}</div>
+                                <ul>
+                                    ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${projects && projects.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">PROJECTS</div>
+                    <div class="section-content">
+                        ${projects.map(proj => `
+                            <div class="project-entry">
+                                <span class="project-title">${proj.title}</span> – ${proj.description}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${accomplishments && accomplishments.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">ACCOMPLISHMENTS</div>
+                    <div class="section-content">
+                        ${accomplishments.map(acc => `<div class="list-item">• ${acc}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${awards && awards.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">AWARDS</div>
+                    <div class="section-content">
+                        ${awards.map(award => `
+                            <div class="award-entry">
+                                <span class="award-title">${award.title}</span>${award.issuer ? ` – ${award.issuer}` : ''}${award.year ? ` (${award.year})` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${publications && publications.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">PUBLICATIONS</div>
+                    <div class="section-content">
+                        ${publications.map(pub => `
+                            <div class="list-item">${pub.title}${pub.journal ? ` – ${pub.journal}` : ''}${pub.year ? ` (${pub.year})` : ''}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${volunteerWork && volunteerWork.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">VOLUNTEER WORK</div>
+                    <div class="section-content">
+                        ${volunteerWork.map(vol => `
+                            <div class="volunteer-entry">
+                                <div class="volunteer-header">${vol.organization}${vol.role ? ` – ${vol.role}` : ''}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                                ${vol.description ? `<div style="margin-top: 2px; font-size: 9px;">${vol.description}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
+                <div class="section">
+                    <div class="section-title">${section.sectionName.toUpperCase()}</div>
+                    <div class="section-content">
+                        ${section.content.split('\n').map(line => `<div class="list-item">${line}</div>`).join('')}
+                    </div>
+                </div>
+                `).join('') : ''}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+// Template 5 Renderer

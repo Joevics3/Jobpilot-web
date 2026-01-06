@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     title: defaultTitle,
     description: defaultDescription,
     images: [`${siteUrl}/og-image.png`],
-    creator: '@jobmeter',
+    creator: '@jobmeterapp',
   },
   icons: {
     icon: [

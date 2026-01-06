@@ -98,3 +98,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .native-ad {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: #fff;
+  }
+}

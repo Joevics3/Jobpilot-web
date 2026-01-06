@@ -8,6 +8,7 @@ import { FileText, Briefcase, Check, ArrowRight, X, Loader2, Search, FileCheck, 
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 import { ATSReviewService } from '@/lib/services/atsReviewService';
+import { supabase } from '@/lib/supabase';
 
 interface Job {
   id: string;
@@ -57,6 +58,7 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
   const [jobSearchQuery, setJobSearchQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [pastedJobDetails, setPastedJobDetails] = useState('');
+  const [fetchingJob, setFetchingJob] = useState(false);
 
   // Reset modal state when opened
   useEffect(() => {
@@ -65,14 +67,16 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     }
   }, [isOpen]);
 
-  // Load CV documents from localStorage
+  // Load CV documents from localStorage (only CVs, not cover letters)
   const loadCVDocuments = () => {
     try {
       const cvDocs = localStorage.getItem('cv_documents');
       if (cvDocs) {
         const docs = JSON.parse(cvDocs);
-        setCvDocuments(docs);
-        setFilteredCVDocuments(docs);
+        // Filter to only show CVs, not cover letters
+        const cvsOnly = docs.filter((doc: any) => doc.type === 'cv' || !doc.type);
+        setCvDocuments(cvsOnly);
+        setFilteredCVDocuments(cvsOnly);
       }
     } catch (error) {
       console.error('Error loading CV documents:', error);
@@ -165,38 +169,89 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     setStep('job-selection');
   };
 
+  const fetchFullJobDetails = async (jobId: string): Promise<Job | null> => {
+    try {
+      // First, try to get from cached jobs (might have description)
+      const cachedJobs = localStorage.getItem('cached_jobs');
+      if (cachedJobs) {
+        const jobsData = JSON.parse(cachedJobs);
+        const cachedJob = jobsData.find((j: any) => j.id === jobId);
+        if (cachedJob && cachedJob.description && cachedJob.description.trim()) {
+          return {
+            id: cachedJob.id,
+            title: cachedJob.title || 'Untitled Job',
+            company: cachedJob.company || 'Company',
+            location: cachedJob.location || 'Not specified',
+            description: cachedJob.description,
+          };
+        }
+      }
+
+      // If not in cache or no description, fetch from Supabase
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, title, company, location, description')
+        .eq('id', jobId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching job from Supabase:', error);
+        return null;
+      }
+
+      if (data) {
+        return {
+          id: data.id,
+          title: data.title || 'Untitled Job',
+          company: typeof data.company === 'string' ? data.company : data.company?.name || 'Company',
+          location: typeof data.location === 'string' ? data.location : 
+            (data.location?.remote ? 'Remote' : 
+            [data.location?.city, data.location?.state, data.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+          description: data.description || '',
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching full job details:', error);
+      return null;
+    }
+  };
+
   const handleJobSelect = async (job: Job) => {
-    // If job doesn't have description, try to fetch it
+    // If job doesn't have description, fetch full details
+    let jobWithDescription = job;
+    
     if (!job.description || !job.description.trim()) {
+      setFetchingJob(true);
       try {
-        // Try to get full job details from cached jobs
-        const cachedJobs = localStorage.getItem('cached_jobs');
-        if (cachedJobs) {
-          const jobsData = JSON.parse(cachedJobs);
-          const fullJob = jobsData.find((j: any) => j.id === job.id);
-          if (fullJob && fullJob.description) {
-            setSelectedJob({
-              ...job,
-              description: fullJob.description,
-            });
-            setStep('analyzing');
-            handleGenerate('cv-job');
+        const fullJob = await fetchFullJobDetails(job.id);
+        if (fullJob && fullJob.description && fullJob.description.trim()) {
+          jobWithDescription = fullJob;
+        } else {
+          // If still no description after fetching, allow user to proceed with general review
+          const proceed = confirm('This job does not have a description. The review will be general (not job-specific). Do you want to continue?');
+          if (!proceed) {
+            setFetchingJob(false);
             return;
           }
         }
-        // If still no description, show error
-        alert('This job does not have a description. Please paste the job description manually or select a different job.');
-        return;
       } catch (error) {
         console.error('Error fetching job details:', error);
-        alert('Unable to load job description. Please paste the job description manually or select a different job.');
-        return;
+        const proceed = confirm('Unable to load job description. The review will be general (not job-specific). Do you want to continue?');
+        if (!proceed) {
+          setFetchingJob(false);
+          return;
+        }
+      } finally {
+        setFetchingJob(false);
       }
     }
     
-    setSelectedJob(job);
+    setSelectedJob(jobWithDescription);
     setStep('analyzing');
-    handleGenerate('cv-job');
+    // Pass the job directly to avoid state timing issues
+    handleGenerateWithJob('cv-job', jobWithDescription);
   };
 
   const handlePasteJob = () => {
@@ -204,15 +259,17 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
       alert('Please paste job details');
       return;
     }
-    setSelectedJob({
+    const pastedJob: Job = {
       id: 'pasted',
       title: 'Pasted Job',
       company: '',
       location: '',
       description: pastedJobDetails,
-    });
+    };
+    setSelectedJob(pastedJob);
     setStep('analyzing');
-    handleGenerate('cv-job');
+    // Pass the job directly to avoid state timing issues
+    handleGenerateWithJob('cv-job', pastedJob);
   };
 
   const handleCVOnly = () => {
@@ -250,7 +307,7 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     return '';
   };
 
-  const handleGenerate = async (reviewType: 'cv-only' | 'cv-job' = 'cv-only') => {
+  const handleGenerate = async (reviewType: 'cv-only' | 'cv-job' = 'cv-only', jobOverride?: Job) => {
     if (!selectedCV) {
       alert('Please select a CV first');
       setStep('cv-selection');
@@ -264,7 +321,10 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
       return;
     }
 
-    if (reviewType === 'cv-job' && !selectedJob) {
+    // Use jobOverride if provided, otherwise use selectedJob from state
+    const jobToUse = jobOverride || selectedJob;
+
+    if (reviewType === 'cv-job' && !jobToUse) {
       alert('Please select a job for job-specific review');
       setStep('job-selection');
       return;
@@ -275,9 +335,9 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     try {
       const reviewResult = await ATSReviewService.generateReview({
         cvContent: cvContent.trim(),
-        jobDescription: selectedJob?.description || undefined,
-        jobTitle: selectedJob?.title || undefined,
-        jobCompany: selectedJob?.company || undefined,
+        jobDescription: jobToUse?.description || undefined,
+        jobTitle: jobToUse?.title || undefined,
+        jobCompany: jobToUse?.company || undefined,
         reviewType: reviewType || 'cv-only',
       });
 
@@ -286,8 +346,8 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
         selectedCV.name,
         reviewResult,
         reviewType || 'cv-only',
-        selectedJob?.title,
-        selectedJob?.company
+        jobToUse?.title,
+        jobToUse?.company
       );
 
       ATSReviewService.saveSession(session);
@@ -302,6 +362,11 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to generate with job passed directly (avoids state timing issues)
+  const handleGenerateWithJob = async (reviewType: 'cv-only' | 'cv-job', job: Job) => {
+    await handleGenerate(reviewType, job);
   };
 
   const loadSessionById = (sessionId: string) => {
@@ -610,10 +675,18 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
                             <button
                               key={job.id}
                               onClick={() => handleJobSelect(job)}
-                              className="w-full p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                              disabled={fetchingJob}
+                              className="w-full p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <h5 className="font-semibold text-gray-900 mb-1">{job.title}</h5>
-                              <p className="text-sm text-gray-600">{job.company} • {job.location}</p>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <h5 className="font-semibold text-gray-900 mb-1">{job.title}</h5>
+                                  <p className="text-sm text-gray-600">{job.company} • {job.location}</p>
+                                </div>
+                                {fetchingJob && (
+                                  <Loader2 size={16} className="animate-spin text-blue-600 ml-2" />
+                                )}
+                              </div>
                             </button>
                           ))}
                         </div>

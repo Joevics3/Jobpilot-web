@@ -3,7 +3,7 @@
 
 import { CVData } from '@/lib/types/cv';
 
-// Base CSS for A4 page (strict 1 page) - optimized for PDF conversion and responsive viewing
+// Base CSS for A4 page (strict 1 page) - optimized for PDF conversion
 const baseCss = `
   @page { 
     size: A4;
@@ -13,7 +13,7 @@ const baseCss = `
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { 
       width: 210mm;
-      min-height: 297mm;
+      height: 297mm;
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -40,13 +40,8 @@ const baseCss = `
     max-width: 210mm;
     margin: 0 auto;
     background: #ffffff;
-    padding: 20px;
+    padding: 10mm 8mm;
     position: relative;
-  }
-  @media (min-width: 768px) {
-    .page {
-      padding: 50px;
-    }
   }
 `;
 
@@ -694,9 +689,1416 @@ function renderTemplate3(data: CVData): string {
   </body></html>`;
 }
 
+// Template 4: Black Bold (Tech style)
+function renderTemplate4(data: CVData): string {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages, interests, publications, volunteerWork, additionalSections } = data;
+  
+  // Calculate smart spacing based on actual content height
+  const { spacing, useDistribution } = calculateSpacing(data);
+  
+  // Build CSS content justification property
+  const contentJustify = useDistribution ? 'justify-content: space-between;' : 'justify-content: flex-start;';
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Arial', 'Helvetica', sans-serif; background: white; margin: 0; padding: 0; }
+        .page { width: 100%; max-width: 210mm; margin: 0 auto;  background: white; margin: 0; padding: 20px 0; position: relative; overflow: hidden; }
+        .header { text-align: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 3px solid #000; }
+        .name { font-size: 32px; font-weight: bold; color: #000; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 6px; }
+        .job-title { font-size: 12px; color: #000; text-transform: uppercase; letter-spacing: 1.5px; }
+        .about-contact-section { display: grid; grid-template-columns: 1fr auto; gap: 30px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 3px solid #000; align-items: start; }
+        .about-me { flex: 1; }
+        .contact-info { display: flex; flex-direction: column; gap: 8px; }
+        .contact-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+        .main-section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+        .about-content { font-size: 10px; line-height: 1.5; text-align: justify; color: #333; }
+        .two-column-layout { display: grid; grid-template-columns: 1fr 2px 2fr; gap: 20px; margin-bottom: 15px; }
+        .divider { background: #000; width: 2px; }
+        .left-column { padding-right: 8px; }
+        .right-column { padding-left: 8px; }
+        .left-column, .right-column {
+            --section-spacing: ${spacing}mm;
+            height: 207mm;
+            max-height: 207mm;
+            display: flex;
+            flex-direction: column;
+            ${contentJustify}
+            overflow: hidden;
+        }
+        .section { margin-bottom: var(--section-spacing); page-break-inside: avoid; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #000; }
+        .section-content { font-size: 10px; line-height: 1.4; color: #333; }
+        .work-entry { margin-bottom: 14px; }
+        .work-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+        .company-name { font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .work-location-date { font-size: 9px; text-align: right; white-space: nowrap; margin-left: 12px; }
+        .work-position { font-size: 10px; font-style: italic; margin-bottom: 6px; }
+        .work-entry ul { margin-left: 16px; }
+        .work-entry li { margin-bottom: 4px; font-size: 10px; line-height: 1.4; }
+        .education-entry { margin-bottom: 14px; }
+        .education-degree { font-weight: bold; font-size: 10px; margin-bottom: 4px; }
+        .education-dates { font-size: 9px; margin-bottom: 6px; }
+        .skills-list { list-style: none; padding: 0; }
+        .skills-list li { padding-left: 12px; position: relative; margin-bottom: 6px; font-size: 10px; }
+        .skills-list li:before { content: "•"; position: absolute; left: 0; font-weight: bold; }
+        .project-entry, .cert-entry, .award-entry { margin-bottom: 6px; font-size: 10px; line-height: 1.3; }
+        .project-title, .cert-name, .award-title { font-weight: bold; }
+        .list-item { margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .volunteer-entry { margin-bottom: 8px; font-size: 10px; }
+        .volunteer-header { font-weight: bold; margin-bottom: 2px; }
+        @media (min-width: 768px) {
+          .page { padding: 15mm 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="name">${personalDetails.name.toUpperCase()}</div>
+            <div class="job-title">${personalDetails.title.toUpperCase()}</div>
+        </div>
 
-function renderTemplate5(data: CVData): string {
-  // Template 5: Academic Single Column
+        <div class="about-contact-section">
+            <div class="about-me">
+                <div class="main-section-title">ABOUT ME</div>
+                <div class="about-content">${summary}</div>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div>📞</div>
+                    <div>${personalDetails.phone}</div>
+                </div>
+                <div class="contact-item">
+                    <div>✉</div>
+                    <div>${personalDetails.email}</div>
+                </div>
+                <div class="contact-item">
+                    <div>📍</div>
+                    <div>${personalDetails.location}</div>
+                </div>
+                ${personalDetails.linkedin ? `<div class="contact-item"><div>💼</div><div>${personalDetails.linkedin}</div></div>` : ''}
+                ${personalDetails.github ? `<div class="contact-item"><div>🔗</div><div>${personalDetails.github}</div></div>` : ''}
+                ${personalDetails.portfolio ? `<div class="contact-item"><div>🌐</div><div>${personalDetails.portfolio}</div></div>` : ''}
+            </div>
+        </div>
+
+        <div class="two-column-layout">
+            <div class="left-column">
+                <div class="section">
+                    <div class="section-title">EDUCATION</div>
+                    <div class="section-content">
+                        ${education.map(edu => `
+                            <div class="education-entry">
+                                <div class="education-degree">${edu.degree}</div>
+                                <div class="education-dates">${edu.years}</div>
+                                <div>${edu.institution}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">SKILLS</div>
+                    <div class="section-content">
+                        <ul class="skills-list">
+                            ${skills.map(skill => `<li>${skill}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                ${certifications && certifications.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">CERTIFICATIONS</div>
+                    <div class="section-content">
+                        ${certifications.map(cert => `
+                            <div class="cert-entry">
+                                <span class="cert-name">${cert.name}</span>${cert.issuer ? ` – ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${languages && languages.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">LANGUAGES</div>
+                    <div class="section-content">
+                        ${languages.join(' • ')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${interests && interests.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">INTERESTS</div>
+                    <div class="section-content">
+                        ${interests.join(' • ')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="right-column">
+                <div class="section">
+                    <div class="section-title">WORK EXPERIENCE</div>
+                    <div class="section-content">
+                        ${experience.map(exp => `
+                            <div class="work-entry">
+                                <div class="work-header">
+                                    <div class="company-name">${exp.company}</div>
+                                    <div class="work-location-date">${personalDetails.location}<br>${exp.years}</div>
+                                </div>
+                                <div class="work-position">${exp.role}</div>
+                                <ul>
+                                    ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${projects && projects.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">PROJECTS</div>
+                    <div class="section-content">
+                        ${projects.map(proj => `
+                            <div class="project-entry">
+                                <span class="project-title">${proj.title}</span> – ${proj.description}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${accomplishments && accomplishments.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">ACCOMPLISHMENTS</div>
+                    <div class="section-content">
+                        ${accomplishments.map(acc => `<div class="list-item">• ${acc}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${awards && awards.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">AWARDS</div>
+                    <div class="section-content">
+                        ${awards.map(award => `
+                            <div class="award-entry">
+                                <span class="award-title">${award.title}</span>${award.issuer ? ` – ${award.issuer}` : ''}${award.year ? ` (${award.year})` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${publications && publications.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">PUBLICATIONS</div>
+                    <div class="section-content">
+                        ${publications.map(pub => `
+                            <div class="list-item">${pub.title}${pub.journal ? ` – ${pub.journal}` : ''}${pub.year ? ` (${pub.year})` : ''}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${volunteerWork && volunteerWork.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">VOLUNTEER WORK</div>
+                    <div class="section-content">
+                        ${volunteerWork.map(vol => `
+                            <div class="volunteer-entry">
+                                <div class="volunteer-header">${vol.organization}${vol.role ? ` – ${vol.role}` : ''}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                                ${vol.description ? `<div style="margin-top: 2px; font-size: 9px;">${vol.description}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
+                <div class="section">
+                    <div class="section-title">${section.sectionName.toUpperCase()}</div>
+                    <div class="section-content">
+                        ${section.content.split('\n').map(line => `<div class="list-item">${line}</div>`).join('')}
+                    </div>
+                </div>
+                `).join('') : ''}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+// Template 5 Renderer
+export const renderTemplate5 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages, interests, publications, volunteerWork, additionalSections } = data;
+  
+  // Calculate smart spacing based on actual content height
+  const { spacing, useDistribution } = calculateSpacing(data);
+  
+  // Build CSS content justification property
+  const contentJustify = useDistribution ? 'justify-content: space-between;' : 'justify-content: flex-start;';
+  
+  // Build contact info with optional fields
+  const contactItems = [
+    personalDetails.location,
+    personalDetails.phone,
+    personalDetails.email,
+    personalDetails.linkedin,
+    personalDetails.github,
+    personalDetails.portfolio
+  ].filter(Boolean).join(' | ');
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Calibri', Arial, sans-serif; background: white; margin: 0; padding: 0; }
+        .page { width: 210mm; height: 297mm; max-height: 297mm; background: white; margin: 0; padding: 15mm 0; position: relative; overflow: hidden; }
+        .header { text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 3px solid #2c5f8d; }
+        .name { font-size: 20px; font-weight: bold; color: #2c5f8d; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+        .contact-info { font-size: 9px; color: #333; line-height: 1.5; }
+        .content {
+            padding: 0 10mm;
+            --section-spacing: ${spacing}mm;
+            height: 207mm;
+            max-height: 207mm;
+            display: flex;
+            flex-direction: column;
+            ${contentJustify}
+            overflow: hidden;
+        }
+        .section { margin-bottom: var(--section-spacing); page-break-inside: avoid; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-size: 11px; font-weight: bold; color: #2c5f8d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-bottom: 3px; border-bottom: 2px solid #2c5f8d; }
+        .section-content { font-size: 10px; line-height: 1.4; color: #333; }
+        .work-entry { margin-bottom: 12px; }
+        .work-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+        .job-title { font-weight: bold; font-size: 10px; color: #000; }
+        .job-dates { font-size: 9px; font-style: italic; color: #666; white-space: nowrap; }
+        .company-name { font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #000; }
+        .work-entry ul { margin-left: 18px; margin-top: 4px; }
+        .work-entry li { margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .education-entry { margin-bottom: 12px; }
+        .education-header { font-weight: bold; font-size: 10px; margin-bottom: 2px; }
+        .education-subheader { font-size: 10px; font-style: italic; margin-bottom: 2px; }
+        .education-location { font-size: 9px; color: #666; }
+        .two-column-container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 6px; }
+        .column-list { margin: 0; padding: 0; list-style: none; }
+        .column-list li { padding-left: 12px; position: relative; margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .column-list li:before { content: "•"; position: absolute; left: 0; color: #2c5f8d; font-weight: bold; }
+        .project-entry, .cert-entry, .award-entry { margin-bottom: 6px; font-size: 10px; line-height: 1.3; }
+        .project-title, .cert-name, .award-title { font-weight: bold; }
+        .list-item { margin-bottom: 4px; font-size: 10px; line-height: 1.3; }
+        .volunteer-entry { margin-bottom: 8px; font-size: 10px; }
+        .volunteer-header { font-weight: bold; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="name">${personalDetails.name.toUpperCase()}</div>
+            <div class="contact-info">${contactItems}</div>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="section-content">${summary}</div>
+            </div>
+
+        <div class="section">
+            <div class="section-title">Work History</div>
+            <div class="section-content">
+                ${experience.map(exp => `
+                    <div class="work-entry">
+                        <div class="work-header">
+                            <div class="job-title">${exp.role}</div>
+                            <div class="job-dates">${exp.years}</div>
+                        </div>
+                        <div class="company-name">${exp.company}</div>
+                        <ul>
+                            ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Skills</div>
+            <div class="section-content">
+                <div class="two-column-container">
+                    <ul class="column-list">
+                        ${skills.slice(0, Math.ceil(skills.length / 2)).map(skill => `<li>${skill}</li>`).join('')}
+                    </ul>
+                    <ul class="column-list">
+                        ${skills.slice(Math.ceil(skills.length / 2)).map(skill => `<li>${skill}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Education</div>
+            <div class="section-content">
+                ${education.map(edu => `
+                    <div class="education-entry">
+                        <div class="education-header">${edu.degree}</div>
+                        <div class="education-subheader">${edu.institution}</div>
+                        <div class="education-location">${edu.years}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        ${projects && projects.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Projects</div>
+            <div class="section-content">
+                ${projects.map(proj => `
+                    <div class="project-entry">
+                        <span class="project-title">${proj.title}</span> – ${proj.description}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${accomplishments && accomplishments.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Accomplishments</div>
+            <div class="section-content">
+                ${accomplishments.map(acc => `<div class="list-item">• ${acc}</div>`).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${certifications && certifications.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Certifications</div>
+            <div class="section-content">
+                ${certifications.map(cert => `
+                    <div class="cert-entry">
+                        <span class="cert-name">${cert.name}</span>${cert.issuer ? ` – ${cert.issuer}` : ''}${cert.year ? ` (${cert.year})` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${awards && awards.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Awards</div>
+            <div class="section-content">
+                ${awards.map(award => `
+                    <div class="award-entry">
+                        <span class="award-title">${award.title}</span>${award.issuer ? ` – ${award.issuer}` : ''}${award.year ? ` (${award.year})` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${languages && languages.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Languages</div>
+            <div class="section-content">
+                ${languages.join(' • ')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${publications && publications.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Publications</div>
+            <div class="section-content">
+                ${publications.map(pub => `
+                    <div class="list-item">${pub.title}${pub.journal ? ` – ${pub.journal}` : ''}${pub.year ? ` (${pub.year})` : ''}</div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${volunteerWork && volunteerWork.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Volunteer Work</div>
+            <div class="section-content">
+                ${volunteerWork.map(vol => `
+                    <div class="volunteer-entry">
+                        <div class="volunteer-header">${vol.organization}${vol.role ? ` – ${vol.role}` : ''}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                        ${vol.description ? `<div style="margin-top: 2px; font-size: 9px;">${vol.description}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${interests && interests.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Interests</div>
+            <div class="section-content">
+                ${interests.join(' • ')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
+        <div class="section">
+            <div class="section-title">${section.sectionName}</div>
+            <div class="section-content">
+                ${section.content.split('\n').map(line => `<div class="list-item">${line}</div>`).join('')}
+            </div>
+        </div>
+        `).join('') : ''}
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+
+
+// Template 7 Renderer (Gray Serif - two-column with vertical divider)
+export const renderTemplate7 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages, interests, publications, volunteerWork } = data;
+  
+  const nameParts = (personalDetails.name || '').split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
+  const contactInfo = [
+    personalDetails.phone,
+    personalDetails.email,
+    personalDetails.location,
+    personalDetails.linkedin,
+    personalDetails.github
+  ].filter(Boolean);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: white;
+            margin: 0;
+            padding: 15mm 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+        }
+        .name-title { flex: 1; }
+        .name { font-size: 32px; font-weight: normal; color: #4a4a4a; margin-bottom: 5px; }
+        .first-name { font-weight: 300; color: #7a7a7a; }
+        .last-name { font-weight: bold; color: #4a4a4a; }
+        .name-underline { width: 200px; height: 2px; background: #4a4a4a; margin-bottom: 12px; }
+        .job-title { font-size: 16px; color: #4a4a4a; font-weight: 300; font-style: italic; }
+        .contact-info { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+        .contact-item { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #4a4a4a; }
+        .horizontal-divider { width: 100%; height: 2px; background: #5a5a5a; margin-bottom: 15px; }
+        .summary-section { margin-bottom: 20px; text-align: center; }
+        .summary-title { font-size: 13px; font-weight: normal; text-transform: uppercase; letter-spacing: 2px; color: #4a4a4a; margin-bottom: 10px; }
+        .summary-content { font-size: 10px; line-height: 1.5; color: #4a4a4a; text-align: justify; }
+        .content-wrapper {
+            height: calc(297mm - 140px);
+            max-height: calc(297mm - 140px);
+            overflow: hidden;
+            padding: 0 10mm;
+        }
+        .two-column-layout { 
+            display: grid; 
+            grid-template-columns: 1fr 3px 2fr; 
+            gap: 20px;
+            height: 100%;
+            max-height: 100%;
+        }
+        .left-column, .right-column {
+            overflow: hidden;
+            height: 100%;
+        }
+        .vertical-divider { background: #5a5a5a; width: 3px; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-size: 13px; font-weight: normal; text-transform: uppercase; letter-spacing: 2px; color: #4a4a4a; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #5a5a5a; }
+        .section-content { font-size: 11px; line-height: 1.6; color: #4a4a4a; }
+        .work-entry, .education-entry { margin-bottom: 12px; }
+        .work-role { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .work-company { font-size: 11px; margin-bottom: 2px; }
+        .work-dates { font-size: 10px; font-style: italic; color: #666; margin-bottom: 4px; }
+        .work-bullets { margin-left: 15px; font-size: 10px; line-height: 1.4; }
+        .work-bullets li { margin-bottom: 3px; }
+        .education-school { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .education-degree { font-size: 11px; margin-bottom: 2px; }
+        .education-dates { font-size: 10px; font-style: italic; color: #666; }
+        .skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .skill-item { font-size: 10px; padding: 4px 8px; background: #e0e0e0; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="name-title">
+                <div class="name">
+                    <span class="first-name">${firstName}</span> <span class="last-name">${lastName}</span>
+                </div>
+                <div class="name-underline"></div>
+                <div class="job-title">${personalDetails.title || ''}</div>
+            </div>
+            <div class="contact-info">
+                ${contactInfo.map(info => `<div class="contact-item">${info}</div>`).join('')}
+            </div>
+        </div>
+        <div class="horizontal-divider"></div>
+        ${summary ? `
+        <div class="summary-section">
+            <div class="summary-title">Professional Summary</div>
+            <div class="summary-content">${summary}</div>
+        </div>
+        ` : ''}
+        <div class="content-wrapper">
+        <div class="two-column-layout">
+            <div class="left-column">
+                ${education && education.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    <div class="section-content">
+                        ${education.map(edu => `
+                            <div class="education-entry">
+                                <div class="education-school">${edu.institution}</div>
+                                <div class="education-degree">${edu.degree}</div>
+                                <div class="education-dates">${edu.years}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${skills && skills.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Skills</div>
+                    <div class="section-content">
+                        <div class="skills-list">
+                            ${skills.map(skill => `<span class="skill-item">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                ${languages && languages.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Languages</div>
+                    <div class="section-content">${languages.join(' • ')}</div>
+                </div>
+                ` : ''}
+            </div>
+            <div class="vertical-divider"></div>
+            <div class="right-column">
+                ${experience && experience.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Experience</div>
+                    <div class="section-content">
+                        ${experience.map(exp => `
+                            <div class="work-entry">
+                                <div class="work-role">${exp.role}</div>
+                                <div class="work-company">${exp.company}</div>
+                                <div class="work-dates">${exp.years}</div>
+                                ${exp.bullets && exp.bullets.length > 0 ? `
+                                    <ul class="work-bullets">
+                                        ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${projects && projects.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Projects</div>
+                    <div class="section-content">
+                        ${projects.map(proj => `
+                            <div class="work-entry">
+                                <div class="work-role">${proj.title}</div>
+                                <div class="work-company">${proj.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+
+// Template 9 Renderer (Modern Minimal - clean minimal with rounded section headers)
+export const renderTemplate9 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, accomplishments, awards, certifications, languages } = data;
+  
+  const contactInfo = [
+    personalDetails.location,
+    personalDetails.phone,
+    personalDetails.email,
+    personalDetails.linkedin,
+    personalDetails.github
+  ].filter(Boolean).join(' | ');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: white;
+            margin: 0;
+            padding: 15mm 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .header { margin-bottom: 15px; }
+        .name { font-size: 34px; font-weight: bold; color: #2d2d2d; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+        .job-title { font-size: 18px; font-weight: bold; color: #2d2d2d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .contact-info { font-size: 10px; color: #2d2d2d; line-height: 1.5; margin-bottom: 15px; }
+        .content-wrapper {
+            height: calc(297mm - 160px);
+            max-height: calc(297mm - 160px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 10mm;
+        }
+        .section { margin-bottom: 20px; }
+        .section-title-container { background: #d4d4d4; padding: 8px 15px; margin-bottom: 12px; border-radius: 20px; }
+        .section-title { font-size: 12px; font-weight: bold; color: #2d2d2d; text-transform: uppercase; font-style: italic; letter-spacing: 1px; }
+        .section-content { font-size: 11px; line-height: 1.5; color: #2d2d2d; }
+        .work-entry, .education-entry { margin-bottom: 10px; }
+        .work-role { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .work-company { font-size: 11px; margin-bottom: 2px; }
+        .work-dates { font-size: 10px; color: #666; margin-bottom: 4px; }
+        .work-bullets { margin-left: 15px; font-size: 10px; line-height: 1.4; }
+        .work-bullets li { margin-bottom: 3px; }
+        .education-school { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .education-degree { font-size: 11px; margin-bottom: 2px; }
+        .education-dates { font-size: 10px; color: #666; }
+        .skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .skill-item { font-size: 10px; padding: 4px 10px; background: #f0f0f0; border-radius: 15px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="name">${personalDetails.name || ''}</div>
+            <div class="job-title">${personalDetails.title || ''}</div>
+            <div class="contact-info">${contactInfo}</div>
+        </div>
+        <div class="content-wrapper">
+        ${summary ? `
+        <div class="section">
+            <div class="section-title-container">
+                <div class="section-title">Professional Summary</div>
+            </div>
+            <div class="section-content">${summary}</div>
+        </div>
+        ` : ''}
+        ${experience && experience.length > 0 ? `
+        <div class="section">
+            <div class="section-title-container">
+                <div class="section-title">Experience</div>
+            </div>
+            <div class="section-content">
+                ${experience.map(exp => `
+                    <div class="work-entry">
+                        <div class="work-role">${exp.role}</div>
+                        <div class="work-company">${exp.company}</div>
+                        <div class="work-dates">${exp.years}</div>
+                        ${exp.bullets && exp.bullets.length > 0 ? `
+                            <ul class="work-bullets">
+                                ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+        ${education && education.length > 0 ? `
+        <div class="section">
+            <div class="section-title-container">
+                <div class="section-title">Education</div>
+            </div>
+            <div class="section-content">
+                ${education.map(edu => `
+                    <div class="education-entry">
+                        <div class="education-school">${edu.institution}</div>
+                        <div class="education-degree">${edu.degree}</div>
+                        <div class="education-dates">${edu.years}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+        ${skills && skills.length > 0 ? `
+        <div class="section">
+            <div class="section-title-container">
+                <div class="section-title">Skills</div>
+            </div>
+            <div class="section-content">
+                <div class="skills-list">
+                    ${skills.map(skill => `<span class="skill-item">${skill}</span>`).join('')}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+// Template 10 Renderer (Color Sidebar - grid layout with colored sidebar)
+export const renderTemplate10 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, certifications, languages } = data;
+  
+  const nameInitials = (personalDetails.name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: white;
+            margin: 0;
+            padding: 15mm 10mm;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            position: relative;
+            overflow: hidden;
+        }
+        .top-decoration {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 130px;
+            display: flex;
+        }
+        .stripe { height: 100%; transform: skewX(-20deg); }
+        .stripe1 { width: 35%; background: #a8b4c4; margin-left: -50px; }
+        .stripe2 { width: 30%; background: #b5a589; }
+        .stripe3 { width: 35%; background: #4a5f73; }
+        .sidebar {
+            background: white;
+            padding: 80px 30px 30px 30px;
+            position: relative;
+            z-index: 1;
+        }
+        .profile-photo {
+            width: 220px;
+            height: 280px;
+            background: linear-gradient(135deg, #4a5f73 0%, #2c5f73 100%);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            color: white;
+            font-weight: bold;
+        }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            color: #2d3e4a;
+            letter-spacing: 1px;
+        }
+        .sidebar-content-text { font-size: 10px; line-height: 1.5; color: #4a4a4a; }
+        .sidebar { overflow-y: auto; overflow-x: hidden; height: 100%; }
+        .main-content {
+            padding: 80px 40px 40px 40px;
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .main-content-wrapper {
+            height: calc(297mm - 140px);
+            max-height: calc(297mm - 140px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .name { font-size: 36px; font-weight: bold; color: #2d3e4a; margin-bottom: 8px; }
+        .job-title { font-size: 16px; color: #4a5f73; margin-bottom: 15px; }
+        .section { margin-bottom: 20px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #2d3e4a;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4a5f73;
+        }
+        .section-content { font-size: 11px; line-height: 1.6; color: #4a4a4a; }
+        .work-entry, .education-entry { margin-bottom: 12px; }
+        .work-role { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .work-company { font-size: 11px; margin-bottom: 2px; }
+        .work-dates { font-size: 10px; color: #666; margin-bottom: 4px; }
+        .work-bullets { margin-left: 15px; font-size: 10px; line-height: 1.4; }
+        .work-bullets li { margin-bottom: 3px; }
+        .skill-item { display: block; margin-bottom: 4px; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="top-decoration">
+            <div class="stripe stripe1"></div>
+            <div class="stripe stripe2"></div>
+            <div class="stripe stripe3"></div>
+        </div>
+        <div class="sidebar">
+            <div class="profile-photo">${nameInitials}</div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Contact</div>
+                <div class="sidebar-content-text">
+                    ${personalDetails.phone ? `<div style="margin-bottom: 5px;">${personalDetails.phone}</div>` : ''}
+                    ${personalDetails.email ? `<div style="margin-bottom: 5px;">${personalDetails.email}</div>` : ''}
+                    ${personalDetails.location ? `<div style="margin-bottom: 5px;">${personalDetails.location}</div>` : ''}
+                    ${personalDetails.linkedin ? `<div style="margin-bottom: 5px;">${personalDetails.linkedin}</div>` : ''}
+                </div>
+            </div>
+            ${education && education.length > 0 ? `
+            <div class="sidebar-section">
+                <div class="sidebar-title">Education</div>
+                <div class="sidebar-content-text">
+                    ${education.map(edu => `
+                        <div style="margin-bottom: 12px;">
+                            <div style="font-weight: bold;">${edu.degree}</div>
+                            <div>${edu.institution}</div>
+                            <div style="font-size: 9px; color: #666;">${edu.years}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            ${skills && skills.length > 0 ? `
+            <div class="sidebar-section">
+                <div class="sidebar-title">Skills</div>
+                <div class="sidebar-content-text">
+                    ${skills.map(skill => `<div class="skill-item">${skill}</div>`).join('')}
+                </div>
+            </div>
+            ` : ''}
+        </div>
+        <div class="main-content">
+            <div class="main-content-wrapper">
+            <div class="name">${personalDetails.name || ''}</div>
+            <div class="job-title">${personalDetails.title || ''}</div>
+            ${summary ? `
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="section-content">${summary}</div>
+            </div>
+            ` : ''}
+            ${experience && experience.length > 0 ? `
+            <div class="section">
+                <div class="section-title">Experience</div>
+                <div class="section-content">
+                    ${experience.map(exp => `
+                        <div class="work-entry">
+                            <div class="work-role">${exp.role}</div>
+                            <div class="work-company">${exp.company}</div>
+                            <div class="work-dates">${exp.years}</div>
+                            ${exp.bullets && exp.bullets.length > 0 ? `
+                                <ul class="work-bullets">
+                                    ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            ${projects && projects.length > 0 ? `
+            <div class="section">
+                <div class="section-title">Projects</div>
+                <div class="section-content">
+                    ${projects.map(proj => `
+                        <div class="work-entry">
+                            <div class="work-role">${proj.title}</div>
+                            <div class="work-company">${proj.description}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+
+// Template 12 Renderer (Creative Layout - grid with dark blue sidebar)
+export const renderTemplate12 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, certifications, languages } = data;
+  
+  const nameInitials = (personalDetails.name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body {
+            font-family: 'Segoe UI', 'Open Sans', Arial, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: white;
+            margin: 0;
+            padding: 15mm 0;
+            display: grid;
+            grid-template-columns: 315px 1fr;
+            overflow: hidden;
+            position: relative;
+        }
+        .sidebar {
+            background: #1e3d52;
+            color: white;
+            padding: 0 10mm;
+        }
+        .profile-section {
+            padding: 50px 40px 30px 40px;
+            text-align: center;
+        }
+        .profile-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a90a4 0%, #2c5f73 100%);
+            margin: 0 auto 30px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            color: white;
+            font-weight: bold;
+            border: 8px solid white;
+        }
+        .name { font-size: 28px; font-weight: bold; color: white; margin-bottom: 8px; }
+        .job-title { font-size: 14px; color: #a0c4d0; margin-bottom: 20px; }
+        .sidebar-content { padding: 0 40px 40px 40px; overflow-y: auto; overflow-x: hidden; height: calc(297mm - 280px); max-height: calc(297mm - 280px); }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+        }
+        .sidebar-content-text { font-size: 11px; line-height: 1.5; }
+        .sidebar { overflow-y: auto; overflow-x: hidden; height: 100%; }
+        .main-content {
+            padding: 50px 40px 40px 40px;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .main-content-wrapper {
+            height: calc(297mm - 90px);
+            max-height: calc(297mm - 90px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .section { margin-bottom: 20px; }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #1e3d52;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #1e3d52;
+        }
+        .section-content { font-size: 11px; line-height: 1.6; color: #4a4a4a; }
+        .work-entry, .education-entry { margin-bottom: 12px; }
+        .work-role { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .work-company { font-size: 11px; margin-bottom: 2px; }
+        .work-dates { font-size: 10px; color: #666; margin-bottom: 4px; }
+        .work-bullets { margin-left: 15px; font-size: 10px; line-height: 1.4; }
+        .work-bullets li { margin-bottom: 3px; }
+        .contact-item { margin-bottom: 6px; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="sidebar">
+            <div class="profile-section">
+                <div class="profile-photo">${nameInitials}</div>
+                <div class="name">${personalDetails.name || ''}</div>
+                <div class="job-title">${personalDetails.title || ''}</div>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Contact</div>
+                    <div class="sidebar-content-text">
+                        ${personalDetails.phone ? `<div class="contact-item">${personalDetails.phone}</div>` : ''}
+                        ${personalDetails.email ? `<div class="contact-item">${personalDetails.email}</div>` : ''}
+                        ${personalDetails.location ? `<div class="contact-item">${personalDetails.location}</div>` : ''}
+                        ${personalDetails.linkedin ? `<div class="contact-item">${personalDetails.linkedin}</div>` : ''}
+                    </div>
+                </div>
+                ${education && education.length > 0 ? `
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Education</div>
+                    <div class="sidebar-content-text">
+                        ${education.map(edu => `
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-weight: bold;">${edu.degree}</div>
+                                <div>${edu.institution}</div>
+                                <div style="font-size: 10px; opacity: 0.8;">${edu.years}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${skills && skills.length > 0 ? `
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Skills</div>
+                    <div class="sidebar-content-text">
+                        ${skills.map(skill => `<div style="margin-bottom: 5px;">${skill}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="main-content-wrapper">
+            ${summary ? `
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="section-content">${summary}</div>
+            </div>
+            ` : ''}
+            ${experience && experience.length > 0 ? `
+            <div class="section">
+                <div class="section-title">Experience</div>
+                <div class="section-content">
+                    ${experience.map(exp => `
+                        <div class="work-entry">
+                            <div class="work-role">${exp.role}</div>
+                            <div class="work-company">${exp.company}</div>
+                            <div class="work-dates">${exp.years}</div>
+                            ${exp.bullets && exp.bullets.length > 0 ? `
+                                <ul class="work-bullets">
+                                    ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            ${projects && projects.length > 0 ? `
+            <div class="section">
+                <div class="section-title">Projects</div>
+                <div class="section-content">
+                    ${projects.map(proj => `
+                        <div class="work-entry">
+                            <div class="work-role">${proj.title}</div>
+                            <div class="work-company">${proj.description}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+// Template 14 Renderer (Startup Bold - two-column with initials background)
+export const renderTemplate14 = (data: CVData): string => {
+  const { personalDetails, summary, experience, education, skills, projects, certifications, languages } = data;
+  
+  const nameInitials = (personalDetails.name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        .cv-container {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: white;
+            margin: 0;
+            padding: 15mm 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #666;
+            border-top: 2px solid #666;
+            padding-top: 15px;
+            position: relative;
+        }
+        .initials-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 180px;
+            font-weight: bold;
+            color: rgba(230, 230, 230, 0.3);
+            font-style: italic;
+            z-index: 0;
+            letter-spacing: 10px;
+        }
+        .header-content { position: relative; z-index: 1; }
+        .name {
+            font-size: 36px;
+            font-weight: 500;
+            color: #4a4a4a;
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            margin-bottom: 8px;
+        }
+        .job-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: 400;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 0.7fr 1.3fr;
+            gap: 25px;
+            height: calc(297mm - 150px);
+            max-height: calc(297mm - 150px);
+            overflow: hidden;
+            padding: 0 10mm;
+        }
+        .left-column { 
+            padding-right: 20px; 
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+        }
+        .right-column { 
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+        }
+        .section { margin-bottom: 18px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #4a4a4a;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #ccc;
+        }
+        .section-content { font-size: 11px; line-height: 1.6; color: #4a4a4a; }
+        .work-entry, .education-entry { margin-bottom: 12px; }
+        .work-role { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .work-company { font-size: 11px; margin-bottom: 2px; }
+        .work-dates { font-size: 10px; color: #666; margin-bottom: 4px; }
+        .work-bullets { margin-left: 15px; font-size: 10px; line-height: 1.4; }
+        .work-bullets li { margin-bottom: 3px; }
+        .skill-item { display: block; margin-bottom: 4px; font-size: 11px; }
+        .contact-item { margin-bottom: 6px; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="cv-container">
+        <div class="header">
+            <div class="initials-bg">${nameInitials}</div>
+            <div class="header-content">
+                <div class="name">${personalDetails.name || ''}</div>
+                <div class="job-title">${personalDetails.title || ''}</div>
+            </div>
+        </div>
+        <div class="content-wrapper">
+            <div class="left-column">
+                ${summary ? `
+                <div class="section">
+                    <div class="section-title">Summary</div>
+                    <div class="section-content">${summary}</div>
+                </div>
+                ` : ''}
+                <div class="section">
+                    <div class="section-title">Contact</div>
+                    <div class="section-content">
+                        ${personalDetails.phone ? `<div class="contact-item">${personalDetails.phone}</div>` : ''}
+                        ${personalDetails.email ? `<div class="contact-item">${personalDetails.email}</div>` : ''}
+                        ${personalDetails.location ? `<div class="contact-item">${personalDetails.location}</div>` : ''}
+                        ${personalDetails.linkedin ? `<div class="contact-item">${personalDetails.linkedin}</div>` : ''}
+                    </div>
+                </div>
+                ${education && education.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    <div class="section-content">
+                        ${education.map(edu => `
+                            <div class="education-entry">
+                                <div style="font-weight: bold;">${edu.degree}</div>
+                                <div>${edu.institution}</div>
+                                <div style="font-size: 10px; color: #666;">${edu.years}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${skills && skills.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Skills</div>
+                    <div class="section-content">
+                        ${skills.map(skill => `<div class="skill-item">${skill}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            <div class="right-column">
+                ${experience && experience.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Experience</div>
+                    <div class="section-content">
+                        ${experience.map(exp => `
+                            <div class="work-entry">
+                                <div class="work-role">${exp.role}</div>
+                                <div class="work-company">${exp.company}</div>
+                                <div class="work-dates">${exp.years}</div>
+                                ${exp.bullets && exp.bullets.length > 0 ? `
+                                    <ul class="work-bullets">
+                                        ${exp.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${projects && projects.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Projects</div>
+                    <div class="section-content">
+                        ${projects.map(proj => `
+                            <div class="work-entry">
+                                <div class="work-role">${proj.title}</div>
+                                <div class="work-company">${proj.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+};
+
+
+// Template 11 Renderer - Academic Single Column
+export const renderTemplate = (data: CVData): string => {
   const { 
     personalDetails, 
     education, 
@@ -1091,9 +2493,8 @@ function renderTemplate5(data: CVData): string {
 </html>`;
 };
 
-
-function renderTemplate6(data: CVData): string {
-  // Template 6: Two-Column Modern Layout
+// Template 11 Renderer - Two-Column Modern Layout
+export const renderTemplate = (data: CVData): string => {
   const { 
     personalDetails, 
     about,
@@ -1809,406 +3210,25 @@ function renderResponsiveTemplate3(data: CVData): string {
 </html>`;
 }
 
-function renderResponsiveTemplate5(data: CVData): string {
-  // Academic Single Column - Responsive Version
-  const formatBullets = (bullets: string[]) => bullets.filter(Boolean).map(b => `<li class="list-disc ml-5 mb-1">${htmlEscape(b)}</li>`).join('');
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Computer+Modern:wght@400;700&display=swap');
-    body { font-family: 'Computer Modern', serif; }
-  </style>
-</head>
-<body class="bg-white">
-  <div class="max-w-4xl mx-auto p-8">
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-normal tracking-wider mb-2">${htmlEscape(data.personalDetails.name)}</h1>
-      <div class="text-sm text-gray-600 space-x-2">
-        ${data.personalDetails.email ? `<a href="mailto:${htmlEscape(data.personalDetails.email)}" class="hover:text-blue-600">${htmlEscape(data.personalDetails.email)}</a>` : ''}
-        ${data.personalDetails.phone ? `<span>| ${htmlEscape(data.personalDetails.phone)}</span>` : ''}
-        ${data.personalDetails.location ? `<span>| ${htmlEscape(data.personalDetails.location)}</span>` : ''}
-      </div>
-    </div>
-
-    <!-- Content Sections -->
-    <div class="space-y-6">
-      ${data.education && data.education.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Education</h2>
-        ${data.education.map(edu => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(edu.institution)}</h3>
-              <span class="text-sm italic">${htmlEscape(edu.period || edu.years)}</span>
-            </div>
-            <p class="italic text-sm mb-2">${htmlEscape(edu.degree)}</p>
-            ${edu.gpa ? `<p class="text-sm">${htmlEscape(edu.gpa)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.experience && data.experience.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Experience</h2>
-        ${data.experience.map(exp => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(exp.title || exp.role)}</h3>
-              <span class="text-sm italic">${htmlEscape(exp.period || exp.years)}</span>
-            </div>
-            <p class="italic text-sm mb-3">${htmlEscape(exp.company)}</p>
-            ${exp.responsibilities && exp.responsibilities.length > 0 ? 
-              `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` : 
-              exp.bullets && exp.bullets.length > 0 ?
-              `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.projects && data.projects.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Projects</h2>
-        ${data.projects.map(project => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(project.title)}</h3>
-              ${project.technologies ? `<span class="text-sm italic">${htmlEscape(project.technologies)}</span>` : ''}
-            </div>
-            ${project.description ? `<p class="text-sm mb-3">${htmlEscape(project.description)}</p>` : ''}
-            ${project.responsibilities && project.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.skills && data.skills.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Skills</h2>
-        <div class="text-sm leading-relaxed">${data.skills.map(s => htmlEscape(s)).join(' • ')}</div>
-      </section>
-      ` : ''}
-
-      ${data.certifications && data.certifications.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Certifications</h2>
-        ${data.certifications.map(cert => `
-          <div class="mb-2">
-            <p class="text-sm">${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</p>
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.accomplishments && data.accomplishments.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Achievements</h2>
-        <ul class="text-sm leading-relaxed">
-          ${data.accomplishments.map(acc => `<li class="list-disc ml-5 mb-1">${htmlEscape(acc)}</li>`).join('')}
-        </ul>
-      </section>
-      ` : ''}
-
-      ${data.awards && data.awards.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Awards</h2>
-        ${data.awards.map(award => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(award.title)}</h3>
-              ${award.year ? `<span class="text-sm italic">(${htmlEscape(award.year)})</span>` : ''}
-            </div>
-            ${award.organization ? `<p class="italic text-sm mb-2">${htmlEscape(award.organization)}</p>` : ''}
-            ${award.description ? `<p class="text-sm">${htmlEscape(award.description)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.publications && data.publications.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Publications</h2>
-        ${data.publications.map(pub => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(pub.title)}</h3>
-              ${pub.year ? `<span class="text-sm italic">(${htmlEscape(pub.year)})</span>` : ''}
-            </div>
-            ${pub.journal ? `<p class="italic text-sm mb-2">${htmlEscape(pub.journal)}</p>` : ''}
-            ${pub.description ? `<p class="text-sm">${htmlEscape(pub.description)}</p>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.languages && data.languages.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Languages</h2>
-        <div class="text-sm leading-relaxed">
-          ${data.languages.map(lang => typeof lang === 'string' ? lang : `${lang.language || ''} (${lang.proficiency || ''})`).join(', ')}
-        </div>
-      </section>
-      ` : ''}
-
-      ${data.interests && data.interests.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Interests</h2>
-        <div class="text-sm leading-relaxed">
-          ${data.interests.join(', ')}
-        </div>
-      </section>
-      ` : ''}
-
-      ${data.volunteerWork && data.volunteerWork.length > 0 ? `
-      <section>
-        <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Volunteer Work</h2>
-        ${data.volunteerWork.map(vol => `
-          <div class="mb-6">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
-              ${vol.duration ? `<span class="text-sm italic">${htmlEscape(vol.duration)}</span>` : ''}
-            </div>
-            <p class="italic text-sm mb-3">${htmlEscape(vol.organization)}</p>
-            ${vol.description ? `<p class="text-sm mb-3">${htmlEscape(vol.description)}</p>` : ''}
-            ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(vol.responsibilities)}</ul>` : ''}
-          </div>
-        `).join('')}
-      </section>
-      ` : ''}
-
-      ${data.additionalSections && data.additionalSections.length > 0 ? data.additionalSections.map(section => `
-        <section>
-          <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">${htmlEscape(section.sectionName)}</h2>
-          <p class="text-sm leading-relaxed">${htmlEscape(section.content)}</p>
-        </section>
-      `).join('') : ''}
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-function renderResponsiveTemplate6(data: CVData): string {
-  // Two-Column Modern Layout - Responsive Version
-  const formatBullets = (bullets: string[]) => bullets.filter(Boolean).map(b => `<li class="list-disc ml-5 mb-1">${htmlEscape(b)}</li>`).join('');
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&display=swap');
-    body { font-family: Georgia, serif; }
-  </style>
-</head>
-<body class="bg-white">
-  <div class="max-w-6xl mx-auto p-8">
-    <!-- Header -->
-    <div class="text-center mb-8 border-b-2 border-gray-800 pb-6">
-      <h1 class="text-5xl tracking-widest font-normal text-gray-900">${htmlEscape(data.personalDetails.name)}</h1>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <!-- Left Column -->
-      <div class="md:col-span-1 space-y-6">
-        ${data.personalDetails.phone || data.personalDetails.location || data.personalDetails.email ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Contact</h2>
-          <div class="space-y-2 text-sm">
-            ${data.personalDetails.phone ? `<div class="flex items-start"><span class="mr-2">📞</span> ${htmlEscape(data.personalDetails.phone)}</div>` : ''}
-            ${data.personalDetails.location ? `<div class="flex items-start"><span class="mr-2">📍</span> ${htmlEscape(data.personalDetails.location)}</div>` : ''}
-            ${data.personalDetails.email ? `<div class="flex items-start"><span class="mr-2">✉</span> ${htmlEscape(data.personalDetails.email)}</div>` : ''}
-          </div>
-        </section>
-        ` : ''}
-
-        ${data.education && data.education.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Education</h2>
-          ${data.education.map(edu => `
-            <div class="mb-4">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(edu.institution)}</h3>
-              <p class="text-sm text-gray-600">${htmlEscape(edu.degree)} - ${htmlEscape(edu.period || edu.years)}</p>
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.skills && data.skills.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Skills</h2>
-          <ul class="text-sm space-y-1">
-            ${data.skills.map(skill => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(skill)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.certifications && data.certifications.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Certification</h2>
-          <ul class="text-sm space-y-1">
-            ${data.certifications.map(cert => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(typeof cert === 'string' ? cert : (cert.name || cert.title || ''))}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.languages && data.languages.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Languages</h2>
-          <ul class="text-sm space-y-1">
-            ${data.languages.map(lang => `<li class="flex items-start"><span class="mr-2">•</span> ${typeof lang === 'string' ? lang : `${lang.language || ''} - ${lang.proficiency || ''}`}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.interests && data.interests.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Interests</h2>
-          <div class="text-sm leading-relaxed">
-            ${data.interests.join(', ')}
-          </div>
-        </section>
-        ` : ''}
-
-        ${data.volunteerWork && data.volunteerWork.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Volunteer Work</h2>
-          ${data.volunteerWork.map(vol => `
-            <div class="mb-4">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${htmlEscape(vol.organization)}</p>
-              ${vol.description ? `<p class="text-sm leading-relaxed">${htmlEscape(vol.description)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.additionalInfo && data.additionalInfo.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Additional Information</h2>
-          <ul class="text-sm space-y-1">
-            ${data.additionalInfo.map(info => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(info)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-      </div>
-
-      <!-- Right Column -->
-      <div class="md:col-span-2 space-y-6">
-        ${data.summary ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">About Me</h2>
-          <p class="text-sm leading-relaxed text-gray-700">${htmlEscape(data.summary)}</p>
-        </section>
-        ` : ''}
-
-        ${data.experience && data.experience.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Work Experience</h2>
-          ${data.experience.map(exp => `
-            <div class="mb-6">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(exp.title || exp.role)}</h3>
-              <p class="text-sm text-gray-600 mb-3">${htmlEscape(exp.company)} ${exp.period || exp.years ? `(${htmlEscape(exp.period || exp.years)})` : ''}</p>
-              ${exp.responsibilities && exp.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(exp.responsibilities)}</ul>` :
-                exp.bullets && exp.bullets.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(exp.bullets)}</ul>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.projects && data.projects.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Projects</h2>
-          ${data.projects.map(project => `
-            <div class="mb-6">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(project.title)}</h3>
-              ${project.organization ? `<p class="text-sm text-gray-600 mb-2">${htmlEscape(project.organization)}</p>` : ''}
-              ${project.description ? `<p class="text-sm leading-relaxed mb-2">${htmlEscape(project.description)}</p>` : ''}
-              ${project.responsibilities && project.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.accomplishments && data.accomplishments.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Achievements</h2>
-          <ul class="text-sm space-y-1">
-            ${data.accomplishments.map(acc => `<li class="flex items-start"><span class="mr-2">•</span> ${htmlEscape(acc)}</li>`).join('')}
-          </ul>
-        </section>
-        ` : ''}
-
-        ${data.awards && data.awards.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Awards</h2>
-          ${data.awards.map(award => `
-            <div class="mb-3">
-              <p class="text-sm leading-relaxed">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
-              ${award.organization ? `<p class="text-sm text-gray-600">${htmlEscape(award.organization)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.publications && data.publications.length > 0 ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Publications</h2>
-          ${data.publications.map(pub => `
-            <div class="mb-3">
-              <p class="text-sm leading-relaxed">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
-              ${pub.organization ? `<p class="text-sm text-gray-600">${htmlEscape(pub.organization)}</p>` : ''}
-            </div>
-          `).join('')}
-        </section>
-        ` : ''}
-
-        ${data.references ? `
-        <section>
-          <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">References</h2>
-          <p class="text-sm leading-relaxed">${htmlEscape(data.references)}</p>
-        </section>
-        ` : ''}
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
 // Main renderer function - supports both PDF mode (default) and view mode
 export function renderCVTemplate(templateId: string, data: CVData, mode: 'view' | 'pdf' = 'pdf'): string {
   // Use responsive templates for view mode
-if (mode === 'view') {
-  switch (templateId) {
-    case 'template-1':
-      return renderResponsiveTemplate1(data);
-    case 'template-2':
-      return renderResponsiveTemplate2(data);
-    case 'template-3':
-      return renderResponsiveTemplate3(data);
-    case 'template-5':
-      return renderResponsiveTemplate5(data);
-    case 'template-6':
-      return renderResponsiveTemplate6(data);
-    default:
-      return renderResponsiveTemplate1(data);
+  if (mode === 'view') {
+    switch (templateId) {
+      case 'template-1':
+        return renderResponsiveTemplate1(data);
+      case 'template-2':
+        return renderResponsiveTemplate2(data);
+      case 'template-3':
+        return renderResponsiveTemplate3(data);
+      case 'template-4':
+        return renderResponsiveTemplate2(data); // Use modern template for template-4
+      case 'template-5':
+        return renderResponsiveTemplate1(data); // Use professional template for template-5
+      default:
+        return renderResponsiveTemplate1(data); // Default fallback
+    }
   }
-}
   
   // Use PDF-optimized templates for PDF mode (default)
   switch (templateId) {
@@ -2218,11 +3238,25 @@ if (mode === 'view') {
       return renderTemplate2(data);
     case 'template-3':
       return renderTemplate3(data);
+    case 'template-4':
+      return renderTemplate4(data);
     case 'template-5':
       return renderTemplate5(data);
     case 'template-6':
       return renderTemplate6(data);
+    case 'template-7':
+      return renderTemplate7(data);
+    case 'template-8':
+      return renderTemplate8(data);
+    case 'template-9':
+      return renderTemplate9(data);
+    case 'template-10':
+      return renderTemplate10(data);
     default:
       return renderTemplate1(data); // Default fallback
   }
 }
+
+
+
+

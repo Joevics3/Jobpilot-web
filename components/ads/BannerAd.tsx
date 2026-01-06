@@ -124,8 +124,6 @@ export default function BannerAd({
     <div
       className={`${className}`}
       style={{
-        paddingTop: '3px',
-        paddingBottom: '3px',
         ...style
       }}
     >

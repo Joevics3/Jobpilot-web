@@ -29,10 +29,11 @@ export default function InterviewSessionPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    if (session && session.chat.length > 0) {
+    const chat = session?.chat || [];
+    if (session && chat.length > 0) {
       scrollToBottom();
       // Auto-start TTS for the latest question if in auto mode
-      const latestMessage = session.chat[session.chat.length - 1];
+      const latestMessage = chat[chat.length - 1];
       if (latestMessage.type === 'question' && autoMode && !isWaitingForResponse) {
         playLatestQuestion();
       }
@@ -43,7 +44,12 @@ export default function InterviewSessionPage() {
     try {
       const foundSession = InterviewPrepService.getSessionById(sessionId);
       if (foundSession) {
-        setSession(foundSession);
+        // Ensure chat array exists (migration for old sessions)
+        const sessionWithChat = {
+          ...foundSession,
+          chat: foundSession.chat || [],
+        };
+        setSession(sessionWithChat);
       } else {
         router.push('/tools/interview');
       }
@@ -64,7 +70,8 @@ export default function InterviewSessionPage() {
   const playLatestQuestion = async () => {
     if (!session) return;
 
-    const latestQuestion = session.chat.filter(msg => msg.type === 'question').pop();
+    const chat = session.chat || [];
+    const latestQuestion = chat.filter(msg => msg.type === 'question').pop();
     if (!latestQuestion) return;
 
     try {
@@ -84,23 +91,41 @@ export default function InterviewSessionPage() {
   const startRecording = async () => {
     try {
       setIsRecording(true);
-      await SpeechUtils.startListening((result) => {
-        // Extract transcript from SpeechRecognitionResult object
-        const transcript = result.transcript || '';
-        if (transcript) {
-          if (result.isFinal) {
-            // Final result: append to existing input
-            setUserInput(prev => prev + (prev ? ' ' : '') + transcript.trim());
-          } else {
-            // Interim result: update the last part
-            setUserInput(prev => {
-              // Remove any previous interim text and add new one
-              const parts = prev.split(/\s+/);
-              return parts.slice(0, -1).join(' ') + (parts.length > 1 ? ' ' : '') + transcript;
-            });
+      const success = SpeechUtils.startListening(
+        (result) => {
+          // Extract transcript from SpeechRecognitionResult object
+          const transcript = result.transcript || '';
+          if (transcript) {
+            if (result.isFinal) {
+              // Final result: append to existing input
+              setUserInput(prev => {
+                const trimmed = transcript.trim();
+                return prev ? prev + ' ' + trimmed : trimmed;
+              });
+            } else {
+              // Interim result: replace the last interim part
+              setUserInput(prev => {
+                // Keep only the final parts, add new interim
+                const finalParts = prev.split(/\s+/).filter((_, i, arr) => i < arr.length - 1 || !prev.endsWith(' '));
+                return finalParts.join(' ') + (finalParts.length > 0 ? ' ' : '') + transcript;
+              });
+            }
           }
+        },
+        (error) => {
+          console.error('Speech recognition error:', error);
+          alert(error);
+          setIsRecording(false);
+        },
+        () => {
+          // On end callback
+          setIsRecording(false);
         }
-      });
+      );
+      
+      if (!success) {
+        setIsRecording(false);
+      }
     } catch (error) {
       console.error('Error starting recording:', error);
       setIsRecording(false);
@@ -145,7 +170,7 @@ export default function InterviewSessionPage() {
 
     const updatedSession = {
       ...session,
-      chat: [...session.chat, userMessage],
+      chat: [...(session.chat || []), userMessage],
     };
 
     setSession(updatedSession);
@@ -160,12 +185,13 @@ export default function InterviewSessionPage() {
     try {
       const response = await InterviewPrepService.processChatResponse(updatedSession, userMessage.content);
 
-      // Add AI feedback
+      // Add AI Coach feedback with score
       const feedbackMessage: ChatMessage = {
         id: `feedback_${Date.now()}`,
         type: 'feedback',
-        content: response.feedback,
+        content: response.coachFeedback.feedback,
         timestamp: Date.now(),
+        score: response.coachFeedback.score,
       };
 
       updatedSession.chat.push(feedbackMessage);
@@ -242,9 +268,9 @@ export default function InterviewSessionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 flex-shrink-0">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -275,15 +301,15 @@ export default function InterviewSessionPage() {
         </div>
       </div>
 
-      {/* Chat Interface */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Chat Messages */}
+      {/* Chat Interface - Takes remaining space */}
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
+          {/* Chat Messages - Scrollable area */}
           <div
             ref={chatContainerRef}
-            className="h-96 overflow-y-auto p-6 space-y-6"
+            className="flex-1 overflow-y-auto p-6 space-y-6"
           >
-            {session.chat.map((message) => (
+            {(session.chat || []).map((message) => (
               <div key={message.id} className={`flex items-start gap-4 ${message.type === 'answer' ? 'justify-end' : ''}`}>
                 {message.type !== 'answer' && (
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -306,6 +332,34 @@ export default function InterviewSessionPage() {
                         ? 'bg-green-50 border border-green-200 ml-auto'
                         : 'bg-yellow-50 border border-yellow-200'
                   }`}>
+                    {message.type === 'feedback' && message.score !== undefined && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`text-3xl font-bold ${
+                            message.score >= 80 ? 'text-green-600' :
+                            message.score >= 60 ? 'text-blue-600' :
+                            message.score >= 40 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {message.score}%
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-gray-700 mb-1">Answer Score</div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  message.score >= 80 ? 'bg-green-600' :
+                                  message.score >= 60 ? 'bg-blue-600' :
+                                  message.score >= 40 ? 'bg-yellow-600' :
+                                  'bg-red-600'
+                                }`}
+                                style={{ width: `${message.score}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
@@ -334,64 +388,67 @@ export default function InterviewSessionPage() {
             )}
           </div>
 
-          {/* Input Area */}
+          {/* Input Area - Fixed at bottom */}
           {!session.completed && (
-            <div className="border-t border-gray-200 p-6">
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <textarea
-                    ref={inputRef}
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Type your answer here... (Press Enter to send)"
-                    className="w-full min-h-[80px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    disabled={isWaitingForResponse}
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={togglePlayback}
-                    disabled={!session.chat.some(msg => msg.type === 'question')}
-                    className={`p-3 rounded-lg transition-colors ${
-                      isPlaying
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    title={isPlaying ? 'Stop playback' : 'Play latest question'}
-                  >
-                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                  </button>
-                  <button
-                    onClick={toggleRecording}
-                    className={`p-3 rounded-lg transition-colors ${
-                      isRecording
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-gray-600 text-white hover:bg-gray-700'
-                    }`}
-                    title={isRecording ? 'Stop recording' : 'Start voice input'}
-                  >
-                    {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-                  </button>
-                  <button
-                    onClick={sendMessage}
-                    disabled={!userInput.trim() || isWaitingForResponse}
-                    className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title="Send message"
-                  >
-                    <Send size={20} />
-                  </button>
+            <div className="border-t border-gray-200 bg-white flex-shrink-0">
+              {/* Textbox - Above buttons */}
+              <div className="p-4 pb-2">
+                <textarea
+                  ref={inputRef}
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your answer here... (Press Enter to send)"
+                  className="w-full min-h-[80px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  disabled={isWaitingForResponse}
+                />
+                <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
+                  <span>Press Enter to send • Auto mode: {autoMode ? 'TTS → STT' : 'Manual control'}</span>
+                  {isRecording && <span className="text-red-600 animate-pulse">● Recording...</span>}
                 </div>
               </div>
-              <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
-                <span>Press Enter to send • Auto mode: {autoMode ? 'TTS → STT' : 'Manual control'}</span>
-                {isRecording && <span className="text-red-600 animate-pulse">● Recording...</span>}
+              {/* Buttons - Horizontal line */}
+              <div className="px-4 pb-4 flex items-center gap-3">
+                <button
+                  onClick={togglePlayback}
+                  disabled={!(session.chat || []).some(msg => msg.type === 'question')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
+                    isPlaying
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={isPlaying ? 'Stop playback' : 'Play latest question'}
+                >
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  <span className="text-sm font-medium">{isPlaying ? 'Stop' : 'Play'}</span>
+                </button>
+                <button
+                  onClick={toggleRecording}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
+                    isRecording
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                  }`}
+                  title={isRecording ? 'Stop recording' : 'Start voice input'}
+                >
+                  {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                  <span className="text-sm font-medium">{isRecording ? 'Stop' : 'Record'}</span>
+                </button>
+                <button
+                  onClick={sendMessage}
+                  disabled={!userInput.trim() || isWaitingForResponse}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Send message"
+                >
+                  <Send size={20} />
+                  <span className="text-sm font-medium">Send</span>
+                </button>
               </div>
             </div>
           )}
 
           {session.completed && (
-            <div className="border-t border-gray-200 p-6 bg-green-50">
+            <div className="border-t border-gray-200 p-6 bg-green-50 flex-shrink-0">
               <div className="text-center">
                 <CheckCircle size={48} className="text-green-600 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Interview Complete!</h3>
