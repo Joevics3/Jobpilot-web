@@ -1075,9 +1075,9 @@ function renderTemplate6(data: CVData): string {
     awards, 
     publications, 
     volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo
+    languages,
+    interests,
+    additionalSections
   } = data;
 
   return `<!DOCTYPE html>
