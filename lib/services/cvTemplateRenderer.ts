@@ -1064,19 +1064,19 @@ function renderTemplate5(data: CVData): string {
 
 function renderTemplate6(data: CVData): string {
   // Template 6: Two-Column Modern Layout
-  const {
-    personalDetails,
-    about,
-    education,
-    experience,
-    projects,
+  const { 
+    personalDetails, 
+    summary,
+    education, 
+    experience, 
+    projects, 
     skills,
-    certifications,
-    awards,
-    publications,
-    volunteerWork,
-    languages,
-    interests,
+    certifications, 
+    awards, 
+    publications, 
+    volunteerWork, 
+    languages, 
+    interests, 
     additionalInfo
   } = data;
 
@@ -1403,10 +1403,10 @@ function renderTemplate6(data: CVData): string {
             <!-- Right Column -->
             <div class="right-column">
                 <!-- About Me -->
-                ${about ? `
+                ${summary ? `
                 <div class="section">
                     <h2 class="section-title">ABOUT ME</h2>
-                    <p class="about-text">${about}</p>
+                    <p class="about-text">${summary}</p>
                 </div>
                 ` : ''}
 
