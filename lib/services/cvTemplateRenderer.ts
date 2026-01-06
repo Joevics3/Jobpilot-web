@@ -994,8 +994,7 @@ function renderTemplate5(data: CVData): string {
             ${awards.map(award => `
                 <div class="entry">
                     <div class="entry-title">${award.title || ''}</div>
-                    <div class="entry-subtitle">${award.organization || ''}</div>
-                    ${award.description ? `<div class="entry-description">${award.description}</div>` : ''}
+                    <div class="entry-subtitle">${award.issuer ? `${award.issuer}${award.year ? ` (${award.year})` : ''}` : award.year || ''}</div>
                 </div>
             `).join('')}
         </div>
@@ -1471,8 +1470,7 @@ function renderTemplate6(data: CVData): string {
                     ${awards.map(award => `
                         <div class="award-item">
                             <div class="work-title">${award.title || ''}</div>
-                            <div class="work-company">${award.organization || ''}</div>
-                            ${award.description ? `<p style="font-size: 10.5px; margin-top: 4px;">${award.description}</p>` : ''}
+                            <div class="work-company">${award.issuer ? `${award.issuer}${award.year ? ` (${award.year})` : ''}` : award.year || ''}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -1960,7 +1958,6 @@ function renderResponsiveTemplate5(data: CVData): string {
         ${data.awards.map(award => `
           <div class="mb-3">
             <p class="text-sm leading-relaxed">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
-            ${award.organization ? `<p class="text-sm text-gray-600">${htmlEscape(award.organization)}</p>` : ''}
           </div>
         `).join('')}
       </section>
@@ -2183,7 +2180,6 @@ function renderResponsiveTemplate6(data: CVData): string {
           ${data.awards.map(award => `
             <div class="mb-3">
               <p class="text-sm leading-relaxed">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
-              ${award.organization ? `<p class="text-sm text-gray-600">${htmlEscape(award.organization)}</p>` : ''}
             </div>
           `).join('')}
         </section>
