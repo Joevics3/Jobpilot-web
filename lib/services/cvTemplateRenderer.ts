@@ -1695,9 +1695,6 @@ function renderResponsiveTemplate1(data: CVData): string {
 </body>
 </html>`;
 }
-</body>
-</html>`;
-}
 
 function renderResponsiveTemplate2(data: CVData): string {
   const formatBullets = (bullets: string[]) => bullets.filter(Boolean).map(b => `<li class="list-disc ml-5 mb-1">${htmlEscape(b)}</li>`).join('');
