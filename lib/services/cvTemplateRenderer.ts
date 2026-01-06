@@ -697,19 +697,19 @@ function renderTemplate3(data: CVData): string {
 
 function renderTemplate5(data: CVData): string {
   // Template 5: Academic Single Column
-  const {
-    personalDetails,
-    education,
-    experience,
-    projects,
+  const { 
+    personalDetails, 
+    education, 
+    experience, 
+    projects, 
     skills,
     accomplishments,
-    certifications,
-    awards,
-    publications,
-    volunteerWork,
-    languages,
-    interests,
+    certifications, 
+    awards, 
+    publications, 
+    volunteerWork, 
+    languages, 
+    interests, 
     additionalSections
   } = data;
 
@@ -1019,13 +1019,9 @@ function renderTemplate5(data: CVData): string {
             <div class="section-title">Volunteer Work</div>
             ${volunteerWork.map(vol => `
                 <div class="entry">
-                    <div class="entry-title">${vol.title || vol.role || ''}</div>
-                    <div class="entry-subtitle">${vol.organization || ''}</div>
-                    ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${vol.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : ''}
+                    <div class="entry-title">${vol.role || ''}</div>
+                    <div class="entry-subtitle">${vol.organization}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                    ${vol.description ? `<div class="entry-description">${vol.description}</div>` : ''}
                 </div>
             `).join('')}
         </div>
@@ -1394,13 +1390,9 @@ function renderTemplate6(data: CVData): string {
                     <h2 class="section-title">VOLUNTEER WORK</h2>
                     ${volunteerWork.map(vol => `
                         <div class="volunteer-item">
-                            <div class="work-title">${vol.title || vol.role || ''}</div>
-                            <div class="work-company">${vol.organization || ''}</div>
-                            ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${vol.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                                </ul>
-                            ` : ''}
+                            <div class="work-title">${vol.role || ''}</div>
+                            <div class="work-company">${vol.organization}${vol.duration ? ` (${vol.duration})` : ''}</div>
+                            ${vol.description ? `<p style="font-size: 10.5px; margin-top: 4px;">${vol.description}</p>` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -1996,13 +1988,11 @@ function renderResponsiveTemplate5(data: CVData): string {
         ${data.volunteerWork.map(vol => `
           <div class="mb-6">
             <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
+              <h3 class="font-bold text-base">${htmlEscape(vol.role || 'Volunteer')}</h3>
               ${vol.duration ? `<span class="text-sm italic">${htmlEscape(vol.duration)}</span>` : ''}
             </div>
             <p class="italic text-sm mb-3">${htmlEscape(vol.organization)}</p>
             ${vol.description ? `<p class="text-sm mb-3">${htmlEscape(vol.description)}</p>` : ''}
-            ${vol.responsibilities && vol.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(vol.responsibilities)}</ul>` : ''}
           </div>
         `).join('')}
       </section>
@@ -2109,8 +2099,8 @@ function renderResponsiveTemplate6(data: CVData): string {
           <h2 class="text-xl tracking-widest font-semibold mb-4 text-gray-900 uppercase">Volunteer Work</h2>
           ${data.volunteerWork.map(vol => `
             <div class="mb-4">
-              <h3 class="font-semibold text-base mb-1">${htmlEscape(vol.title || vol.role || 'Volunteer')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${htmlEscape(vol.organization)}</p>
+              <h3 class="font-semibold text-base mb-1">${htmlEscape(vol.role || 'Volunteer')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${htmlEscape(vol.organization)}${vol.duration ? ` (${htmlEscape(vol.duration)})` : ''}</p>
               ${vol.description ? `<p class="text-sm leading-relaxed">${htmlEscape(vol.description)}</p>` : ''}
             </div>
           `).join('')}
@@ -2157,7 +2147,7 @@ function renderResponsiveTemplate6(data: CVData): string {
             <div class="mb-6">
               <h3 class="font-semibold text-base mb-1">${htmlEscape(project.title)}</h3>
               ${project.description ? `<p class="text-sm leading-relaxed mb-2">${htmlEscape(project.description)}</p>` : ''}
-            </div>
+      </div>
           `).join('')}
         </section>
         ` : ''}
