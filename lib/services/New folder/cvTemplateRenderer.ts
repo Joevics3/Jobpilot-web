@@ -792,6 +792,7 @@ function renderTemplate4(data: CVData): string {
 
         <div class="two-column-layout">
             <div class="left-column">
+                ${education && education.length > 0 ? `
                 <div class="section">
                     <div class="section-title">EDUCATION</div>
                     <div class="section-content">
@@ -804,6 +805,7 @@ function renderTemplate4(data: CVData): string {
                         `).join('')}
                     </div>
                 </div>
+                ` : ''}
 
                 <div class="section">
                     <div class="section-title">SKILLS</div>
