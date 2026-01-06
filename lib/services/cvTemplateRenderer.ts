@@ -960,16 +960,16 @@ function renderTemplate5(data: CVData): string {
         </div>
         ` : ''}
 
-        <!-- Achievements -->
-        ${achievements && achievements.length > 0 ? `
+        <!-- Accomplishments -->
+        ${accomplishments && accomplishments.length > 0 ? `
         <div class="section">
-            <div class="section-title">Achievements</div>
+            <div class="section-title">Accomplishments</div>
             <ul class="achievements-list">
-                ${achievements.map(achievement => {
-                    const formattedAchievement = achievement
+                ${accomplishments.map(accomplishment => {
+                    const formattedAccomplishment = accomplishment
                         .replace(/(\d+\+?)/g, '<strong>$1</strong>')
                         .replace(/(LeetCode|Codeforces|CodeChef|AtCoder|ICPC|Meta Hacker Cup|Smart India Hackathon|SIH)/g, '<strong>$1</strong>');
-                    return `<li>${formattedAchievement}</li>`;
+                    return `<li>${formattedAccomplishment}</li>`;
                 }).join('')}
             </ul>
         </div>
