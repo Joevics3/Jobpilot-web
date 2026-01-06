@@ -945,13 +945,8 @@ function renderTemplate5(data: CVData): string {
             <div class="section-title">Projects</div>
             ${projects.map(project => `
                 <div class="entry">
-                    <div class="entry-title">${project.title || ''} ${project.technologies ? `| <span style="font-style: italic; font-weight: 400;">${project.technologies}</span>` : ''}</div>
+                    <div class="entry-title">${project.title || ''}</div>
                     ${project.description ? `<div class="entry-subtitle">${project.description}</div>` : ''}
-                    ${project.responsibilities && project.responsibilities.length > 0 ? `
-                        <ul class="entry-list">
-                            ${project.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                        </ul>
-                    ` : ''}
                 </div>
             `).join('')}
         </div>
@@ -1468,12 +1463,7 @@ function renderTemplate6(data: CVData): string {
                     ${projects.map(project => `
                         <div class="project-item">
                             <div class="work-title">${project.title || ''}</div>
-                            <div class="work-company">${project.organization || project.description || ''}</div>
-                            ${project.responsibilities && project.responsibilities.length > 0 ? `
-                                <ul class="work-list">
-                                    ${project.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
-                                </ul>
-                            ` : ''}
+                            <div class="work-company">${project.description || ''}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -1935,11 +1925,8 @@ function renderResponsiveTemplate5(data: CVData): string {
           <div class="mb-6">
             <div class="flex justify-between items-baseline mb-1">
               <h3 class="font-bold text-base">${htmlEscape(project.title)}</h3>
-              ${project.technologies ? `<span class="text-sm italic">${htmlEscape(project.technologies)}</span>` : ''}
             </div>
             ${project.description ? `<p class="text-sm mb-3">${htmlEscape(project.description)}</p>` : ''}
-            ${project.responsibilities && project.responsibilities.length > 0 ? `
-              <ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
           </div>
         `).join('')}
       </section>
@@ -2180,10 +2167,7 @@ function renderResponsiveTemplate6(data: CVData): string {
           ${data.projects.map(project => `
             <div class="mb-6">
               <h3 class="font-semibold text-base mb-1">${htmlEscape(project.title)}</h3>
-              ${project.organization ? `<p class="text-sm text-gray-600 mb-2">${htmlEscape(project.organization)}</p>` : ''}
               ${project.description ? `<p class="text-sm leading-relaxed mb-2">${htmlEscape(project.description)}</p>` : ''}
-              ${project.responsibilities && project.responsibilities.length > 0 ?
-                `<ul class="text-sm leading-relaxed">${formatBullets(project.responsibilities)}</ul>` : ''}
             </div>
           `).join('')}
         </section>
