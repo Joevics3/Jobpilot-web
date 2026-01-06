@@ -1626,8 +1626,75 @@ function renderResponsiveTemplate1(data: CVData): string {
                 `).join('')}
             </section>
             ` : ''}
+
+            ${data.awards && data.awards.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Awards</h3>
+                ${data.awards.map(award => `
+                    <div class="mb-2">
+                        <p class="text-sm text-gray-700">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
+                    </div>
+                `).join('')}
+            </section>
+            ` : ''}
+
+            ${data.publications && data.publications.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Publications</h3>
+                ${data.publications.map(pub => `
+                    <div class="mb-2">
+                        <p class="text-sm text-gray-700">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
+                    </div>
+                `).join('')}
+            </section>
+            ` : ''}
+
+            ${data.accomplishments && data.accomplishments.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Accomplishments</h3>
+                <ul class="text-sm text-gray-700">
+                    ${data.accomplishments.map(acc => `<li class="mb-1">• ${htmlEscape(acc)}</li>`).join('')}
+                </ul>
+            </section>
+            ` : ''}
+
+            ${data.languages && data.languages.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Languages</h3>
+                <div class="text-sm text-gray-700">${data.languages.map(lang => htmlEscape(lang)).join(' • ')}</div>
+            </section>
+            ` : ''}
+
+            ${data.interests && data.interests.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Interests</h3>
+                <div class="text-sm text-gray-700">${data.interests.map(interest => htmlEscape(interest)).join(' • ')}</div>
+            </section>
+            ` : ''}
+
+            ${data.volunteerWork && data.volunteerWork.length > 0 ? `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">Volunteer Work</h3>
+                ${data.volunteerWork.map(vol => `
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-700">${htmlEscape(vol.role || 'Volunteer')}${vol.organization ? ` - ${htmlEscape(vol.organization)}` : ''}</p>
+                        ${vol.description ? `<p class="text-xs text-gray-600 mt-1">${htmlEscape(vol.description)}</p>` : ''}
+                    </div>
+                `).join('')}
+            </section>
+            ` : ''}
+
+            ${data.additionalSections && data.additionalSections.length > 0 ? data.additionalSections.map(section => `
+            <section>
+                <h3 class="uppercase text-lg font-bold text-gray-700 border-b-2 border-blue-500 pb-1 mb-3">${htmlEscape(section.sectionName)}</h3>
+                <p class="text-sm text-gray-700">${htmlEscape(section.content)}</p>
+            </section>
+            `).join('') : ''}
         </div>
     </div>
+</body>
+</html>`;
+}
 </body>
 </html>`;
 }
@@ -1921,13 +1988,9 @@ function renderResponsiveTemplate5(data: CVData): string {
       <section>
         <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Awards</h2>
         ${data.awards.map(award => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(award.title)}</h3>
-              ${award.year ? `<span class="text-sm italic">(${htmlEscape(award.year)})</span>` : ''}
-            </div>
-            ${award.organization ? `<p class="italic text-sm mb-2">${htmlEscape(award.organization)}</p>` : ''}
-            ${award.description ? `<p class="text-sm">${htmlEscape(award.description)}</p>` : ''}
+          <div class="mb-3">
+            <p class="text-sm leading-relaxed">${htmlEscape(award.title)}${award.issuer ? ` - ${htmlEscape(award.issuer)}` : ''}${award.year ? ` (${htmlEscape(award.year)})` : ''}</p>
+            ${award.organization ? `<p class="text-sm text-gray-600">${htmlEscape(award.organization)}</p>` : ''}
           </div>
         `).join('')}
       </section>
@@ -1937,13 +2000,9 @@ function renderResponsiveTemplate5(data: CVData): string {
       <section>
         <h2 class="text-lg font-bold uppercase tracking-wider border-b border-black pb-1 mb-4">Publications</h2>
         ${data.publications.map(pub => `
-          <div class="mb-4">
-            <div class="flex justify-between items-baseline mb-1">
-              <h3 class="font-bold text-base">${htmlEscape(pub.title)}</h3>
-              ${pub.year ? `<span class="text-sm italic">(${htmlEscape(pub.year)})</span>` : ''}
-            </div>
-            ${pub.journal ? `<p class="italic text-sm mb-2">${htmlEscape(pub.journal)}</p>` : ''}
-            ${pub.description ? `<p class="text-sm">${htmlEscape(pub.description)}</p>` : ''}
+          <div class="mb-3">
+            <p class="text-sm leading-relaxed">${htmlEscape(pub.title)}${pub.journal ? ` - ${htmlEscape(pub.journal)}` : ''}${pub.year ? ` (${htmlEscape(pub.year)})` : ''}</p>
+            ${pub.organization ? `<p class="text-sm text-gray-600">${htmlEscape(pub.organization)}</p>` : ''}
           </div>
         `).join('')}
       </section>

@@ -2116,21 +2116,21 @@ export const renderTemplate14 = (data: CVData): string => {
 
 // Template 11 Renderer - Academic Single Column
 export const renderTemplate11 = (data: CVData): string => {
-  const { 
-    personalDetails, 
-    education, 
-    experience, 
-    projects, 
-    technicalSkills, 
-    achievements, 
-    certifications, 
-    awards, 
-    publications, 
-    volunteerWork, 
-    languages, 
-    interests, 
-    additionalInfo, 
-    references 
+  const {
+    personalDetails,
+    summary,
+    education,
+    experience,
+    projects,
+    accomplishments,
+    certifications,
+    awards,
+    publications,
+    volunteerWork,
+    languages,
+    interests,
+    additionalSections,
+    references
   } = data;
 
   return `<!DOCTYPE html>
@@ -2382,29 +2382,24 @@ export const renderTemplate11 = (data: CVData): string => {
         </div>
         ` : ''}
 
-        <!-- Technical Skills -->
-        ${technicalSkills && Object.keys(technicalSkills).length > 0 ? `
+        <!-- Skills -->
+        ${skills && skills.length > 0 ? `
         <div class="section">
-            <div class="section-title">Technical Skills</div>
-            <div class="skills-grid">
-                ${Object.entries(technicalSkills).map(([category, skills]) => `
-                    <div class="skill-category">${category}:</div>
-                    <div class="skill-items">${skills}</div>
-                `).join('')}
-            </div>
+            <div class="section-title">Skills</div>
+            <div class="skills-list">${skills.join(' • ')}</div>
         </div>
         ` : ''}
 
-        <!-- Achievements -->
-        ${achievements && achievements.length > 0 ? `
+        <!-- Accomplishments -->
+        ${accomplishments && accomplishments.length > 0 ? `
         <div class="section">
-            <div class="section-title">Achievements</div>
+            <div class="section-title">Accomplishments</div>
             <ul class="achievements-list">
-                ${achievements.map(achievement => {
-                    const formattedAchievement = achievement
+                ${accomplishments.map(accomplishment => {
+                    const formattedAccomplishment = accomplishment
                         .replace(/(\d+\+?)/g, '<strong>$1</strong>')
                         .replace(/(LeetCode|Codeforces|CodeChef|AtCoder|ICPC|Meta Hacker Cup|Smart India Hackathon|SIH)/g, '<strong>$1</strong>');
-                    return `<li>${formattedAchievement}</li>`;
+                    return `<li>${formattedAccomplishment}</li>`;
                 }).join('')}
             </ul>
         </div>
@@ -2488,15 +2483,13 @@ export const renderTemplate11 = (data: CVData): string => {
         </div>
         ` : ''}
 
-        <!-- Additional Information -->
-        ${additionalInfo && additionalInfo.length > 0 ? `
+        <!-- Additional Sections -->
+        ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
         <div class="section">
-            <div class="section-title">Additional Information</div>
-            <ul class="achievements-list">
-                ${additionalInfo.map(info => `<li>${info}</li>`).join('')}
-            </ul>
+            <div class="section-title">${section.sectionName}</div>
+            <div class="section-content">${section.content}</div>
         </div>
-        ` : ''}
+        `).join('') : ''}
 
         <!-- References -->
         ${references ? `
@@ -2531,7 +2524,7 @@ export const renderTemplate6 = (data: CVData): string => {
     volunteerWork, 
     languages, 
     interests, 
-    additionalInfo, 
+    additionalSections, 
     references 
   } = data;
 
@@ -2849,14 +2842,14 @@ export const renderTemplate6 = (data: CVData): string => {
                 ` : ''}
 
                 <!-- Additional Information -->
-                ${additionalInfo && additionalInfo.length > 0 ? `
+                ${additionalSections && additionalSections.length > 0 ? additionalSections.map(section => `
                 <div class="section">
-                    <h2 class="section-title">ADDITIONAL INFORMATION</h2>
+                    <h2 class="section-title">${section.sectionName}</h2>
                     <div class="additional-info">
-                        ${additionalInfo.map(info => `<p>• ${info}</p>`).join('')}
+                        <p>${section.content}</p>
                     </div>
                 </div>
-                ` : ''}
+                `).join('') : ''}
             </div>
 
             <!-- Right Column -->

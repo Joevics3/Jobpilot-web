@@ -250,7 +250,7 @@ export default function SettingsPage() {
           >
             <div className="flex items-center justify-between gap-4 p-4">
               <span className="text-sm font-medium flex-1" style={{ color: theme.colors.primary.DEFAULT }}>
-                Sign in to access your settings and personalized features.
+                Sign up to access your settings and personalized features.
               </span>
               <Button
                 onClick={() => setAuthModalOpen(true)}
@@ -259,7 +259,7 @@ export default function SettingsPage() {
                 className="flex-shrink-0"
               >
                 <LogIn size={16} className="mr-2" />
-                Sign In
+                Sign Up
               </Button>
             </div>
           </div>

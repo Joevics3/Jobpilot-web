@@ -596,7 +596,7 @@ export default function JobList() {
           >
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm font-medium flex-1" style={{ color: theme.colors.primary.DEFAULT }}>
-                Sign in to get personalized match scores.
+                Sign up to get personalized match scores.
               </span>
               <Button
                 onClick={() => setAuthModalOpen(true)}
@@ -605,7 +605,7 @@ export default function JobList() {
                 className="flex-shrink-0"
               >
                 <LogIn size={16} className="mr-2" />
-                Sign In
+                Sign Up
               </Button>
             </div>
           </div>
