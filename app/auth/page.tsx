@@ -18,8 +18,12 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.colors.background.muted }}>
-      <div className="w-full max-w-md px-6">
+      
+     <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+     >
+
         <button
           onClick={handleClose}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"

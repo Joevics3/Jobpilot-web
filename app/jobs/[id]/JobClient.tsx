@@ -451,17 +451,29 @@ export default function JobClient({ job }: { job: any }) {
     return 'Not specified';
   };
 
-  const getSalaryString = () => {
-    if (!job.salary && !job.salary_range) return null;
-    if (typeof job.salary === 'string') return job.salary;
-    if (job.salary_range && typeof job.salary_range === 'object') {
-      const sal = job.salary_range;
-      if (sal.min !== null && sal.max !== null && sal.currency) {
-        return `${sal.currency} ${sal.min.toLocaleString()} - ${sal.max.toLocaleString()} ${sal.period || ''}`.trim();
+const getSalaryString = () => {
+  if (!job.salary && !job.salary_range) return null;
+
+  // If salary is already a string, return as-is
+  if (typeof job.salary === 'string') return job.salary;
+
+  if (job.salary_range && typeof job.salary_range === 'object') {
+    const { min, max, currency, period } = job.salary_range;
+
+    if (min != null && currency) {
+      // 🔹 If min === max OR max is missing → show single value
+      if (!max || min === max) {
+        return `${currency} ${min.toLocaleString()} ${period || ''}`.trim();
       }
+
+      // 🔹 Otherwise show range
+      return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} ${period || ''}`.trim();
     }
-    return null;
-  };
+  }
+
+  return null;
+};
+
 
   // Helper function to format experience level with years
   const getExperienceLevelWithYears = (level: string) => {
@@ -502,13 +514,14 @@ export default function JobClient({ job }: { job: any }) {
             backgroundColor: theme.colors.primary.DEFAULT,
           }}
         >
-          <button
-            onClick={() => router.back()}
-            className="mb-4 p-2 rounded-full hover:bg-white/20 transition-colors"
-            style={{ backgroundColor: theme.colors.overlay.header }}
-          >
-            <ArrowLeft size={20} style={{ color: theme.colors.text.light }} />
+          <button 
+           onClick={() => router.push('/')}
+           className="mb-4 p-2 rounded-full hover:bg-white/20 transition-colors"  
+          style={{ backgroundColor: theme.colors.overlay.header }}
+           >
+           <ArrowLeft size={20} style={{ color: theme.colors.text.light }} />
           </button>
+
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -695,9 +708,7 @@ export default function JobClient({ job }: { job: any }) {
             </section>
           )}
 
-          {/* Inline Ad - After Required Skills */}
-          <InlineAd />
-
+ 
           {/* Responsibilities */}
           {(() => {
             const responsibilities = job.responsibilities || [];
