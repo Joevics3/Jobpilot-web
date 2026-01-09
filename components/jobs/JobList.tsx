@@ -391,7 +391,6 @@ export default function JobList() {
 
     return {
       id: job.id,
-      slug: job.slug,
       title: job.title || 'Untitled Job',
       company: companyStr,
       location: locationStr,
