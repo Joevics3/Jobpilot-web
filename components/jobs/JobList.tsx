@@ -17,7 +17,7 @@ import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
-import AdsterraBanner from '@/components/ads/AdsterraBanner';
+import AdsterraNative from '@/components/ads/AdsterraNative';
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
 const STORAGE_KEYS = {
@@ -355,10 +355,17 @@ export default function JobList() {
     try {
       setLoading(true);
       
-      // ✅ Removed limit - fetch ALL jobs
+      // ✅ Calculate date 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+      
+      // ✅ Fetch only active jobs from last 30 days
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
+        .eq('status', 'active') // Only active jobs
+        .gte('created_at', thirtyDaysAgoISO) // Posted within last 30 days
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -578,7 +585,7 @@ export default function JobList() {
         <div className="px-6 py-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
+              <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Computing matches...</p>
             </div>
           ) : sortedJobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -592,13 +599,13 @@ export default function JobList() {
                 className="text-sm text-center"
                 style={{ color: theme.colors.text.secondary }}
               >
-                Check back later for new opportunities
+                Check your internet connection.
               </p>
             </div>
           ) : (
             sortedJobs.map((job, index) => {
-              const adNumber = Math.floor(index / 5) + 1;
-              const shouldShowAd = (index + 1) % 5 === 0 && adNumber <= 40;
+              // ✅ Show native ad after every 10th job (shows 3 ads instead of 1 banner)
+              const shouldShowAd = (index + 1) % 10 === 0;
               
               return (
                 <React.Fragment key={job.id}>
@@ -610,11 +617,11 @@ export default function JobList() {
                     onApply={handleApply}
                     onShowBreakdown={handleShowBreakdown}
                   />
+                  {/* ✅ Native ad after every 10th job - shows 3 ads per placement */}
                   {shouldShowAd && (
-                    <AdsterraBanner 
-                      key={`banner-ad-${adNumber}`}
-                      type="desktop"
-                      slotId={`job-feed-ad-${adNumber}`}
+                    <AdsterraNative 
+                      key={`native-ad-${index}`}
+                      slotId={`job-feed-native-${index}`}
                     />
                   )}
                 </React.Fragment>

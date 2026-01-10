@@ -25,11 +25,11 @@ export default function ToolsPage() {
   const tools: Tool[] = [
     {
       id: '1',
-      title: 'Interview Prep',
-      description: 'Practice with personalized questions based on job descriptions',
-      icon: MessageCircle,
-      color: theme.colors.accent.blue,
-      route: '/tools/interview',
+      title: 'Resources & Blog',
+      description: 'Career advice, job search tips, and professional development resources',
+      icon: BookOpen,
+      color: theme.colors.accent.gold,
+      route: '/resources',
     },
     {
       id: '2',
@@ -49,11 +49,11 @@ export default function ToolsPage() {
     },
     {
       id: '4',
-      title: 'Resources & Blog',
-      description: 'Career advice, job search tips, and professional development resources',
-      icon: BookOpen,
-      color: theme.colors.accent.gold,
-      route: '/resources',
+      title: 'Interview Prep',
+      description: 'Practice with personalized questions based on job descriptions',
+      icon: MessageCircle,
+      color: theme.colors.accent.blue,
+      route: '/tools/interview',
     },
   ];
 
