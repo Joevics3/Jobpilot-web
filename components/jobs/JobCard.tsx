@@ -7,6 +7,7 @@ import { theme } from '@/lib/theme';
 
 export interface JobUI {
   id: string;
+  slug: string; // ✅ Added slug property
   title: string;
   company: string;
   location: string;
@@ -65,7 +66,8 @@ export default function JobCard({
   };
 
   return (
-    <Link href={`/jobs/${job.id}`} className="block">
+    // ✅ Changed from job.id to job.slug
+    <Link href={`/jobs/${job.slug}`} className="block">
       <div
         className="bg-white rounded-2xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100"
         style={{
@@ -169,5 +171,3 @@ export default function JobCard({
     </Link>
   );
 }
-
-

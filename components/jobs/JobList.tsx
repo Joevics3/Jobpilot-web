@@ -17,7 +17,7 @@ import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
-import AdsterraNative from '@/components/ads/AdsterraNative';
+import AdsterraBanner from '@/components/ads/AdsterraBanner';
 import Script from 'next/script';
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
@@ -101,11 +101,13 @@ export default function JobList() {
                 try {
                   const jobsData = parsedJobs.map((job: any) => ({
                     id: job.id,
+                    slug: job.slug || job.id,
                     title: job.title || 'Untitled Job',
                     company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
                     location: typeof job.location === 'string' ? job.location : 
                       (job.location?.remote ? 'Remote' : 
                       [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+                    postedDate: job.postedDate || job.posted_date || job.created_at, // ✅ Ensure posted date is preserved
                   }));
                   localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
                 } catch (cacheError) {
@@ -378,19 +380,21 @@ export default function JobList() {
       companyStr = job.company.name || 'Unknown Company';
     }
 
-    // Handle salary - can be string or object
+    // Handle salary - can be string or object (min only)
     let salaryStr = '';
     if (typeof job.salary === 'string') {
       salaryStr = job.salary;
     } else if (job.salary_range && typeof job.salary_range === 'object') {
       const sal = job.salary_range;
-      if (sal.min !== null && sal.max !== null && sal.currency) {
-        salaryStr = `${sal.currency} ${sal.min.toLocaleString()} - ${sal.max.toLocaleString()} ${sal.period || ''}`;
+      // ✅ Show min only, no range
+      if (sal.min !== null && sal.currency) {
+        salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
       }
     }
 
     return {
       id: job.id,
+      slug: job.slug || job.id,
       title: job.title || 'Untitled Job',
       company: companyStr,
       location: locationStr,
@@ -399,6 +403,8 @@ export default function JobList() {
       calculatedTotal: finalMatchScore,
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
+      postedDate: job.posted_date || job.created_at || null, // ✅ Get from posted_date column
+      rawData: job, // ✅ Store raw data for debugging
     };
   };
 
@@ -406,11 +412,11 @@ export default function JobList() {
     try {
       setLoading(true);
       
+      // ✅ Removed .limit(50) to fetch ALL active jobs
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -659,22 +665,46 @@ export default function JobList() {
               </p>
             </div>
           ) : (
-            sortedJobs.map((job, index) => (
-              <React.Fragment key={job.id}>
-                <JobCard
-                  job={job}
-                  savedJobs={savedJobs}
-                  appliedJobs={appliedJobs}
-                  onSave={handleSave}
-                  onApply={handleApply}
-                  onShowBreakdown={handleShowBreakdown}
-                />
-                {/* In-feed native ad after every 5th job card */}
-                {(index + 1) % 5 === 0 && (
-                  <AdsterraNative key={`native-ad-${index}`} slotId={`feed-${index}`} />
-                )}
-              </React.Fragment>
-            ))
+            sortedJobs.map((job, index) => {
+              // ✅ Calculate which ad number this should be (1 ad per 5 jobs)
+              const adNumber = Math.floor(index / 5) + 1;
+              const shouldShowAd = (index + 1) % 5 === 0 && adNumber <= 40; // Max 40 ads for 200 jobs
+              
+              // ✅ IMPORTANT: You need to create 40 separate banner placements in Adsterra dashboard
+              // and replace these with your actual ad keys
+              const adKeys = [
+                'YOUR_AD_KEY_1', 'YOUR_AD_KEY_2', 'YOUR_AD_KEY_3', 'YOUR_AD_KEY_4', 'YOUR_AD_KEY_5',
+                'YOUR_AD_KEY_6', 'YOUR_AD_KEY_7', 'YOUR_AD_KEY_8', 'YOUR_AD_KEY_9', 'YOUR_AD_KEY_10',
+                'YOUR_AD_KEY_11', 'YOUR_AD_KEY_12', 'YOUR_AD_KEY_13', 'YOUR_AD_KEY_14', 'YOUR_AD_KEY_15',
+                'YOUR_AD_KEY_16', 'YOUR_AD_KEY_17', 'YOUR_AD_KEY_18', 'YOUR_AD_KEY_19', 'YOUR_AD_KEY_20',
+                'YOUR_AD_KEY_21', 'YOUR_AD_KEY_22', 'YOUR_AD_KEY_23', 'YOUR_AD_KEY_24', 'YOUR_AD_KEY_25',
+                'YOUR_AD_KEY_26', 'YOUR_AD_KEY_27', 'YOUR_AD_KEY_28', 'YOUR_AD_KEY_29', 'YOUR_AD_KEY_30',
+                'YOUR_AD_KEY_31', 'YOUR_AD_KEY_32', 'YOUR_AD_KEY_33', 'YOUR_AD_KEY_34', 'YOUR_AD_KEY_35',
+                'YOUR_AD_KEY_36', 'YOUR_AD_KEY_37', 'YOUR_AD_KEY_38', 'YOUR_AD_KEY_39', 'YOUR_AD_KEY_40',
+              ];
+              
+              return (
+                <React.Fragment key={job.id}>
+                  <JobCard
+                    job={job}
+                    savedJobs={savedJobs}
+                    appliedJobs={appliedJobs}
+                    onSave={handleSave}
+                    onApply={handleApply}
+                    onShowBreakdown={handleShowBreakdown}
+                  />
+                  {/* ✅ Individual Adsterra banner ad after every 5th job - up to 40 ads */}
+                  {shouldShowAd && adNumber <= adKeys.length && (
+                    <AdsterraBanner 
+                      key={`banner-ad-${adNumber}`}
+                      adKey={adKeys[adNumber - 1]}
+                      width={728}
+                      height={90}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })
           )}
         </div>
       </div>

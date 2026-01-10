@@ -4,37 +4,19 @@ import { mapJobToSchema } from '@/lib/mapJobToSchema';
 import JobClient from './JobClient';
 import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = createClient();
   
-  const slugOrId = params.id;
+  const { slug } = params;
   
-  // Try to find job by slug first, then fallback to ID
-  let job = null;
-  
-  // Method 1: Try finding by slug
-  const { data: jobBySlug, error: slugError } = await supabase
+  // Find job by slug
+  const { data: job, error } = await supabase
     .from('jobs')
     .select('*')
-    .eq('slug', slugOrId)
+    .eq('slug', slug)
     .single();
-    
-  if (!slugError && jobBySlug) {
-    job = jobBySlug;
-  } else {
-    // Method 2: Try finding by ID
-    const { data: jobById, error: idError } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', slugOrId)
-      .single();
-      
-    if (!idError && jobById) {
-      job = jobById;
-    }
-  }
 
-  if (!job) {
+  if (error || !job) {
     return {
       title: 'Job Not Found - JobMeter',
     };
@@ -73,42 +55,22 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description,
     },
     alternates: {
-      canonical: `/jobs/${job.slug || job.id}`, // Use slug if available
+      canonical: `/jobs/${job.slug}`,
     },
   };
 }
 
-export default async function JobPage({ params }: { params: { id: string } }) {
+export default async function JobPage({ params }: { params: { slug: string } }) {
   const supabase = createClient();
   
-  const slugOrId = params.id;
+  const { slug } = params;
   
-  // Try to find job by slug first (new system), then fallback to ID (old system)
-  let job = null;
-  let error = null;
-  
-  // Method 1: Try finding by slug (for new SEO-friendly URLs)
-  const { data: jobBySlug, error: slugError } = await supabase
+  // Find job by slug only (SEO-friendly)
+  const { data: job, error } = await supabase
     .from('jobs')
     .select('*')
-    .eq('slug', slugOrId)
+    .eq('slug', slug)
     .single();
-    
-  if (!slugError && jobBySlug) {
-    job = jobBySlug;
-  } else {
-    // Method 2: Try finding by ID (for backward compatibility)
-    const { data: jobById, error: idError } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', slugOrId)
-      .single();
-      
-    if (!idError && jobById) {
-      job = jobById;
-    }
-    error = idError;
-  }
 
   if (error || !job) {
     notFound();
