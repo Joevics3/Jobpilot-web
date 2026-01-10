@@ -17,8 +17,7 @@ import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
-import AdsterraNative from '@/components/ads/AdsterraNative';
-import Script from 'next/script';
+import AdsterraBanner from '@/components/ads/AdsterraBanner';
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
 const STORAGE_KEYS = {
@@ -49,7 +48,6 @@ export default function JobList() {
     loadSavedJobs();
     loadAppliedJobs();
     
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setUser(session.user);
@@ -71,90 +69,75 @@ export default function JobList() {
   }, [user]);
 
   useEffect(() => {
-    // Wait for auth check to complete
     if (!authChecked) {
       return;
     }
 
-    // Check if jobs are cached and if we should reload
     const cachedJobsKey = 'jobs_cache';
     const cacheTimestampKey = 'jobs_cache_timestamp';
-    const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours
+    const CACHE_DURATION = 3 * 60 * 60 * 1000;
     
     try {
       const cachedJobs = localStorage.getItem(cachedJobsKey);
       const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
       
-      // Check if cache exists and is still valid
       if (cachedJobs && cacheTimestamp) {
         const timestamp = parseInt(cacheTimestamp, 10);
         const now = Date.now();
         
-            // If cache is still valid (less than 24 hours old), use it
-            if (now - timestamp < CACHE_DURATION) {
-              try {
-                const parsedJobs = JSON.parse(cachedJobs);
-                setJobs(parsedJobs);
-                setLoading(false);
-                
-                // Update cached_jobs for CV/Cover Letter modals
-                try {
-                  const jobsData = parsedJobs.map((job: any) => ({
-                    id: job.id,
-                    title: job.title || 'Untitled Job',
-                    company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-                    location: typeof job.location === 'string' ? job.location : 
-                      (job.location?.remote ? 'Remote' : 
-                      [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-                  }));
-                  localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
-                } catch (cacheError) {
-                  console.error('Error updating cached_jobs:', cacheError);
-                }
-                
-                // Still process with matching if user is authenticated
-                if (user && userOnboardingData !== null) {
-                  // Re-process for match scores (uses cache for match calculations)
-                  const rawDataArray = parsedJobs.map((job: any) => {
-                    // If rawData exists, use it; otherwise reconstruct from job UI data
-                    if (job.rawData) return job.rawData;
-                    // Fallback: reconstruct minimal job data structure
-                    return {
-                      id: job.id,
-                      title: job.title,
-                      company: job.company,
-                      location: job.location,
-                      role: job.title,
-                      skills_required: [],
-                      // Add other fields as needed
-                    };
-                  });
-                  processJobsWithMatching(rawDataArray).then((processed) => {
-                    setJobs(processed);
-                  });
-                }
-                return; // Don't fetch from server
-              } catch (error) {
-                console.error('Error parsing cached jobs:', error);
-                // Fall through to fetch from server
-              }
+        if (now - timestamp < CACHE_DURATION) {
+          try {
+            const parsedJobs = JSON.parse(cachedJobs);
+            setJobs(parsedJobs);
+            setLoading(false);
+            
+            try {
+              const jobsData = parsedJobs.map((job: any) => ({
+                id: job.id,
+                slug: job.slug || job.id,
+                title: job.title || 'Untitled Job',
+                company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
+                location: typeof job.location === 'string' ? job.location : 
+                  (job.location?.remote ? 'Remote' : 
+                  [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+                postedDate: job.postedDate || job.posted_date || job.created_at,
+              }));
+              localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
+            } catch (cacheError) {
+              console.error('Error updating cached_jobs:', cacheError);
             }
+            
+            if (user && userOnboardingData !== null) {
+              const rawDataArray = parsedJobs.map((job: any) => {
+                if (job.rawData) return job.rawData;
+                return {
+                  id: job.id,
+                  title: job.title,
+                  company: job.company,
+                  location: job.location,
+                  role: job.title,
+                  skills_required: [],
+                };
+              });
+              processJobsWithMatching(rawDataArray).then((processed) => {
+                setJobs(processed);
+              });
+            }
+            return;
+          } catch (error) {
+            console.error('Error parsing cached jobs:', error);
+          }
+        }
       }
     } catch (error) {
       console.error('Error checking job cache:', error);
-      // Fall through to fetch from server
     }
 
-    // Fetch jobs for both authenticated and unauthenticated users
-    // Only calculate matches if user is authenticated
     if (user && userOnboardingData !== null) {
-      // Authenticated user with known onboarding data status
       fetchJobs();
     } else if (user && userOnboardingData === null) {
-      // Authenticated but no onboarding data yet - wait
       return;
     } else {
-      // Unauthenticated user - fetch jobs without matching
       fetchJobs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,7 +151,6 @@ export default function JobList() {
       setUser(null);
     }
     setAuthChecked(true);
-    // Don't redirect - allow unauthenticated access
   };
 
   const fetchUserProfile = async () => {
@@ -195,7 +177,7 @@ export default function JobList() {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching onboarding data:', error);
         return;
       }
@@ -217,29 +199,7 @@ export default function JobList() {
     }
   };
 
-  const saveJobsToCache = () => {
-    try {
-      // Save current jobs to localStorage for CV/Cover Letter modals
-      if (jobs.length > 0) {
-        const jobsData = jobs.map(job => {
-          // Get full job data from the original jobRows if available
-          // For now, save what we have
-          return {
-            id: job.id,
-            title: job.title,
-            company: job.company,
-            location: job.location,
-          };
-        });
-        localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
-      }
-    } catch (error) {
-      console.error('Error saving jobs to cache:', error);
-    }
-  };
-
   const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
-    // Save jobs to cache for CV/Cover Letter modals
     try {
       const jobsData = jobRows.map((job: any) => ({
         id: job.id,
@@ -255,18 +215,15 @@ export default function JobList() {
     }
 
     if (!userOnboardingData || !user) {
-      // If no onboarding data, return jobs without matching
       return jobRows.map((job: any) => {
         return transformJobToUI(job, 0, null);
       });
     }
 
-    // Load match cache
     const matchCache = matchCacheService.loadMatchCache(user.id);
     let cacheNeedsUpdate = false;
     const updatedCache = { ...matchCache };
 
-    // Process jobs in batches to avoid blocking UI
     const batchSize = 10;
     const processedJobs: JobUI[] = [];
 
@@ -276,19 +233,16 @@ export default function JobList() {
       const batchResults = await Promise.all(
         batch.map(async (job: any) => {
           try {
-            // Check cache first
             let matchResult;
             const cachedMatch = updatedCache[job.id];
 
             if (cachedMatch) {
-              // Use cached match
               matchResult = {
                 score: cachedMatch.score,
                 breakdown: cachedMatch.breakdown,
                 computedAt: cachedMatch.cachedAt,
               };
             } else {
-              // Calculate new match
               const jobRow: JobRow = {
                 role: job.role || job.title,
                 related_roles: job.related_roles,
@@ -304,7 +258,6 @@ export default function JobList() {
 
               matchResult = scoreJob(jobRow, userOnboardingData);
 
-              // Store in cache
               updatedCache[job.id] = {
                 score: matchResult.score,
                 breakdown: matchResult.breakdown,
@@ -313,7 +266,6 @@ export default function JobList() {
               cacheNeedsUpdate = true;
             }
 
-            // Calculate total from breakdown (same logic as matchEngine)
             const rsCapped = Math.min(
               80,
               matchResult.breakdown.rolesScore +
@@ -338,13 +290,11 @@ export default function JobList() {
 
       processedJobs.push(...batchResults);
 
-      // Yield to UI thread between batches
       if (i + batchSize < jobRows.length) {
         await new Promise(resolve => setTimeout(resolve, 0));
       }
     }
 
-    // Save updated cache
     if (cacheNeedsUpdate) {
       matchCacheService.saveMatchCache(user.id, updatedCache);
     }
@@ -353,10 +303,9 @@ export default function JobList() {
   }, [user, userOnboardingData]);
 
   const transformJobToUI = (job: any, matchScore: number, breakdown: any): JobUI => {
-    // If user is not authenticated, set match score to 0
     const finalMatchScore = user ? matchScore : 0;
     const finalBreakdown = user ? breakdown : null;
-    // Handle location - can be string or object
+    
     let locationStr = 'Location not specified';
     if (typeof job.location === 'string') {
       locationStr = job.location;
@@ -370,7 +319,6 @@ export default function JobList() {
       }
     }
 
-    // Handle company - can be string or object
     let companyStr = 'Unknown Company';
     if (typeof job.company === 'string') {
       companyStr = job.company;
@@ -378,13 +326,11 @@ export default function JobList() {
       companyStr = job.company.name || 'Unknown Company';
     }
 
-    // Handle salary - can be string or object (min only)
     let salaryStr = '';
     if (typeof job.salary === 'string') {
       salaryStr = job.salary;
     } else if (job.salary_range && typeof job.salary_range === 'object') {
       const sal = job.salary_range;
-      // ✅ Show min only, no range
       if (sal.min !== null && sal.currency) {
         salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
       }
@@ -401,7 +347,7 @@ export default function JobList() {
       calculatedTotal: finalMatchScore,
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
-      postedDate: job.posted_date || job.created_at || null, // ✅ Added posted date
+      postedDate: job.posted_date || job.created_at || null,
     };
   };
 
@@ -409,25 +355,22 @@ export default function JobList() {
     try {
       setLoading(true);
       
+      // ✅ Removed limit - fetch ALL jobs
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Process jobs with matching
       const processedJobs = await processJobsWithMatching(data || []);
       
-      // Sort by match score
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
 
-      // Cache the jobs with raw data for future use
       try {
         const jobsToCache = processedJobs.map(job => ({
           ...job,
-          rawData: data?.find((j: any) => j.id === job.id), // Store raw data for re-processing
+          rawData: data?.find((j: any) => j.id === job.id),
         }));
         localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
         localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
@@ -487,7 +430,6 @@ export default function JobList() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
 
-      // Remove from saved jobs if it was saved (when applying)
       if (!appliedJobs.includes(jobId)) {
         const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
         if (saved) {
@@ -508,7 +450,6 @@ export default function JobList() {
 
   const handleRefreshMatches = async () => {
     if (!user) {
-      // For unauthenticated users, clear cache and refresh
       localStorage.removeItem('jobs_cache');
       localStorage.removeItem('jobs_cache_timestamp');
       await fetchJobs();
@@ -518,16 +459,13 @@ export default function JobList() {
     setRefreshingMatches(true);
     
     try {
-      // Clear match cache to force recalculation (if user is authenticated)
       if (user) {
         matchCacheService.clearMatchCache(user.id);
       }
       
-      // Clear job cache to force fresh fetch
       localStorage.removeItem('jobs_cache');
       localStorage.removeItem('jobs_cache_timestamp');
       
-      // Re-fetch jobs which will recalculate matches for authenticated users
       await fetchJobs();
     } catch (error) {
       console.error('Error refreshing matches:', error);
@@ -556,7 +494,6 @@ export default function JobList() {
     setMatchModalOpen(true);
   };
 
-  // Filter out applied jobs from the list
   const filteredJobs = jobs.filter(job => !appliedJobs.includes(job.id));
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
@@ -568,7 +505,6 @@ export default function JobList() {
 
   return (
     <>
-      {/* SEO Structured Data */}
       <OrganizationSchema />
       <WebSiteSchema 
         searchAction={{
@@ -588,7 +524,6 @@ export default function JobList() {
           onSubmitJob={() => router.push('/submit')}
         />
 
-        {/* Sign in notification banner - only show if not authenticated */}
         {!user && (
           <div
             className="px-6 py-3 border-b"
@@ -614,7 +549,6 @@ export default function JobList() {
           </div>
         )}
 
-        {/* Top Banner Ad - Below header, above sort bar */}
         <div className="px-6">
           <BannerAd />
         </div>
@@ -662,22 +596,30 @@ export default function JobList() {
               </p>
             </div>
           ) : (
-            sortedJobs.map((job, index) => (
-              <React.Fragment key={job.id}>
-                <JobCard
-                  job={job}
-                  savedJobs={savedJobs}
-                  appliedJobs={appliedJobs}
-                  onSave={handleSave}
-                  onApply={handleApply}
-                  onShowBreakdown={handleShowBreakdown}
-                />
-                {/* In-feed native ad after every 5th job card */}
-                {(index + 1) % 5 === 0 && (
-                  <AdsterraNative key={`native-ad-${index}`} slotId={`feed-${index}`} />
-                )}
-              </React.Fragment>
-            ))
+            sortedJobs.map((job, index) => {
+              const adNumber = Math.floor(index / 5) + 1;
+              const shouldShowAd = (index + 1) % 5 === 0 && adNumber <= 40;
+              
+              return (
+                <React.Fragment key={job.id}>
+                  <JobCard
+                    job={job}
+                    savedJobs={savedJobs}
+                    appliedJobs={appliedJobs}
+                    onSave={handleSave}
+                    onApply={handleApply}
+                    onShowBreakdown={handleShowBreakdown}
+                  />
+                  {shouldShowAd && (
+                    <AdsterraBanner 
+                      key={`banner-ad-${adNumber}`}
+                      type="desktop"
+                      slotId={`job-feed-ad-${adNumber}`}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })
           )}
         </div>
       </div>
@@ -693,7 +635,6 @@ export default function JobList() {
         onOpenChange={setAuthModalOpen}
       />
 
-      {/* CV and Cover Letter Modals */}
       <CreateCVModal
         isOpen={cvModalOpen}
         onClose={() => setCvModalOpen(false)}
