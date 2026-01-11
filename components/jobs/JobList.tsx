@@ -585,7 +585,7 @@ export default function JobList() {
         <div className="px-6 py-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Computing matches...</p>
+              <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Checking for matches...</p>
             </div>
           ) : sortedJobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
