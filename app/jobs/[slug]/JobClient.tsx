@@ -492,7 +492,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
           }}
         >
           <button 
-           onClick={() => router.push('/')}
+           onClick={() => router.push('/jobs')}
            className="mb-4 p-2 rounded-full hover:bg-white/20 transition-colors"  
           style={{ backgroundColor: theme.colors.overlay.header }}
            >

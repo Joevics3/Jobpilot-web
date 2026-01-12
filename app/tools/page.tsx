@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { MessageCircle, FileCheck, GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
+import { MessageCircle, FileCheck, GraduationCap, BookOpen, ArrowRight, Building2, Newspaper } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 import InterviewPrepModal from '@/components/tools/InterviewPrepModal';
@@ -55,6 +55,22 @@ export default function ToolsPage() {
       color: theme.colors.accent.blue,
       route: '/tools/interview',
     },
+    {
+      id: '5',
+      title: 'Blog & Articles',
+      description: 'Read expert insights, salary guides, and career tips for job seekers',
+      icon: Newspaper,
+      color: theme.colors.accent.purple || '#9333EA',
+      route: '/blog',
+    },
+    {
+      id: '6',
+      title: 'Company Directory',
+      description: 'Explore top companies, their culture, benefits, and open positions',
+      icon: Building2,
+      color: theme.colors.accent.orange || '#EA580C',
+      route: '/company',
+    },
   ];
 
   const handleToolClick = (tool: Tool) => {
@@ -95,7 +111,7 @@ export default function ToolsPage() {
           </div>
         </div>
 
-        {/* Top Banner Ad - Before Interview Prep */}
+        {/* Top Banner Ad */}
         <div className="px-6">
           <BannerAd />
         </div>
@@ -155,8 +171,3 @@ export default function ToolsPage() {
     </>
   );
 }
-
-
-
-
-
