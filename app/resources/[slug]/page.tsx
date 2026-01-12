@@ -1,5 +1,3 @@
-// app/resources/[slug]/page.tsx
-
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';

@@ -66,21 +66,6 @@ export default function JobCard({
     onShowBreakdown(job);
   };
 
-  // ✅ Format posted date
-  const formatPostedDate = (dateString?: string) => {
-    if (!dateString) return null;
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return null;
-    }
-  };
-
   return (
     <Link href={`/jobs/${job.slug}`} className="block">
       <div
@@ -117,29 +102,28 @@ export default function JobCard({
                 </span>
               </div>
               
-              {/* ✅ Salary (min only) and Posted Date side by side */}
-              <div className="flex items-center gap-4">
-                {job.salary && (
+              {/* ✅ Salary - Only show if exists */}
+              {job.salary && (
+                <span
+                  className="text-xs"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  {job.salary}
+                </span>
+              )}
+              
+              {/* ✅ Posted Date - On its own line */}
+              {job.postedDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar size={14} style={{ color: theme.colors.text.secondary }} />
                   <span
                     className="text-xs"
                     style={{ color: theme.colors.text.secondary }}
                   >
-                    {job.salary}
+                    {job.postedDate}
                   </span>
-                )}
-                
-                {job.postedDate && (
-                  <div className="flex items-center gap-1">
-                    <Calendar size={14} style={{ color: theme.colors.text.secondary }} />
-                    <span
-                      className="text-xs"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      {formatPostedDate(job.postedDate)}
-                    </span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 

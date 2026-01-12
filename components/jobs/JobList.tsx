@@ -336,6 +336,34 @@ export default function JobList() {
       }
     }
 
+    // ✅ Calculate relative time for posted date
+    const getRelativeTime = (dateString: string | null) => {
+      if (!dateString) return null;
+      
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+        
+        if (diffInDays === 0) return 'Today';
+        if (diffInDays === 1) return '1 day ago';
+        if (diffInDays < 7) return `${diffInDays} days ago`;
+        if (diffInDays < 30) {
+          const weeks = Math.floor(diffInDays / 7);
+          return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+        }
+        if (diffInDays < 365) {
+          const months = Math.floor(diffInDays / 30);
+          return months === 1 ? '1 month ago' : `${months} months ago`;
+        }
+        const years = Math.floor(diffInDays / 365);
+        return years === 1 ? '1 year ago' : `${years} years ago`;
+      } catch {
+        return null;
+      }
+    };
+
     return {
       id: job.id,
       slug: job.slug || job.id,
@@ -347,7 +375,7 @@ export default function JobList() {
       calculatedTotal: finalMatchScore,
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
-      postedDate: job.posted_date || job.created_at || null,
+      postedDate: getRelativeTime(job.posted_date || job.created_at),
     };
   };
 
@@ -585,7 +613,7 @@ export default function JobList() {
         <div className="px-6 py-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Checking for matches...</p>
+              <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
             </div>
           ) : sortedJobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -599,7 +627,7 @@ export default function JobList() {
                 className="text-sm text-center"
                 style={{ color: theme.colors.text.secondary }}
               >
-                Check your internet connection.
+                Check back later for new opportunities
               </p>
             </div>
           ) : (

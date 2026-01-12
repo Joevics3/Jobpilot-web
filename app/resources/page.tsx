@@ -1,8 +1,3 @@
-// =====================================================
-// FILE: app/resources/page.tsx
-// Main categories listing page - FIXED VERSION
-// =====================================================
-
 import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';

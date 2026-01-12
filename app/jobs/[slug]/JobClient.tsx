@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles, Share2 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
@@ -14,21 +14,21 @@ import { useCredits } from '@/hooks/useCredits';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import RelatedJobCard from '@/components/jobs/RelatedJobCard';
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
   APPLIED_JOBS: 'applied_jobs',
 };
 
-export default function JobClient({ job }: { job: any }) {
+export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?: any[] }) {
   const router = useRouter();
-  // ✅ jobId comes from the job prop, not from params
   const jobId = job.id;
   
-  // ... rest of your state variables remain the same ...
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
   const [applicationModalOpen, setApplicationModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [matchScore, setMatchScore] = useState<number>(0);
@@ -46,8 +46,7 @@ export default function JobClient({ job }: { job: any }) {
     checkAuth();
     loadSavedStatus();
     loadAppliedStatus();
-    // ❌ REMOVED: fetchJob() - job is now passed as prop
-  }, []); // ✅ No jobId dependency since job is static
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -56,15 +55,13 @@ export default function JobClient({ job }: { job: any }) {
   }, [user]);
 
   useEffect(() => {
-    // ✅ job is now available immediately as prop
     if (job && user && userOnboardingData) {
       calculateMatchScore();
     } else if (job && (!user || !userOnboardingData)) {
-      // If no user or onboarding data, match score is 0
       setMatchScore(0);
       setMatchBreakdown(null);
     }
-  }, [job, user, userOnboardingData]); // ✅ Include job in dependencies
+  }, [job, user, userOnboardingData]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -115,20 +112,17 @@ export default function JobClient({ job }: { job: any }) {
     }
 
     try {
-      // Check cache first
       const matchCache = matchCacheService.loadMatchCache(user.id);
       const cachedMatch = matchCache[job.id];
 
       let matchResult;
       if (cachedMatch) {
-        // Use cached match
         matchResult = {
           score: cachedMatch.score,
           breakdown: cachedMatch.breakdown,
           computedAt: cachedMatch.cachedAt,
         };
       } else {
-        // Calculate new match
         const jobRow: JobRow = {
           role: job.role || job.title,
           related_roles: job.related_roles,
@@ -144,7 +138,6 @@ export default function JobClient({ job }: { job: any }) {
 
         matchResult = scoreJob(jobRow, userOnboardingData);
 
-        // Store in cache
         const updatedCache = { ...matchCache };
         updatedCache[job.id] = {
           score: matchResult.score,
@@ -154,7 +147,6 @@ export default function JobClient({ job }: { job: any }) {
         matchCacheService.saveMatchCache(user.id, updatedCache);
       }
 
-      // Calculate total from breakdown (same logic as matchEngine)
       const rsCapped = Math.min(
         80,
         matchResult.breakdown.rolesScore +
@@ -226,8 +218,24 @@ export default function JobClient({ job }: { job: any }) {
     setSaved(newSaved.includes(jobId));
   };
 
+  const handleShare = (type: 'whatsapp' | 'email') => {
+    const jobUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const companyName = getCompanyName();
+    const shareText = `${job.title} at ${companyName}`;
+    
+    if (type === 'whatsapp') {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${jobUrl}`)}`;
+      window.open(whatsappUrl, '_blank');
+    } else if (type === 'email') {
+      const emailSubject = encodeURIComponent(shareText);
+      const emailBody = encodeURIComponent(`Check out this job opportunity:\n\n${shareText}\n\n${jobUrl}`);
+      window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+    }
+    
+    setShareModalOpen(false);
+  };
+
   const handleApply = () => {
-    // Show the application modal
     setApplicationModalOpen(true);
   };
 
@@ -238,19 +246,15 @@ export default function JobClient({ job }: { job: any }) {
     const email = application.email || job.application_email;
     
     if (!email) {
-      // Should not happen if button is conditionally rendered, but safety check
       return;
     }
 
-    // Step 1: Check if user has enough credits (2 credits per application)
     const AUTO_APPLY_CREDITS_COST = 2;
     
     try {
-      // Refresh credit balance to get latest
       await loadCreditBalance();
 
       if (!hasEnoughCredits(AUTO_APPLY_CREDITS_COST)) {
-        // User doesn't have enough credits - show upgrade modal
         setUpgradeErrorType('INSUFFICIENT_CREDITS');
         setUpgradeErrorData({
           message: `Auto-apply requires ${AUTO_APPLY_CREDITS_COST} credits. You have ${balance} credit${balance !== 1 ? 's' : ''}. Please purchase credits to continue.`,
@@ -261,8 +265,6 @@ export default function JobClient({ job }: { job: any }) {
         return;
       }
 
-      // Premium check passed - trigger application in background (fire-and-forget)
-      // Mark as applied immediately so user can continue browsing
       const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
       let appliedArray: string[] = [];
       
@@ -279,7 +281,6 @@ export default function JobClient({ job }: { job: any }) {
         localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(updatedApplied));
         setApplied(true);
 
-        // Remove from saved jobs if it was saved
         const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
         if (saved) {
           try {
@@ -295,7 +296,6 @@ export default function JobClient({ job }: { job: any }) {
         }
       }
 
-      // Trigger application in background - don't wait for response
       fetch('/api/jobs/manual-apply', {
         method: 'POST',
         headers: {
@@ -306,37 +306,29 @@ export default function JobClient({ job }: { job: any }) {
           jobId: jobId,
         }),
       }).catch((error) => {
-        // Silently log errors - backend will handle retries
         console.error('Background application error (will be retried):', error);
       });
 
-      // User can continue browsing - application is processing in background
     } catch (error: any) {
       console.error('Error in auto apply:', error);
-      // Only show error if it's a premium/quota issue (already handled above)
-      // Other errors will be handled by backend retry mechanism
     }
   };
 
   const handleApplicationAction = async (type: 'email' | 'phone' | 'link') => {
     if (!job || !user) return;
 
-    // For email applications, use mailto: link (auto-apply is now handled by separate button)
     if (type === 'email') {
       const application = job.application || {};
       const email = application.email || job.application_email;
       
       if (email) {
-        // Open mailto: link for manual email application
         const targetUrl = email.startsWith('mailto:') ? email : `mailto:${email}`;
         window.location.href = targetUrl;
         return;
       }
     }
 
-    // For phone and link, use existing behavior
     try {
-      // Mark the job as applied
       const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
       let appliedArray: string[] = [];
       
@@ -353,7 +345,6 @@ export default function JobClient({ job }: { job: any }) {
         localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(updatedApplied));
         setApplied(true);
 
-        // Remove from saved jobs if it was saved
         const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
         if (saved) {
           try {
@@ -369,7 +360,6 @@ export default function JobClient({ job }: { job: any }) {
         }
       }
 
-      // Open the application method
       const application = job.application || {};
       
       switch (type) {
@@ -416,7 +406,6 @@ export default function JobClient({ job }: { job: any }) {
 
       if (textToCopy) {
         await navigator.clipboard.writeText(textToCopy);
-        // You could add a toast notification here
         alert(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`);
       }
     } catch (error) {
@@ -424,7 +413,6 @@ export default function JobClient({ job }: { job: any }) {
     }
   };
 
-  // Match score is now calculated and stored in state
   const getMatchColor = (match: number) => {
     if (match >= 50) return theme.colors.match.good;
     if (match >= 31) return theme.colors.match.average;
@@ -432,7 +420,6 @@ export default function JobClient({ job }: { job: any }) {
   };
   const matchColor = getMatchColor(matchScore);
 
-  // Helper functions to format data that might be objects or strings
   const getCompanyName = () => {
     if (!job.company) return 'Confidential Employer';
     if (typeof job.company === 'string') return job.company;
@@ -451,31 +438,26 @@ export default function JobClient({ job }: { job: any }) {
     return 'Not specified';
   };
 
-const getSalaryString = () => {
-  if (!job.salary && !job.salary_range) return null;
+  const getSalaryString = () => {
+    if (!job.salary && !job.salary_range) return null;
 
-  // If salary is already a string, return as-is
-  if (typeof job.salary === 'string') return job.salary;
+    if (typeof job.salary === 'string') return job.salary;
 
-  if (job.salary_range && typeof job.salary_range === 'object') {
-    const { min, max, currency, period } = job.salary_range;
+    if (job.salary_range && typeof job.salary_range === 'object') {
+      const { min, max, currency, period } = job.salary_range;
 
-    if (min != null && currency) {
-      // 🔹 If min === max OR max is missing → show single value
-      if (!max || min === max) {
-        return `${currency} ${min.toLocaleString()} ${period || ''}`.trim();
+      if (min != null && currency) {
+        if (!max || min === max) {
+          return `${currency} ${min.toLocaleString()} ${period || ''}`.trim();
+        }
+
+        return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} ${period || ''}`.trim();
       }
-
-      // 🔹 Otherwise show range
-      return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} ${period || ''}`.trim();
     }
-  }
 
-  return null;
-};
+    return null;
+  };
 
-
-  // Helper function to format experience level with years
   const getExperienceLevelWithYears = (level: string) => {
     const experienceMap: Record<string, string> = {
       'Entry Level': 'Entry Level (0-2 years)',
@@ -488,7 +470,6 @@ const getSalaryString = () => {
     return experienceMap[level] || level;
   };
 
-  // Helper function to format job type
   const getJobTypeDisplay = (jobType: string) => {
     const jobTypeMap: Record<string, string> = {
       'remote': 'Remote',
@@ -499,10 +480,6 @@ const getSalaryString = () => {
     };
     return jobTypeMap[jobType?.toLowerCase()] || jobType;
   };
-
-  // ✅ REMOVED: generateStructuredData function - schema is now server-side
-
-  // ✅ REMOVED: getExperienceMonths function - not needed in client
 
   return (
     <>
@@ -522,7 +499,6 @@ const getSalaryString = () => {
            <ArrowLeft size={20} style={{ color: theme.colors.text.light }} />
           </button>
 
-
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1
@@ -537,41 +513,52 @@ const getSalaryString = () => {
                 {getCompanyName()}
               </p>
               
-              {/* Match Score Badge and Save Icon */}
-              <div className="flex items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: theme.colors.overlay.header }}>
-                <div
-                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
-                  style={{
-                    borderColor: theme.colors.text.light,
-                    backgroundColor: 'transparent',
-                  }}
-                >
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: theme.colors.text.light }}
+              {/* Match Score Badge, Save Icon, and Share Icon */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: theme.colors.overlay.header }}>
+                    <div
+                      className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
+                      style={{
+                        borderColor: theme.colors.text.light,
+                        backgroundColor: 'transparent',
+                      }}
+                    >
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: theme.colors.text.light }}
+                      >
+                        {matchScore}%
+                      </span>
+                    </div>
+                    <span
+                      className="font-medium"
+                      style={{ color: theme.colors.text.light }}
+                    >
+                      Match
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleSave}
+                    className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                    style={{ backgroundColor: theme.colors.overlay.header }}
                   >
-                    {matchScore}%
-                  </span>
-                </div>
-                <span
-                  className="font-medium"
-                  style={{ color: theme.colors.text.light }}
-                >
-                  Match
-                </span>
+                    {saved ? (
+                      <BookmarkCheck size={20} style={{ color: theme.colors.text.light }} />
+                    ) : (
+                      <Bookmark size={20} style={{ color: theme.colors.overlay.headerText }} />
+                    )}
+                  </button>
                 </div>
 
+                {/* Share Button */}
                 <button
-                  onClick={handleSave}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-                style={{ backgroundColor: theme.colors.overlay.header }}
+                  onClick={() => setShareModalOpen(true)}
+                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                  style={{ backgroundColor: theme.colors.overlay.header }}
                 >
-                  {saved ? (
-                    <BookmarkCheck size={20} style={{ color: theme.colors.text.light }} />
-                  ) : (
-                    <Bookmark size={20} style={{ color: theme.colors.overlay.headerText }} />
-                  )}
+                  <Share2 size={20} style={{ color: theme.colors.overlay.headerText }} />
                 </button>
               </div>
             </div>
@@ -708,7 +695,6 @@ const getSalaryString = () => {
             </section>
           )}
 
- 
           {/* Responsibilities */}
           {(() => {
             const responsibilities = job.responsibilities || [];
@@ -800,6 +786,20 @@ const getSalaryString = () => {
                   day: 'numeric'
                 })}
               </p>
+            </section>
+          )}
+
+          {/* Related Jobs Section */}
+          {relatedJobs && relatedJobs.length > 0 && (
+            <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Related Jobs
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {relatedJobs.map((relatedJob) => (
+                  <RelatedJobCard key={relatedJob.id} job={relatedJob} />
+                ))}
+              </div>
             </section>
           )}
 
@@ -1039,9 +1039,66 @@ const getSalaryString = () => {
             </div>
           </div>
         )}
+
+        {/* Share Modal */}
+        {shareModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50"
+            onClick={() => setShareModalOpen(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold mb-4" style={{ color: theme.colors.text.primary }}>
+                Share this job
+              </h3>
+              
+              <div className="space-y-3 mb-6">
+                <button
+                  onClick={() => handleShare('whatsapp')}
+                  className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
+                >
+                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-gray-900">Share on WhatsApp</p>
+                    <p className="text-sm text-gray-500">Send to your contacts</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleShare('email')}
+                  className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                    <Mail size={24} className="text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-gray-900">Share via Email</p>
+                    <p className="text-sm text-gray-500">Send to your email contacts</p>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="w-full px-4 py-3 rounded-xl font-semibold text-white"
+                style={{
+                  backgroundColor: theme.colors.primary.DEFAULT,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* CV and Cover Letter Modals - MOVED INSIDE return statement */}
+      {/* CV and Cover Letter Modals */}
       <CreateCVModal
         isOpen={cvModalOpen}
         onClose={() => setCvModalOpen(false)}

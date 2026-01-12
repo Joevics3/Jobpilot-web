@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { User, Bell, LogOut, ChevronRight, Mail, Shield, HelpCircle, LogIn } from 'lucide-react';
+import { User, Bell, LogOut, ChevronRight, Mail, Shield, HelpCircle, LogIn, Info } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -366,6 +366,24 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h2 className="text-base font-semibold mb-2 px-1 text-gray-700">Support</h2>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <Link
+              href="/about"
+              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: theme.colors.primary.DEFAULT + '15' }}
+                >
+                  <Info size={20} style={{ color: theme.colors.primary.DEFAULT }} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-900">About Us</h3>
+                  <p className="text-xs text-gray-600">Learn more about JobMeter</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-400" />
+            </Link>
             <Link
               href="/privacy-policy"
               className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
