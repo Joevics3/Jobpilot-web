@@ -70,7 +70,7 @@ async function getLatestBlogPosts() {
   const supabase = createClient();
   
   const { data, error } = await supabase
-    .from('blog')
+    .from('blogs')
     .select('id, slug, title, excerpt, created_at')
     .eq('status', 'published')
     .order('created_at', { ascending: false })

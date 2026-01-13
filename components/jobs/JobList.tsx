@@ -379,47 +379,49 @@ const getRelativeTime = (dateString: string | null): string | undefined => {
     };
   };
 
-  const fetchJobs = async () => {
+const fetchJobs = async () => {
+  try {
+    setLoading(true);
+    
+    // ✅ Fetch the 1000 most recent active jobs (Supabase's limit)
+    // Ordered by created_at descending ensures we get the newest jobs
+    const { data, error, count } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact' })
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1000); // Explicitly set limit to 1000 (Supabase's max)
+
+    if (error) throw error;
+
+    console.log(`Fetched ${data?.length || 0} most recent active jobs out of ${count || 0} total`);
+
+    const processedJobs = await processJobsWithMatching(data || []);
+    
+    // ✅ Sort by match score (highest first)
+    processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+
+    // ✅ Cache the processed jobs
     try {
-      setLoading(true);
+      const jobsToCache = processedJobs.map(job => ({
+        ...job,
+        rawData: data?.find((j: any) => j.id === job.id),
+      }));
+      localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
+      localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
       
-      // ✅ Calculate date 30 days ago
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
-      
-      // ✅ Fetch only active jobs from last 30 days
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('status', 'active') // Only active jobs
-        .gte('created_at', thirtyDaysAgoISO) // Posted within last 30 days
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const processedJobs = await processJobsWithMatching(data || []);
-      
-      processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-
-      try {
-        const jobsToCache = processedJobs.map(job => ({
-          ...job,
-          rawData: data?.find((j: any) => j.id === job.id),
-        }));
-        localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
-        localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
-      } catch (cacheError) {
-        console.error('Error caching jobs:', cacheError);
-      }
-
-      setJobs(processedJobs);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-    } finally {
-      setLoading(false);
+      console.log(`Cached ${jobsToCache.length} jobs`);
+    } catch (cacheError) {
+      console.error('Error caching jobs:', cacheError);
     }
-  };
+
+    setJobs(processedJobs);
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const loadSavedJobs = () => {
     if (typeof window === 'undefined') return;
