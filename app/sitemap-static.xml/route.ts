@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { MetadataRoute } from 'next';
 
@@ -58,12 +57,21 @@ export async function GET() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
   .map(
-    (route) => `  <url>
+    (route) => {
+      // Safely handle lastModified - it should always be a Date at this point, but add fallback
+      const lastModDate = route.lastModified instanceof Date 
+        ? route.lastModified 
+        : route.lastModified 
+          ? new Date(route.lastModified) 
+          : new Date();
+      
+      return `  <url>
     <loc>${route.url}</loc>
-    <lastmod>${(route.lastModified instanceof Date ? route.lastModified : new Date(route.lastModified)).toISOString()}</lastmod>
+    <lastmod>${lastModDate.toISOString()}</lastmod>
     <changefreq>${route.changeFrequency}</changefreq>
     <priority>${route.priority}</priority>
-  </url>`
+  </url>`;
+    }
   )
   .join('\n')}
 </urlset>`;
