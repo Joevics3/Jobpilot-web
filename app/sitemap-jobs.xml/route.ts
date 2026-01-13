@@ -32,12 +32,13 @@ export async function GET() {
 
     if (categoryPages && categoryPages.length > 0) {
       categoryPages.forEach((page) => {
-        routes.push({
-          url: `${siteUrl}/resources/${page.slug}`,
-          lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
-          changeFrequency: 'daily', // Categories update daily with new jobs
-          priority: page.location ? 0.7 : 0.8, // National pages get higher priority
-        });
+routes.push({
+  url: `${siteUrl}/resources/${page.slug}`,
+  lastModified: new Date(page.updated_at),
+  changeFrequency: 'daily',
+  priority: page.location ? 0.7 : 0.8,
+});
+
       });
 
       console.log(`📄 Category sitemap: ${routes.length} pages`);
@@ -54,7 +55,7 @@ ${routes
   .map(
     (route) => `  <url>
     <loc>${route.url}</loc>
-    <lastmod>${route.lastModified?.toISOString()}</lastmod>
+    <lastmod>${new Date(route.lastModified!).toISOString()}</lastmod>
     <changefreq>${route.changeFrequency}</changefreq>
     <priority>${route.priority}</priority>
   </url>`

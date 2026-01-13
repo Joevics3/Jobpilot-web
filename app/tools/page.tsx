@@ -25,8 +25,8 @@ export default function ToolsPage() {
   const tools: Tool[] = [
     {
       id: '1',
-      title: 'Resources & Blog',
-      description: 'Career advice, job search tips, and professional development resources',
+      title: 'Job Categories',
+      description: 'Find jobs based on categories and location',
       icon: BookOpen,
       color: theme.colors.accent.gold,
       route: '/resources',
