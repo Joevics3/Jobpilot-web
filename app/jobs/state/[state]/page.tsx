@@ -311,7 +311,7 @@ export default function JobsByStatePage() {
       calculatedTotal: finalMatchScore,
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
-      postedDate: getRelativeTime(job.posted_date ?? job.created_at ?? undefined),
+      postedDate: getRelativeTime(job.posted_date || job.created_at || undefined),
     };
   };
 
