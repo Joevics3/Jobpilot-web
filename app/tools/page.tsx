@@ -60,7 +60,7 @@ export default function ToolsPage() {
       title: 'Blog & Articles',
       description: 'Read expert insights, salary guides, and career tips for job seekers',
       icon: Newspaper,
-      color: theme.colors.accent.purple || '#9333EA',
+      color: '#9333EA',
       route: '/blog',
     },
     {
@@ -68,7 +68,7 @@ export default function ToolsPage() {
       title: 'Company Directory',
       description: 'Explore top companies, their culture, benefits, and open positions',
       icon: Building2,
-      color: theme.colors.accent.orange || '#EA580C',
+      color: '#EA580C',
       route: '/company',
     },
   ];
