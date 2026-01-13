@@ -34,29 +34,47 @@ interface StateJobCount {
 }
 
 async function getJobCountsByState(): Promise<StateJobCount[]> {
-  const counts = await Promise.all(
-    NIGERIAN_STATES.map(async (state) => {
-      try {
-        const { count, error } = await supabase
-          .from('jobs')
-          .select('*', { count: 'exact', head: true })
-          .ilike('location', `%${state}%`);
+  try {
+    // Fetch ALL active jobs at once
+    const { data: allJobs, error } = await supabase
+      .from('jobs')
+      .select('id, location')
+      .eq('status', 'active');
 
-        return {
-          state,
-          count: count || 0,
-        };
-      } catch (error) {
-        return {
-          state,
-          count: 0,
-        };
-      }
-    })
-  );
+    if (error) {
+      console.error('Error fetching jobs:', error);
+      return NIGERIAN_STATES.map(state => ({ state, count: 0 }));
+    }
 
-  // Sort by count descending
-  return counts.sort((a, b) => b.count - a.count);
+    // Count jobs for each state in JavaScript
+    const counts = NIGERIAN_STATES.map((state) => {
+      const count = (allJobs || []).filter((job) => {
+        // Handle string location format
+        if (typeof job.location === 'string') {
+          return job.location.toLowerCase().includes(state.toLowerCase());
+        }
+        
+        // Handle object location format
+        if (job.location && typeof job.location === 'object') {
+          const locState = job.location.state || '';
+          return locState.toLowerCase() === state.toLowerCase();
+        }
+        
+        return false;
+      }).length;
+
+      return {
+        state,
+        count,
+      };
+    });
+
+    // Sort by count descending
+    return counts.sort((a, b) => b.count - a.count);
+  } catch (error) {
+    console.error('Error in getJobCountsByState:', error);
+    return NIGERIAN_STATES.map(state => ({ state, count: 0 }));
+  }
 }
 
 export const revalidate = 3600; // Revalidate every hour
@@ -72,7 +90,7 @@ export default async function AllStatesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-3 mb-4">
             <MapPin size={32} />
-            <h1 className="text-4xl font-bold">Browse Jobs by State</h1>
+            <h1 className="text-4xl font-bold">Browse Jobs by Location</h1>
           </div>
           <p className="text-lg text-white max-w-3xl">
             Find job opportunities across all 36 states in Nigeria and the Federal Capital Territory. 

@@ -108,27 +108,37 @@ export default function JobsByStatePage() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      // Fetch jobs filtered by state (same as your JobList.tsx but with location filter)
+      // Fetch ALL active jobs from last 30 days
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .eq('status', 'active')
         .gte('created_at', thirtyDaysAgo.toISOString())
-        .ilike('location', `%${formattedState}%`) // ← ONLY DIFFERENCE from JobList.tsx
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const { count } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .ilike('location', `%${formattedState}%`);
+      // Filter jobs by state in JavaScript (since location can be string or JSON object)
+      const stateFilteredJobs = (data || []).filter((job) => {
+        // Handle string location format
+        if (typeof job.location === 'string') {
+          return job.location.toLowerCase().includes(formattedState.toLowerCase());
+        }
+        
+        // Handle object location format
+        if (job.location && typeof job.location === 'object') {
+          const locState = job.location.state || '';
+          return locState.toLowerCase() === formattedState.toLowerCase();
+        }
+        
+        return false;
+      });
 
-      setTotalJobs(count || 0);
+      // Set total count for this state
+      setTotalJobs(stateFilteredJobs.length);
 
       // Use EXACT SAME matching logic as JobList.tsx
-      const processedJobs = await processJobsWithMatching(data || []);
+      const processedJobs = await processJobsWithMatching(stateFilteredJobs);
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
       setJobs(processedJobs);
     } catch (error) {
@@ -302,7 +312,6 @@ export default function JobsByStatePage() {
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
       postedDate: getRelativeTime(job.posted_date ?? job.created_at ?? undefined),
-
     };
   };
 
@@ -404,11 +413,11 @@ export default function JobsByStatePage() {
         {/* Back Button */}
         <div className="px-6 py-4">
           <Link
-            href="/jobs"
+            href="/jobs/state/"
             className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
           >
             <ArrowLeft size={20} />
-            Back to All Jobs
+            Back to All Locations
           </Link>
         </div>
 

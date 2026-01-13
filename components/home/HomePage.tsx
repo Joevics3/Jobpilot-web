@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { theme } from '@/lib/theme';
+import { supabase } from '@/lib/supabase';
 import { 
   Briefcase, 
   Building2, 
@@ -19,79 +20,297 @@ import {
 import Link from 'next/link';
 import BannerAd from '@/components/ads/BannerAd';
 import AuthModal from '@/components/AuthModal';
+import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
+import { matchCacheService } from '@/lib/matching/matchCache';
 
 interface HomePageProps {
   jobs: any[];
   blogPosts: any[];
 }
 
-export default function HomePage({ jobs, blogPosts }: HomePageProps) {
+interface JobWithMatch {
+  id: string;
+  slug: string;
+  title: string;
+  company: any;
+  location: any;
+  posted_date: string;
+  matchScore: number;
+  breakdown: any;
+}
+
+// Inline MatchCircle component
+interface MatchCircleProps {
+  score: number;
+}
+
+const MatchCircle: React.FC<MatchCircleProps> = ({ score }) => {
+  let matchColor = '#F87171'; // red
+  if (score > 0 && score <= 50) matchColor = '#FBBF24'; // orange
+  if (score > 50) matchColor = '#34D399'; // green
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
+        style={{
+          borderColor: matchColor,
+          backgroundColor: theme.colors.background.muted,
+        }}
+      >
+        <span className="text-sm font-bold" style={{ color: matchColor }}>
+          {score}%
+        </span>
+      </div>
+      <span
+        className="text-[10px] font-medium"
+        style={{ color: theme.colors.text.secondary }}
+      >
+        Match
+      </span>
+    </div>
+  );
+};
+
+export default function HomePage({ jobs: initialJobs, blogPosts }: HomePageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'seekers' | 'recruiters'>('seekers');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
+  const [processedJobs, setProcessedJobs] = useState<JobWithMatch[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Featured categories with descriptions
-  const featuredCategories = [
-    {
-      title: 'Accountant Jobs',
-      slug: 'accountant-jobs',
-      description: 'Explore accounting and finance positions across industries. Find roles in auditing, bookkeeping, financial analysis, and tax preparation.',
-      icon: '💰',
-    },
-    {
-      title: 'Sales Executive Jobs',
-      slug: 'sales-executive-jobs',
-      description: 'Discover sales and business development opportunities. Connect with companies seeking driven sales professionals to grow their business.',
-      icon: '📈',
-    },
-    {
-      title: 'Social Media Manager Jobs',
-      slug: 'social-media-manager-jobs',
-      description: 'Find digital marketing and social media management roles. Join brands looking for creative professionals to manage their online presence.',
-      icon: '📱',
-    },
-    {
-      title: 'Inventory Controller Jobs',
-      slug: 'inventory-controller-jobs',
-      description: 'Browse inventory management and logistics positions. Work with companies optimizing their supply chain and warehouse operations.',
-      icon: '📦',
-    },
-    {
-      title: 'Executive Assistant Jobs',
-      slug: 'executive-assistant-jobs',
-      description: 'Access executive support and administrative opportunities. Partner with leaders as their right hand in dynamic organizations.',
-      icon: '📋',
-    },
+  // Hardcoded categories and locations for hyperlinks
+  const categories = [
+    { title: 'Accountant Jobs', slug: 'accountant-jobs' },
+    { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
+    { title: 'Social Media Manager Jobs', slug: 'social-media-manager-jobs' },
+    { title: 'Inventory Controller Jobs', slug: 'inventory-controller-jobs' },
+    { title: 'Executive Assistant Jobs', slug: 'executive-assistant-jobs' },
+    { title: 'Housekeeper Jobs', slug: 'housekeeper-jobs' },
+    { title: 'Farm Manager Jobs', slug: 'farm-manager-jobs' },
+    { title: 'Marketing Officer Jobs', slug: 'marketing-officer-jobs' },
+    { title: 'Nanny Jobs', slug: 'nanny-jobs' },
+    { title: 'HR Manager Jobs', slug: 'hr-manager-jobs' },
+    { title: 'Chef Jobs', slug: 'chef-jobs' },
+    { title: 'Cook Jobs', slug: 'cook-jobs' },
+    { title: 'Sales Manager Jobs', slug: 'sales-manager-jobs' },
+    { title: 'Content Creator Jobs', slug: 'content-creator-jobs' },
+    { title: 'Customer Service Representative Jobs', slug: 'customer-service-representative-jobs' },
+    { title: 'Machine Operator Jobs', slug: 'machine-operator-jobs' },
+    { title: 'Production Technician Jobs', slug: 'production-technician-jobs' },
+    { title: 'Beautician Jobs', slug: 'beautician-jobs' },
+    { title: 'Graphic Designer Jobs', slug: 'graphic-designer-jobs' },
+    { title: 'AI Engineer Jobs', slug: 'ai-engineer-jobs' },
   ];
 
-  // Featured locations with descriptions
-  const featuredLocations = [
-    {
-      title: 'Content Creator Jobs in Lagos',
-      slug: 'content-creator-jobs-lagos',
-      description: 'Lagos content creation opportunities across media, marketing, and digital platforms.',
-    },
-    {
-      title: 'Machine Operator Jobs in Lagos',
-      slug: 'machine-operator-jobs-lagos',
-      description: 'Manufacturing and production roles for skilled machine operators in Lagos.',
-    },
-    {
-      title: 'Production Technician Jobs in Akwa Ibom',
-      slug: 'production-technician-jobs-akwa-ibom',
-      description: 'Technical production positions in Akwa Ibom\'s growing industrial sector.',
-    },
-    {
-      title: 'Customer Service Jobs in Lagos',
-      slug: 'customer-service-representative-jobs-lagos',
-      description: 'Customer support and service roles with top companies in Lagos.',
-    },
-    {
-      title: 'Social Media Manager Jobs in Lagos',
-      slug: 'social-media-manager-jobs-lagos',
-      description: 'Digital marketing and social media opportunities in Lagos\' vibrant tech scene.',
-    },
+  const locations = [
+    { title: 'Jobs in Lagos', slug: 'lagos' },
+    { title: 'Jobs in Abuja', slug: 'abuja' },
+    { title: 'Jobs in PortHarcourt', slug: 'portharcourt' },
+    { title: 'Jobs in Ibadan', slug: 'ibadan' },
+    { title: 'Jobs in Kano', slug: 'kano' },
+    { title: 'Jobs in Kaduna', slug: 'kaduna' },
+    { title: 'Jobs in Ondo', slug: 'ondo' },
+    { title: 'Jobs in Ogun', slug: 'ogun' },
+    { title: 'Jobs in Rivers', slug: 'rivers' },
+    { title: 'Jobs in Oyo', slug: 'oyo' },
+    { title: 'Jobs in Ekiti', slug: 'ekiti' },
+    { title: 'Jobs in Enugu', slug: 'enugu' },
+    { title: 'Jobs in Imo', slug: 'imo' },
+    { title: 'Jobs in Delta', slug: 'delta' },
+    { title: 'Jobs in Edo', slug: 'edo' },
+    { title: 'Jobs in Kwara', slug: 'kwara' },
+    { title: 'Jobs in Benue', slug: 'benue' },
+    { title: 'Jobs in Niger', slug: 'niger' },
+    { title: 'Jobs in Plateau', slug: 'plateau' },
+    { title: 'Jobs in Sokoto', slug: 'sokoto' },
   ];
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserOnboardingData();
+    } else {
+      // No user, just show jobs with 0 match score
+      processJobsWithoutMatching();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && userOnboardingData !== null) {
+      processJobsWithMatching(initialJobs);
+    }
+  }, [userOnboardingData, initialJobs]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setUser(session.user);
+    } else {
+      setUser(null);
+      processJobsWithoutMatching();
+    }
+  };
+
+  const fetchUserOnboardingData = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('onboarding_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching onboarding data:', error);
+        processJobsWithoutMatching();
+        return;
+      }
+
+      if (data) {
+        setUserOnboardingData({
+          target_roles: data.target_roles || [],
+          cv_skills: data.cv_skills || [],
+          preferred_locations: data.preferred_locations || [],
+          experience_level: data.experience_level || null,
+          salary_min: data.salary_min || null,
+          salary_max: data.salary_max || null,
+          job_type: data.job_type || null,
+          sector: data.sector || null,
+        });
+      } else {
+        processJobsWithoutMatching();
+      }
+    } catch (error) {
+      console.error('Error fetching onboarding data:', error);
+      processJobsWithoutMatching();
+    }
+  };
+
+  const processJobsWithoutMatching = () => {
+    const jobsWithZeroMatch = initialJobs.map(job => ({
+      id: job.id,
+      slug: job.slug || job.id,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      posted_date: job.posted_date || job.created_at,
+      matchScore: 0,
+      breakdown: null,
+    }));
+    setProcessedJobs(jobsWithZeroMatch);
+    setLoading(false);
+  };
+
+  const processJobsWithMatching = useCallback(async (jobRows: any[]) => {
+    if (!userOnboardingData || !user) {
+      processJobsWithoutMatching();
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const matchCache = matchCacheService.loadMatchCache(user.id);
+      let cacheNeedsUpdate = false;
+      const updatedCache = { ...matchCache };
+
+      const jobsWithScores = await Promise.all(
+        jobRows.map(async (job: any) => {
+          try {
+            let matchResult;
+            const cachedMatch = updatedCache[job.id];
+
+            if (cachedMatch) {
+              matchResult = {
+                score: cachedMatch.score,
+                breakdown: cachedMatch.breakdown,
+                computedAt: cachedMatch.cachedAt,
+              };
+            } else {
+              const jobRow: JobRow = {
+                role: job.role || job.title,
+                related_roles: job.related_roles,
+                ai_enhanced_roles: job.ai_enhanced_roles,
+                skills_required: job.skills_required,
+                ai_enhanced_skills: job.ai_enhanced_skills,
+                location: job.location,
+                experience_level: job.experience_level,
+                salary_range: job.salary_range,
+                employment_type: job.employment_type,
+                sector: job.sector,
+              };
+
+              matchResult = scoreJob(jobRow, userOnboardingData);
+
+              updatedCache[job.id] = {
+                score: matchResult.score,
+                breakdown: matchResult.breakdown,
+                cachedAt: matchResult.computedAt,
+              };
+              cacheNeedsUpdate = true;
+            }
+
+            const rsCapped = Math.min(
+              80,
+              matchResult.breakdown.rolesScore +
+              matchResult.breakdown.skillsScore +
+              matchResult.breakdown.sectorScore
+            );
+            const calculatedTotal = Math.round(
+              rsCapped +
+              matchResult.breakdown.locationScore +
+              matchResult.breakdown.experienceScore +
+              matchResult.breakdown.salaryScore +
+              matchResult.breakdown.typeScore
+            );
+
+            return {
+              id: job.id,
+              slug: job.slug || job.id,
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              posted_date: job.posted_date || job.created_at,
+              matchScore: calculatedTotal,
+              breakdown: matchResult.breakdown,
+            };
+          } catch (error) {
+            console.error(`Error processing match for job ${job.id}:`, error);
+            return {
+              id: job.id,
+              slug: job.slug || job.id,
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              posted_date: job.posted_date || job.created_at,
+              matchScore: 0,
+              breakdown: null,
+            };
+          }
+        })
+      );
+
+      if (cacheNeedsUpdate) {
+        matchCacheService.saveMatchCache(user.id, updatedCache);
+      }
+
+      // Sort by match score descending
+      jobsWithScores.sort((a, b) => b.matchScore - a.matchScore);
+      setProcessedJobs(jobsWithScores);
+    } catch (error) {
+      console.error('Error processing jobs with matching:', error);
+      processJobsWithoutMatching();
+    } finally {
+      setLoading(false);
+    }
+  }, [user, userOnboardingData, initialJobs]);
 
   const getRelativeTime = (dateString: string) => {
     try {
@@ -99,7 +318,7 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
       const now = new Date();
       const diffInMs = now.getTime() - date.getTime();
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      
+
       if (diffInDays === 0) return 'Today';
       if (diffInDays === 1) return '1 day ago';
       if (diffInDays < 7) return `${diffInDays} days ago`;
@@ -131,12 +350,7 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
       {/* Hero Section */}
-      <div
-        className="pt-12 pb-8 px-6"
-        style={{
-          backgroundColor: theme.colors.primary.DEFAULT,
-        }}
-      >
+      <div className="pt-12 pb-8 px-6" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-4 text-white">
             JobMeter — Find Jobs That Match Your Skills & Experiences
@@ -175,41 +389,23 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
           <div className="flex gap-2 mb-6 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('seekers')}
-              className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${
-                activeTab === 'seekers'
-                  ? 'text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'seekers' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
             >
               <div className="flex items-center justify-center gap-2">
                 <Briefcase size={18} />
                 Job Seekers
               </div>
-              {activeTab === 'seekers' && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                />
-              )}
+              {activeTab === 'seekers' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }} />}
             </button>
             <button
               onClick={() => setActiveTab('recruiters')}
-              className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${
-                activeTab === 'recruiters'
-                  ? 'text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'recruiters' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
             >
               <div className="flex items-center justify-center gap-2">
                 <Building2 size={18} />
                 Recruiters
               </div>
-              {activeTab === 'recruiters' && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                />
-              )}
+              {activeTab === 'recruiters' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }} />}
             </button>
           </div>
 
@@ -229,30 +425,42 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
                     <ArrowRight size={16} />
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {jobs.slice(0, 10).map((job) => (
-                    <Link
-                      key={job.id}
-                      href={`/jobs/${job.slug}`}
-                      className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors"
-                    >
-                      <h3 className="font-semibold text-gray-900 mb-1">{job.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{getCompanyName(job.company)}</p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <MapPin size={14} />
-                          {getLocationString(job.location)}
-                        </span>
-                        {job.posted_date && (
-                          <span className="flex items-center gap-1">
-                            <Calendar size={14} />
-                            {getRelativeTime(job.posted_date)}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {processedJobs.slice(0, 10).map((job) => (
+                      <Link
+                        key={job.id}
+                        href={`/jobs/${job.slug}`}
+                        className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors flex flex-col justify-between"
+                      >
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-2">{job.title}</h3>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-600">{getCompanyName(job.company)}</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                <MapPin size={12} />
+                                {getLocationString(job.location)}
+                                {job.posted_date && (
+                                  <>
+                                    <span className="mx-1">•</span>
+                                    <Calendar size={12} />
+                                    {getRelativeTime(job.posted_date)}
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                            <MatchCircle score={job.matchScore} />
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-6 text-center">
                   <Link
                     href="/jobs"
@@ -323,52 +531,50 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
         </div>
       </div>
 
-      {/* Featured Categories */}
+      {/* Browse Jobs by Category */}
       <section className="px-6 py-8 bg-white">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Browse Jobs by Category</h2>
-          <p className="text-sm text-gray-600 mb-6">Explore popular job categories and find opportunities that match your skills and career goals.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {featuredCategories.map((category) => (
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Browse Jobs by Category</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {categories.map((cat) => (
               <Link
-                key={category.slug}
-                href={`/resources/${category.slug}`}
-                className="bg-gray-50 rounded-xl p-5 border border-gray-200 hover:border-blue-300 transition-colors group"
+                key={cat.slug}
+                href={`/resources/${cat.slug}`}
+                className="text-blue-600 hover:underline"
               >
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl">{category.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {category.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">{category.description}</p>
-                  </div>
-                </div>
+                {cat.title}
               </Link>
             ))}
+            <Link
+              href="/resources"
+              className="text-blue-600 hover:underline font-semibold mt-2"
+            >
+              View All Categories
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Featured Locations */}
+      {/* Browse Jobs by Location */}
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Jobs by Location</h2>
-          <p className="text-sm text-gray-600 mb-6">Find employment opportunities in top cities and regions across the country.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredLocations.map((location) => (
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Jobs by Location</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {locations.map((loc) => (
               <Link
-                key={location.slug}
-                href={`/resources/${location.slug}`}
-                className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors"
+                key={loc.slug}
+                href={`/jobs/state/${loc.slug}`}
+                className="text-blue-600 hover:underline"
               >
-                <div className="flex items-start gap-2 mb-2">
-                  <MapPin size={18} style={{ color: theme.colors.primary.DEFAULT }} className="flex-shrink-0 mt-0.5" />
-                  <h3 className="font-semibold text-gray-900 text-sm">{location.title}</h3>
-                </div>
-                <p className="text-xs text-gray-600">{location.description}</p>
+                {loc.title}
               </Link>
             ))}
+            <Link
+              href="/jobs/state"
+              className="text-blue-600 hover:underline font-semibold mt-2"
+            >
+              View All Locations
+            </Link>
           </div>
         </div>
       </section>
@@ -409,8 +615,7 @@ export default function HomePage({ jobs, blogPosts }: HomePageProps) {
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">Career Insights & Resources</h2>
-                <p className="text-sm text-gray-600">Latest career advice, salary guides, and job search tips to help you succeed.</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Blog Posts</h2>
               </div>
               <Link
                 href="/blog"
