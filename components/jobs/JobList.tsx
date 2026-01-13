@@ -337,8 +337,8 @@ export default function JobList() {
     }
 
     // ✅ Calculate relative time for posted date
-    const getRelativeTime = (dateString: string | null) => {
-      if (!dateString) return null;
+const getRelativeTime = (dateString: string | null): string | undefined => {
+  if (!dateString) return undefined;
       
       try {
         const date = new Date(dateString);
@@ -359,9 +359,9 @@ export default function JobList() {
         }
         const years = Math.floor(diffInDays / 365);
         return years === 1 ? '1 year ago' : `${years} years ago`;
-      } catch {
-        return null;
-      }
+} catch {
+    return undefined;
+  }
     };
 
     return {
