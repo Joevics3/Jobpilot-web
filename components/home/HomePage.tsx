@@ -500,8 +500,8 @@ export default function HomePage({ jobs: initialJobs, blogPosts }: HomePageProps
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.colors.accent.purple + '20' }}>
-                      <TrendingUp size={20} style={{ color: theme.colors.accent.purple }} />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#9333EA20' }}>
+                      <TrendingUp size={20} style={{ color: '#9333EA' }} />
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-1">Easy Job Posting</h4>
