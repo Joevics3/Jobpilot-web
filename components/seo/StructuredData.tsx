@@ -14,7 +14,8 @@ export function OrganizationSchema() {
     name: 'JobMeter',
     url: siteUrl,
     logo: `${siteUrl}/logo.png`,
-    description: 'AI-powered job discovery and matching platform connecting job seekers with employment opportunities worldwide.',
+    description:
+      'AI-powered job discovery and matching platform connecting job seekers with employment opportunities worldwide.',
     sameAs: [
       'https://twitter.com/jobmeterapp',
       'https://www.linkedin.com/company/jobmeter',
@@ -48,7 +49,8 @@ export function WebSiteSchema({ searchAction }: { searchAction?: SearchAction } 
     '@type': 'WebSite',
     name: 'JobMeter',
     url: siteUrl,
-    description: 'Find your dream job with AI-powered job matching. Search thousands of jobs, get personalized recommendations, and apply with confidence.',
+    description:
+      'Find your dream job with AI-powered job matching. Search thousands of jobs, get personalized recommendations, and apply with confidence.',
     ...(searchAction && {
       potentialAction: {
         '@type': 'SearchAction',
@@ -95,105 +97,9 @@ export function BreadcrumbListSchema({ items }: { items: BreadcrumbItem[] }) {
   );
 }
 
-// =============================================
-// JOB POSTING SCHEMA
-// =============================================
-
-interface JobPostingSchemaProps {
-  title: string;
-  description: string;
-  datePosted: string;
-  validThrough?: string;
-  employmentType?: string;
-  hiringOrganization: {
-    name: string;
-    sameAs?: string;
-  };
-  jobLocation?: {
-    address: {
-      addressLocality: string;
-      addressRegion?: string;
-      addressCountry: string;
-    };
-  };
-  baseSalary?: {
-    currency: string;
-    value: {
-      minValue?: number;
-      maxValue?: number;
-      value?: number;
-    };
-  };
-  url: string;
-}
-
-export function JobPostingSchema({
-  title,
-  description,
-  datePosted,
-  validThrough,
-  employmentType,
-  hiringOrganization,
-  jobLocation,
-  baseSalary,
-  url,
-}: JobPostingSchemaProps) {
-  const schema: any = {
-    '@context': 'https://schema.org',
-    '@type': 'JobPosting',
-    title,
-    description,
-    datePosted,
-    hiringOrganization: {
-      '@type': 'Organization',
-      name: hiringOrganization.name,
-      ...(hiringOrganization.sameAs && { sameAs: hiringOrganization.sameAs }),
-    },
-    url,
-  };
-
-  if (validThrough) {
-    schema.validThrough = validThrough;
-  }
-
-  if (employmentType) {
-    schema.employmentType = employmentType;
-  }
-
-  if (jobLocation) {
-    schema.jobLocation = {
-      '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: jobLocation.address.addressLocality,
-        ...(jobLocation.address.addressRegion && {
-          addressRegion: jobLocation.address.addressRegion,
-        }),
-        addressCountry: jobLocation.address.addressCountry,
-      },
-    };
-  }
-
-  if (baseSalary) {
-    schema.baseSalary = {
-      '@type': 'MonetaryAmount',
-      currency: baseSalary.currency,
-      value: {
-        '@type': 'QuantitativeValue',
-        ...(baseSalary.value.minValue && { minValue: baseSalary.value.minValue }),
-        ...(baseSalary.value.maxValue && { maxValue: baseSalary.value.maxValue }),
-        ...(baseSalary.value.value && { value: baseSalary.value.value }),
-      },
-    };
-  }
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
+// ===========================================================
+// REMOVED: ❌ JobPostingSchema (you already generate this in mapJobToSchema.ts)
+// ===========================================================
 
 // =============================================
 // BLOG ARTICLE SCHEMA
@@ -259,7 +165,9 @@ export function ArticleSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(schema),
+      }}
     />
   );
 }
@@ -288,13 +196,15 @@ export function BlogSchema() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(schema),
+      }}
     />
   );
 }
 
 // =============================================
-// COMPANY/ORGANIZATION SCHEMA (for company profiles)
+// COMPANY SCHEMA
 // =============================================
 
 interface CompanySchemaProps {
@@ -333,13 +243,15 @@ export function CompanySchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(schema),
+      }}
     />
   );
 }
 
 // =============================================
-// ITEM LIST SCHEMA (for company/blog listings)
+// ITEM LIST SCHEMA
 // =============================================
 
 interface ItemListSchemaProps {
@@ -383,7 +295,9 @@ export function ItemListSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(schema),
+      }}
     />
   );
 }
@@ -416,7 +330,9 @@ export function FAQSchema({ faqs }: { faqs: FAQ[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(schema),
+      }}
     />
   );
 }

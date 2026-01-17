@@ -1,4 +1,3 @@
-
 import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
@@ -15,6 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteUrl}/sitemap-jobs.xml`,
+      lastModified: new Date(),
+    },
+    {
+      url: `${siteUrl}/sitemap-content.xml`, // New: For Company and Blog
       lastModified: new Date(),
     },
   ];

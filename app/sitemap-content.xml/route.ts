@@ -17,30 +17,43 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const { data: categoryPages, error } = await supabase
-      .from('category_pages')
-      .select('slug, updated_at, location, job_count')
-      .eq('is_published', true)
-      .order('job_count', { ascending: false });
+    // Fetch Companies
+    const { data: companies, error: companyError } = await supabase
+      .from('companies')
+      .select('slug, updated_at')
+      .eq('is_published', true);
 
-    if (error) {
-      console.error('Error fetching category pages:', error);
-      return new Response('Error fetching category pages', { status: 500 });
-    }
-
-    if (categoryPages && categoryPages.length > 0) {
-      categoryPages.forEach((page) => {
+    if (companies) {
+      companies.forEach((company) => {
         routes.push({
-          url: `${siteUrl}/resources/${page.slug}`,
-          lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
-          changeFrequency: 'daily',
-          priority: page.location ? 0.7 : 0.8,
+          url: `${siteUrl}/company/${company.slug}`,
+          lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.6,
         });
       });
-      console.log(`📄 Category sitemap: ${routes.length} pages`);
     }
+
+    // Fetch Blog Posts
+    const { data: posts, error: postError } = await supabase
+      .from('posts')
+      .select('slug, updated_at')
+      .eq('is_published', true);
+
+    if (posts) {
+      posts.forEach((post) => {
+        routes.push({
+          url: `${siteUrl}/blog/${post.slug}`,
+          lastModified: post.updated_at ? new Date(post.updated_at) : new Date(),
+          changeFrequency: 'monthly',
+          priority: 0.5,
+        });
+      });
+    }
+
+    console.log(`📄 Content sitemap: ${routes.length} companies/posts`);
   } catch (error) {
-    console.error('Error generating category sitemap:', error);
+    console.error('Error generating content sitemap:', error);
     return new Response('Error generating sitemap', { status: 500 });
   }
 
@@ -61,9 +74,9 @@ ${routes
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=21600, s-maxage=21600',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
     },
   });
 }
 
-export const revalidate = 21600;
+export const revalidate = 86400;

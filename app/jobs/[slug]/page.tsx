@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (error || !job) {
     return {
       title: 'Job Not Found - JobMeter',
+      description: 'The job you are looking for could not be found. Browse more jobs on JobMeter.',
     };
   }
 
@@ -32,13 +33,59 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         ? 'Remote'
         : [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified');
 
-  const salaryStr = job.salary || 
-    (job.salary_range 
-      ? `${job.salary_range.currency} ${job.salary_range.min} - ${job.salary_range.max}`
-      : null);
+  // FIX: Handle undefined/null salary values properly
+  const getSalaryString = () => {
+    if (job.salary) return job.salary;
+    
+    if (job.salary_range && typeof job.salary_range === 'object') {
+      const { min, max, currency } = job.salary_range;
+      
+      // Only return salary if we have currency AND at least one value
+      if (currency && (min || max)) {
+        if (min && max) {
+          return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()}`;
+        } else if (min) {
+          return `${currency} ${min.toLocaleString()}`;
+        } else if (max) {
+          return `${currency} ${max.toLocaleString()}`;
+        }
+      }
+    }
+    
+    return null; // Return null instead of undefined
+  };
 
-  const title = `${job.title || 'Job'} at ${companyName} - JobMeter`;
-  const description = `${job.title || 'Job'} position at ${companyName} in ${locationStr}.${salaryStr ? ` Salary: ${salaryStr}` : ''} ${job.description ? String(job.description).substring(0, 100) + '...' : ''}`;
+  const salaryStr = getSalaryString();
+
+  // FIX: Remove duplicate "JobMeter" - only ONE at the end
+  const title = `${job.title} at ${companyName}`;
+  
+  // FIX: Don't include salary if it's null/undefined
+  let description = `Apply for ${job.title} at ${companyName} in ${locationStr}`;
+  
+  // Only add salary if it exists and isn't null
+  if (salaryStr) {
+    description += `. Salary: ${salaryStr}`;
+  }
+  
+  description += '. Apply now on JobMeter.';
+  
+  // Ensure description is within optimal length (120-155 chars)
+  if (description.length > 155) {
+    if (salaryStr) {
+      // Try without salary
+      description = `Apply for ${job.title} at ${companyName} in ${locationStr}. Apply now on JobMeter.`;
+    }
+    
+    // If still too long, truncate job title
+    if (description.length > 155) {
+      const maxTitleLength = 155 - `Apply for  at ${companyName} in ${locationStr}. Apply now!`.length;
+      const truncatedTitle = job.title.length > maxTitleLength 
+        ? job.title.substring(0, maxTitleLength - 3) + '...'
+        : job.title;
+      description = `Apply for ${truncatedTitle} at ${companyName} in ${locationStr}. Apply now!`;
+    }
+  }
 
   return {
     title,
@@ -48,6 +95,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       type: 'website',
       siteName: 'JobMeter',
+      url: `https://www.jobmeter.app/jobs/${job.slug}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -55,7 +103,18 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
     },
     alternates: {
-      canonical: `/jobs/${job.slug}`,
+      canonical: `https://www.jobmeter.app/jobs/${job.slug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   };
 }

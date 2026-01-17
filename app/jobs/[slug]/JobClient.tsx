@@ -458,17 +458,30 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     return null;
   };
 
-  const getExperienceLevelWithYears = (level: string) => {
-    const experienceMap: Record<string, string> = {
-      'Entry Level': 'Entry Level (0-2 years)',
-      'Junior': 'Junior (1-3 years)',
-      'Mid-level': 'Mid-level (3-5 years)',
-      'Senior': 'Senior (5-8 years)',
-      'Lead': 'Lead (8-12 years)',
-      'Executive': 'Executive (12+ years)',
-    };
-    return experienceMap[level] || level;
+const getExperienceLevelWithYears = (level: string) => {
+  // Normalize the input
+  const normalizedLevel = level.trim();
+  
+  const experienceMap: Record<string, string> = {
+    'Entry Level': 'Entry Level (0-2 years)',
+    'entry level': 'Entry Level (0-2 years)',
+    'entry-level': 'Entry Level (0-2 years)',
+    'Junior': 'Junior (1-3 years)',
+    'junior': 'Junior (1-3 years)',
+    'Mid-level': 'Mid-level (3-5 years)',
+    'mid-level': 'Mid-level (3-5 years)',
+    'Mid level': 'Mid-level (3-5 years)',
+    'mid level': 'Mid-level (3-5 years)',
+    'Senior': 'Senior (5-8 years)',
+    'senior': 'Senior (5-8 years)',
+    'Lead': 'Lead (8-12 years)',
+    'lead': 'Lead (8-12 years)',
+    'Executive': 'Executive (12+ years)',
+    'executive': 'Executive (12+ years)',
   };
+  
+  return experienceMap[normalizedLevel] || level;
+};
 
   const getJobTypeDisplay = (jobType: string) => {
     const jobTypeMap: Record<string, string> = {
@@ -775,19 +788,29 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
             return null;
           })()}
 
-          {/* Posted Date */}
-          {job.posted_date && (
-            <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-              <h2 className="text-lg font-semibold mb-2 text-gray-900">Posted</h2>
-              <p className="text-sm text-gray-600">
-                {new Date(job.posted_date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </section>
-          )}
+{(job.posted_date || job.created_at) && (
+  <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+    <h2 className="text-lg font-semibold mb-2 text-gray-900">Posted</h2>
+    <p className="text-sm text-gray-600">
+      {(() => {
+        const dateStr = job.posted_date || job.created_at;
+        const date = new Date(dateStr);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return 'Date not available';
+        }
+        
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC' // Important: use UTC to prevent timezone issues
+        });
+      })()}
+    </p>
+  </section>
+)}
 
           {/* Related Jobs Section */}
           {relatedJobs && relatedJobs.length > 0 && (

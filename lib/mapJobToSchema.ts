@@ -1,84 +1,231 @@
+// lib/mapJobToSchema.ts
+// FINAL unified, fixed, cleaned, enhanced Google JobPosting schema generator
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.jobmeter.app";
+
 export function mapJobToSchema(job: any) {
-  // Helper functions
+  // -----------------------------
+  // CLEAN DESCRIPTION (fixes your issue!)
+  // -----------------------------
+  const getCleanDescription = () => {
+    let desc =
+      job.description_html ||
+      job.description ||
+      "Job description not available";
+
+    // Remove application links completely
+    desc = desc.replace(/<a[^>]*>.*?<\/a>/gi, "");
+    desc = desc.replace(/https?:\/\/\S+/gi, "");
+    desc = desc.replace(/To apply[^<]*/gi, "");
+
+    // Fix dangling closing tags like </a>
+    desc = desc.replace(/<\/a>/gi, "");
+
+    return desc;
+  };
+
+  // -----------------------------
+  // Helper: Company Name
+  // -----------------------------
   const getCompanyName = () => {
-    if (!job.company) return 'Confidential Employer';
-    if (typeof job.company === 'string') return job.company;
-    if (typeof job.company === 'object' && job.company.name) return job.company.name;
-    return 'Confidential Employer';
+    if (!job.company) return "Confidential Employer";
+    if (typeof job.company === "string") return job.company;
+    if (job.company.name) return job.company.name;
+    return "Confidential Employer";
   };
 
+  // -----------------------------
+  // Helper: Employment Type
+  // -----------------------------
   const getEmploymentType = () => {
-    const type = job.employment_type || job.type || 'full-time';
-    const normalizedType = type.toLowerCase();
-    
-    // Map to Google Jobs expected values
-    const typeMap: Record<string, string> = {
-      'full-time': 'FULL_TIME',
-      'part-time': 'PART_TIME',
-      'contract': 'CONTRACTOR',
-      'temporary': 'TEMPORARY',
-      'internship': 'INTERN',
-      'freelance': 'CONTRACTOR'
+    const t = (job.employment_type || "").toLowerCase();
+
+    const map: Record<string, string> = {
+      "full-time": "FULL_TIME",
+      "full time": "FULL_TIME",
+      fulltime: "FULL_TIME",
+      "part-time": "PART_TIME",
+      "part time": "PART_TIME",
+      parttime: "PART_TIME",
+      contract: "CONTRACTOR",
+      freelance: "CONTRACTOR",
+      temporary: "TEMPORARY",
+      internship: "INTERN",
+      intern: "INTERN",
+      volunteer: "VOLUNTEER",
     };
-    
-    return [typeMap[normalizedType] || 'FULL_TIME'];
+
+    return [map[t] || "FULL_TIME"];
   };
 
-  const getExperienceMonths = (level: string) => {
-    const levels: Record<string, number> = {
-      'Entry Level': 0,
-      'Junior': 12,
-      'Mid-level': 36,
-      'Senior': 60,
-      'Lead': 84,
-      'Executive': 120
+  // -----------------------------
+  // Experience → Months
+  // -----------------------------
+  const getExperienceMonths = (level = "") => {
+    const l = level.toLowerCase();
+
+    const map: Record<string, number> = {
+      "entry-level": 0,
+      "entry level": 0,
+      junior: 12,
+      "mid-level": 36,
+      "mid level": 36,
+      senior: 60,
+      lead: 84,
+      executive: 120,
     };
-    return levels[level] || 36; // Default to mid-level
+
+    return map[l] || 36;
   };
 
-  return {
+  // -----------------------------
+  // Job Location
+  // -----------------------------
+  const getJobLocation = () => {
+    if (job.location?.remote) return undefined;
+
+    return {
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress:
+          job.location?.streetAddress || job.location?.street_address || "",
+        addressLocality: job.location?.city || "Not specified",
+        addressRegion:
+          job.location?.state || job.location?.city || "Not specified",
+        postalCode:
+          job.location?.postalCode || job.location?.postal_code || "",
+        addressCountry: job.location?.country || "NG",
+      },
+    };
+  };
+
+  // -----------------------------
+  // validThrough
+  // -----------------------------
+  const getValidThrough = () => {
+    if (job.deadline) return job.deadline;
+
+    const base = new Date(job.posted_date || job.created_at || Date.now());
+    base.setDate(base.getDate() + 30);
+
+    return base.toISOString().split("T")[0];
+  };
+
+  // -----------------------------
+  // Base Salary (required)
+  // -----------------------------
+  const getBaseSalary = () => {
+    if (!job.salary_range) {
+      return {
+        "@type": "MonetaryAmount",
+        currency: "NGN",
+        value: {
+          "@type": "QuantitativeValue",
+          value: 0,
+          unitText: "MONTH",
+        },
+      };
+    }
+
+    const { min, max, currency = "NGN", period = "MONTH" } =
+      job.salary_range || {};
+
+    return {
+      "@type": "MonetaryAmount",
+      currency,
+      value: {
+        "@type": "QuantitativeValue",
+        minValue: min || undefined,
+        maxValue: max || undefined,
+        value: min || max || undefined,
+        unitText: period.toUpperCase(),
+      },
+    };
+  };
+
+  // -----------------------------
+  // FINAL SCHEMA
+  // -----------------------------
+  const schema: any = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
-    "title": job.title || 'Job Position',
-    "description": job.description_html || job.description || 'Job description not available',
-    "datePosted": job.created_at || job.posted_date,
-    "validThrough": job.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    "employmentType": getEmploymentType(),
-    "hiringOrganization": {
+
+    title: job.title || "Untitled Job",
+    description: getCleanDescription(),
+
+    datePosted:
+      job.created_at ||
+      job.posted_date ||
+      new Date().toISOString().split("T")[0],
+
+    validThrough: getValidThrough(),
+
+    employmentType: getEmploymentType(),
+
+    hiringOrganization: {
       "@type": "Organization",
-      "name": getCompanyName(),
+      name: getCompanyName(),
+      industry: job.company?.industry || job.sector || undefined,
     },
-    "jobLocation": job.location?.remote ? undefined : {
-      "@type": "Place",
-      "address": {
-        "@type": "PostalAddress",
-        ...(job.location?.city && { "addressLocality": job.location.city }),
-        ...(job.location?.state && { "addressRegion": job.location.state }),
-        ...(job.location?.country && { "addressCountry": job.location.country }),
-      }
+
+    employmentUnit: {
+      "@type": "Organization",
+      name: getCompanyName(),
     },
-    "jobLocationType": job.location?.remote ? "TELECOMMUTE" : undefined,
-    "baseSalary": job.salary_range ? {
-      "@type": "MonetaryAmount",
-      "currency": job.salary_range.currency || 'USD',
-      "value": {
-        "@type": "QuantitativeValue",
-        "minValue": job.salary_range.min,
-        "maxValue": job.salary_range.max,
-        "unitText": (job.salary_range.period || 'YEAR').toUpperCase()
-      }
-    } : undefined,
-    "experienceRequirements": job.experience_level ? {
-      "@type": "OccupationalExperienceRequirements",
-      "monthsOfExperience": getExperienceMonths(job.experience_level)
-    } : undefined,
-    "directApply": true,
-    "identifier": {
+
+    jobLocation: getJobLocation(),
+
+    jobLocationType: job.location?.remote ? "TELECOMMUTE" : "ON_SITE",
+
+    applicantLocationRequirements: {
+      "@type": "Country",
+      name: job.location?.country || "Nigeria",
+    },
+
+    baseSalary: getBaseSalary(),
+
+    experienceRequirements: job.experience_level
+      ? {
+          "@type": "OccupationalExperienceRequirements",
+          monthsOfExperience: getExperienceMonths(job.experience_level),
+        }
+      : undefined,
+
+    responsibilities:
+      job.responsibilities?.join("; ") || undefined,
+
+    qualifications:
+      job.qualifications?.join("; ") || undefined,
+
+    skills:
+      job.skills_required?.join(", ") || undefined,
+
+    jobBenefits:
+      job.benefits?.join(", ") || undefined,
+
+    identifier: {
       "@type": "PropertyValue",
-      "name": "JobMeter",
-      "value": job.id
+      name: getCompanyName(),
+      value: job.id,
     },
-    // Use stored slug if available, otherwise generate one
-    "url": `https://www.jobmeter.app/jobs/${job.slug || job.id}`
+
+    workHours: job.employment_type === "Full-time" ? "40 hours per week" : undefined,
+
+    applicationContact:
+      job.application?.url || job.application_url
+        ? {
+            "@type": "ContactPoint",
+            url: job.application?.url || job.application_url,
+          }
+        : undefined,
+
+    directApply: true,
+    url: `${siteUrl}/jobs/${job.slug || job.id}`,
   };
+
+  // Remove undefined
+  Object.keys(schema).forEach((k) => schema[k] === undefined && delete schema[k]);
+
+  return schema;
 }
