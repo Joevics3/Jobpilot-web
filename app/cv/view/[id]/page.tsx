@@ -138,105 +138,145 @@ export default function CVViewPage() {
     setIsEditMode(false);
     setEditedData(null);
   };
+// Replace the handleDownload function in your page.tsx with this updated version
+// Fixed to capture full content height properly
 
-  const handleDownload = async () => {
-    if (!renderedHTML || !document) {
-      alert('Document content is not available. Please try again.');
-      return;
+const handleDownload = async () => {
+  if (!document) {
+    alert('Document content is not available. Please try again.');
+    return;
+  }
+  
+  // Guard: Ensure we're in a browser environment
+  if (typeof window === 'undefined' || !window.document?.body) {
+    console.error('Browser environment is not available');
+    return;
+  }
+
+  const doc = window.document;
+  const docBody = doc.body;
+
+  setIsGeneratingPDF(true);
+  try {
+    // Render PDF-optimized template (mode = 'pdf')
+    let pdfHTML = '';
+    if (document.type === 'cv') {
+      pdfHTML = renderCVTemplate(currentTemplateId, document.structuredData as CVData, 'pdf');
+    } else {
+      pdfHTML = renderCoverLetterTemplate(currentTemplateId, document.structuredData as StructuredCoverLetter, 'pdf');
     }
+
+    // Create a temporary container for PDF generation
+    const printableContent = doc.createElement('div');
+    printableContent.id = 'printable-content';
+    printableContent.style.position = 'absolute';
+    printableContent.style.left = '0';
+    printableContent.style.top = '0';
+    printableContent.style.zIndex = '-9999'; // Hide behind everything
+    printableContent.style.width = '210mm'; // A4 width
+    printableContent.style.minHeight = '297mm'; // A4 height minimum
+    printableContent.style.backgroundColor = 'white';
+    printableContent.style.overflow = 'visible'; // Don't clip content
     
-    // Guard: Ensure we're in a browser environment
-    if (typeof window === 'undefined' || !window.document?.body) {
-      console.error('Browser environment is not available');
-      return;
-    }
+    // Set the PDF-optimized HTML
+    printableContent.innerHTML = pdfHTML;
+    docBody.appendChild(printableContent);
 
-    const doc = window.document;
-    const docBody = doc.body;
+    // Wait for content to fully render and fonts to load
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    setIsGeneratingPDF(true);
-    try {
-      // Create a temporary container for PDF generation (like old-code.txt)
-      const printableContent = doc.createElement('div');
-      printableContent.id = 'printable-content';
-      printableContent.style.position = 'absolute';
-      printableContent.style.left = '0';
-      printableContent.style.zIndex = '-1';
-      printableContent.style.width = '210mm'; // A4 width for rendering
-      printableContent.style.padding = '20mm'; // Add margins for clean canvas capture
-      printableContent.style.backgroundColor = 'white';
+    // Get the actual rendered height
+    const actualHeight = printableContent.scrollHeight;
+    const actualWidth = printableContent.scrollWidth;
+
+    console.log('Capturing content with dimensions:', { 
+      width: actualWidth, 
+      height: actualHeight,
+      widthMM: '210mm'
+    });
+
+    // Capture the canvas with high quality - use actual dimensions
+    const canvas = await html2canvas(printableContent, {
+      scale: 3, // High resolution for crisp text
+      logging: false,
+      useCORS: true,
+      allowTaint: true,
+      width: actualWidth,
+      height: actualHeight,
+      windowWidth: actualWidth,
+      windowHeight: actualHeight,
+      backgroundColor: '#ffffff',
+      scrollY: -window.scrollY,
+      scrollX: -window.scrollX,
+    });
+
+    console.log('Canvas captured:', {
+      width: canvas.width,
+      height: canvas.height
+    });
+
+    // A4 dimensions in mm
+    const A4_WIDTH_MM = 210;
+    const A4_HEIGHT_MM = 297;
+
+    // Calculate canvas dimensions in mm (maintaining aspect ratio)
+    const canvasWidthMM = A4_WIDTH_MM;
+    const canvasHeightMM = (canvas.height * A4_WIDTH_MM) / canvas.width;
+
+    console.log('Calculated dimensions in mm:', {
+      canvasWidthMM,
+      canvasHeightMM,
+      needsScaling: canvasHeightMM > A4_HEIGHT_MM
+    });
+
+    // Initialize PDF
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+    // Determine if we need to scale down to fit 1 page
+    if (canvasHeightMM > A4_HEIGHT_MM) {
+      // Content is too tall - scale everything proportionally to fit A4 height
+      const scaleFactor = A4_HEIGHT_MM / canvasHeightMM;
+      const finalHeight = A4_HEIGHT_MM;
+      const finalWidth = A4_WIDTH_MM * scaleFactor;
       
-      // Create inner container for CV content
-      const cvPreviewTemp = doc.createElement('div');
-      cvPreviewTemp.id = 'cv-preview-temp';
+      // Center horizontally if width was reduced
+      const xOffset = (A4_WIDTH_MM - finalWidth) / 2;
       
-      // Use the actual rendered DOM content (with Tailwind styles already applied)
-      // This matches the old-code.txt approach where it copies from the visible preview
-      if (contentContainerRef.current) {
-        // Clone the rendered content with all styles
-        cvPreviewTemp.innerHTML = contentContainerRef.current.innerHTML;
-      } else {
-        // Fallback: extract body content from HTML string
-        let contentHTML = renderedHTML;
-        if (renderedHTML.includes('<body>')) {
-          const bodyMatch = renderedHTML.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-          if (bodyMatch && bodyMatch[1]) {
-            contentHTML = bodyMatch[1].trim();
-          }
-        }
-        cvPreviewTemp.innerHTML = contentHTML;
-      }
-      
-      printableContent.appendChild(cvPreviewTemp);
-      docBody.appendChild(printableContent);
-
-      // Wait a bit for content to render
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Generate the canvas from the content (like old-code.txt)
-      const canvas = await html2canvas(printableContent, {
-        scale: 3, // Higher scale for better resolution
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        windowWidth: 794, // Simulate A4 width in pixels (794px at 96dpi for 210mm)
-        backgroundColor: '#ffffff',
+      console.log('Scaling down to fit:', {
+        scaleFactor,
+        finalWidth,
+        finalHeight,
+        xOffset
       });
-
-      // Initialize jsPDF (A4 dimensions)
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = canvas.height * imgWidth / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Add content with page breaks
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Save the PDF
-      pdf.save(`${document.name || 'document'}.pdf`);
-
-      // Clean up
-      if (docBody.contains(printableContent)) {
-        docBody.removeChild(printableContent);
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGeneratingPDF(false);
+      
+      pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight);
+    } else {
+      // Content fits within 1 page - center it vertically
+      const yOffset = (A4_HEIGHT_MM - canvasHeightMM) / 2;
+      
+      console.log('Centering content:', {
+        canvasHeightMM,
+        yOffset
+      });
+      
+      pdf.addImage(imgData, 'JPEG', 0, yOffset, A4_WIDTH_MM, canvasHeightMM);
     }
-  };
+
+    // Save the PDF (guaranteed 1 page)
+    pdf.save(`${document.name || 'document'}.pdf`);
+
+    // Clean up temporary element
+    if (docBody.contains(printableContent)) {
+      docBody.removeChild(printableContent);
+    }
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Failed to generate PDF. Please try again.');
+  } finally {
+    setIsGeneratingPDF(false);
+  }
+};
 
   const handleFieldChange = (path: string[], value: any) => {
     if (!editedData) return;

@@ -176,7 +176,7 @@ export function mapJobToSchema(job: any) {
 
     jobLocation: getJobLocation(),
 
-    jobLocationType: job.location?.remote ? "TELECOMMUTE" : "ON_SITE",
+    jobLocationType: job.location?.remote ? "TELECOMMUTE" : undefined,
 
     applicantLocationRequirements: {
       "@type": "Country",

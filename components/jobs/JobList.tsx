@@ -9,7 +9,7 @@ import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
 import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
-import { ChevronDown, LogIn } from 'lucide-react';
+import { ChevronDown, LogIn, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthModal from '@/components/AuthModal';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
@@ -42,6 +42,7 @@ export default function JobList() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     checkAuth();
@@ -336,9 +337,8 @@ export default function JobList() {
       }
     }
 
-    // ✅ Calculate relative time for posted date
-const getRelativeTime = (dateString: string | null): string | undefined => {
-  if (!dateString) return undefined;
+    const getRelativeTime = (dateString: string | null): string | undefined => {
+      if (!dateString) return undefined;
       
       try {
         const date = new Date(dateString);
@@ -359,9 +359,9 @@ const getRelativeTime = (dateString: string | null): string | undefined => {
         }
         const years = Math.floor(diffInDays / 365);
         return years === 1 ? '1 year ago' : `${years} years ago`;
-} catch {
-    return undefined;
-  }
+      } catch {
+        return undefined;
+      }
     };
 
     return {
@@ -376,52 +376,50 @@ const getRelativeTime = (dateString: string | null): string | undefined => {
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
       postedDate: getRelativeTime(job.posted_date || job.created_at),
+      // Store description for search if available
+      description: job.description || job.job_description || '',
     };
   };
 
-const fetchJobs = async () => {
-  try {
-    setLoading(true);
-    
-    // ✅ Fetch the 1000 most recent active jobs (Supabase's limit)
-    // Ordered by created_at descending ensures we get the newest jobs
-    const { data, error, count } = await supabase
-      .from('jobs')
-      .select('*', { count: 'exact' })
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(1000); // Explicitly set limit to 1000 (Supabase's max)
-
-    if (error) throw error;
-
-    console.log(`Fetched ${data?.length || 0} most recent active jobs out of ${count || 0} total`);
-
-    const processedJobs = await processJobsWithMatching(data || []);
-    
-    // ✅ Sort by match score (highest first)
-    processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-
-    // ✅ Cache the processed jobs
+  const fetchJobs = async () => {
     try {
-      const jobsToCache = processedJobs.map(job => ({
-        ...job,
-        rawData: data?.find((j: any) => j.id === job.id),
-      }));
-      localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
-      localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
+      setLoading(true);
       
-      console.log(`Cached ${jobsToCache.length} jobs`);
-    } catch (cacheError) {
-      console.error('Error caching jobs:', cacheError);
-    }
+      const { data, error, count } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact' })
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
-    setJobs(processedJobs);
-  } catch (error) {
-    console.error('Error fetching jobs:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+      if (error) throw error;
+
+      console.log(`Fetched ${data?.length || 0} most recent active jobs out of ${count || 0} total`);
+
+      const processedJobs = await processJobsWithMatching(data || []);
+      
+      processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+
+      try {
+        const jobsToCache = processedJobs.map(job => ({
+          ...job,
+          rawData: data?.find((j: any) => j.id === job.id),
+        }));
+        localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
+        localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
+        
+        console.log(`Cached ${jobsToCache.length} jobs`);
+      } catch (cacheError) {
+        console.error('Error caching jobs:', cacheError);
+      }
+
+      setJobs(processedJobs);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadSavedJobs = () => {
     if (typeof window === 'undefined') return;
@@ -531,7 +529,19 @@ const fetchJobs = async () => {
     setMatchModalOpen(true);
   };
 
-  const filteredJobs = jobs.filter(job => !appliedJobs.includes(job.id));
+  // Filter jobs based on search query
+  const searchFilteredJobs = jobs.filter(job => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const titleMatch = job.title.toLowerCase().includes(query);
+    const companyMatch = job.company.toLowerCase().includes(query);
+    const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
+    
+    return titleMatch || companyMatch || descriptionMatch;
+  });
+
+  const filteredJobs = searchFilteredJobs.filter(job => !appliedJobs.includes(job.id));
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     if (sortBy === 'match') {
@@ -590,6 +600,42 @@ const fetchJobs = async () => {
           <BannerAd />
         </div>
 
+        {/* Search Bar */}
+        <div className="px-6 py-4">
+          <div className="relative">
+            <Search 
+              size={20} 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: theme.colors.text.secondary }}
+            />
+            <input
+              type="text"
+              placeholder="Search jobs by title, company, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 rounded-lg border outline-none focus:ring-2 transition-all"
+              style={{
+                backgroundColor: theme.colors.background.DEFAULT,
+                borderColor: theme.colors.border.DEFAULT,
+                color: theme.colors.text.primary,
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={16} style={{ color: theme.colors.text.secondary }} />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="mt-2 text-sm" style={{ color: theme.colors.text.secondary }}>
+              Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+
         <div
           className="sticky top-0 z-10 px-6 py-3 flex items-center justify-between border-b"
           style={{
@@ -623,18 +669,17 @@ const fetchJobs = async () => {
                 className="text-base font-medium mb-2"
                 style={{ color: theme.colors.text.primary }}
               >
-                No jobs found
+                {searchQuery ? 'No jobs found matching your search' : 'No jobs found'}
               </p>
               <p
                 className="text-sm text-center"
                 style={{ color: theme.colors.text.secondary }}
               >
-                Check back later for new opportunities
+                {searchQuery ? 'Try adjusting your search terms' : 'Check back later for new opportunities'}
               </p>
             </div>
           ) : (
             sortedJobs.map((job, index) => {
-              // ✅ Show native ad after every 10th job (shows 3 ads instead of 1 banner)
               const shouldShowAd = (index + 1) % 10 === 0;
               
               return (
@@ -647,7 +692,6 @@ const fetchJobs = async () => {
                     onApply={handleApply}
                     onShowBreakdown={handleShowBreakdown}
                   />
-                  {/* ✅ Native ad after every 10th job - shows 3 ads per placement */}
                   {shouldShowAd && (
                     <AdsterraNative 
                       key={`native-ad-${index}`}
