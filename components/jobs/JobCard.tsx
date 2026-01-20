@@ -16,8 +16,12 @@ export interface JobUI {
   type?: string;
   calculatedTotal?: number;
   breakdown?: any;
-  postedDate?: string; // ✅ Added posted date
+  postedDate?: string;
+
+  /** Used for search & filtering */
+  description?: string;
 }
+
 
 interface JobCardProps {
   job: JobUI;
