@@ -34,7 +34,7 @@ export async function GET() {
           url: `${siteUrl}/resources/${page.slug}`,
           lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
           changeFrequency: 'daily',
-          priority: page.location ? 0.7 : 0.8,
+          priority: page.job_count > 20 ? 0.9 : 0.7,
         });
       });
       console.log(`📄 Category sitemap: ${routes.length} pages`);
