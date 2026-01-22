@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'JobMeter - Find Your Dream Job',
     short_name: 'JobMeter',
     description: 'Discover and apply to top job opportunities across Nigeria',
-    start_url: '/',
+    start_url: '/jobs',  // Changed from '/' to '/jobs'
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#2563EB',
