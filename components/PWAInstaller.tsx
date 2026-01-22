@@ -25,7 +25,12 @@ export default function PWAInstaller() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallPrompt(true);
+      
+      // Check if user previously dismissed
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (!dismissed) {
+        setShowInstallPrompt(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -51,8 +56,7 @@ export default function PWAInstaller() {
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show if dismissed before or already installed
-  if (!showInstallPrompt || localStorage.getItem('pwa-install-dismissed')) {
+  if (!showInstallPrompt) {
     return null;
   }
 
@@ -61,12 +65,17 @@ export default function PWAInstaller() {
       <button
         onClick={handleDismiss}
         className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+        aria-label="Dismiss"
       >
         <X size={20} />
       </button>
       
       <div className="flex items-start gap-3">
-        <img src="/icon-192x192.png" alt="JobMeter" className="w-12 h-12 rounded" />
+        <img 
+          src="/android-chrome-192x192.png" 
+          alt="JobMeter" 
+          className="w-12 h-12 rounded" 
+        />
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">Install JobMeter</h3>
           <p className="text-sm text-gray-600 mt-1">
