@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import RootLayoutClient from './RootLayoutClient';
+import PWAInstaller from '@/components/PWAInstaller';
+
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -86,6 +88,26 @@ export const metadata: Metadata = {
     canonical: siteUrl,
   },
 };
+  manifest: '/manifest.json', // This tells Next.js to use the manifest
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'JobMeter',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+};
 
 export default function RootLayout({
   children,
@@ -102,6 +124,17 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <RootLayoutClient>{children}</RootLayoutClient>
+      </body>
+    </html>
+  );
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <PWAInstaller />
       </body>
     </html>
   );
