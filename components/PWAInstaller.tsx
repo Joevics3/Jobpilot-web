@@ -79,7 +79,7 @@ export default function PWAInstaller() {
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">Install JobMeter</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Get quick access to jobs with our mobile app
+            Don’t miss out. Find jobs instantly on your phone
           </p>
           <button
             onClick={handleInstallClick}
