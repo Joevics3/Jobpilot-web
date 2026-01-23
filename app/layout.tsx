@@ -110,6 +110,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <RootLayoutClient>{children}</RootLayoutClient>
         <PWAInstaller />
+        <NotificationManager />
       </body>
     </html>
   );
