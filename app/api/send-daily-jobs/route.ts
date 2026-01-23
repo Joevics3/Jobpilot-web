@@ -1,28 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendNotification } from '@/lib/firebase-admin';
-import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get CRON_SECRET from Supabase Vault
-    const vaultClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
-    const { data: cronSecretData } = await vaultClient.rpc('vault_get_secret', {
-      secret_name: 'CRON_SECRET'
-    });
-
-    const cronSecret = cronSecretData?.secret;
-
-    // Verify cron secret from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get latest 7 jobs
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
@@ -72,9 +53,13 @@ export async function GET(request: NextRequest) {
       jobsSent: jobs.length,
       notificationsSent: successCount,
       failed: failCount,
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Cron job error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

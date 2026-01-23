@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendNotification } from '@/lib/firebase-admin';
-import { createClient } from '@supabase/supabase-js';
 
 const careerTips = [
   {
@@ -18,23 +17,6 @@ const careerTips = [
 
 export async function GET(request: NextRequest) {
   try {
-    // Get CRON_SECRET from Supabase Vault
-    const vaultClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
-    const { data: cronSecretData } = await vaultClient.rpc('vault_get_secret', {
-      secret_name: 'CRON_SECRET'
-    });
-
-    const cronSecret = cronSecretData?.secret;
-
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { data: tokens } = await supabase
       .from('notification_tokens')
       .select('token');
@@ -62,9 +44,13 @@ export async function GET(request: NextRequest) {
       success: true,
       tipSent: tip.title,
       notificationsSent: successCount,
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Weekly tips error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
