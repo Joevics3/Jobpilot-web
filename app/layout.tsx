@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import RootLayoutClient from './RootLayoutClient';
 import PWAInstaller from '@/components/PWAInstaller';
+import NotificationManager from '@/components/NotificationManager';
 
 const inter = Inter({ subsets: ['latin'] });
 
