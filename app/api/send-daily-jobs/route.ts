@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      jobsSent: jobs.length,
+      jobCount: jobs.length,
       notificationsSent: successCount,
       failed: failCount,
       timestamp: new Date().toISOString(),
