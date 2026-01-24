@@ -1,51 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { sendNotification } from '@/lib/firebase-admin';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get latest 7 jobs
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
+
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('id, title, slug, company')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
-      .limit(7);
+      .limit(50);
 
-    if (jobsError || !jobs || jobs.length === 0) {
+    if (jobsError) {
+      return NextResponse.json({ error: 'Failed to fetch jobs', details: jobsError }, { status: 500 });
+    }
+
+    if (!jobs || jobs.length === 0) {
       return NextResponse.json({ error: 'No jobs found' }, { status: 404 });
     }
 
-    // Get all active notification tokens
     const { data: tokens, error: tokensError } = await supabase
       .from('notification_tokens')
       .select('token');
 
-    if (tokensError || !tokens || tokens.length === 0) {
+    if (tokensError) {
+      return NextResponse.json({ error: 'Failed to fetch tokens', details: tokensError }, { status: 500 });
+    }
+
+    if (!tokens || tokens.length === 0) {
       return NextResponse.json({ error: 'No tokens found' }, { status: 404 });
     }
+
+    // Send ONE summary notification
+    const title = `${jobs.length} New Jobs Posted Today! 🎉`;
+    const topJobs = jobs.slice(0, 3).map(j => j.title).join(', ');
+    const body = jobs.length > 3 
+      ? `${topJobs} and ${jobs.length - 3} more...` 
+      : topJobs;
+    
+    const data = {
+      url: '/jobs',
+      jobCount: jobs.length.toString(),
+      tag: 'daily-jobs-summary',
+    };
 
     let successCount = 0;
     let failCount = 0;
 
-    // Send notification for each of the 7 jobs to all users
-    for (const job of jobs) {
-      const title = `New Job: ${job.title}`;
-      const body = `${job.company} is hiring. Check it out now!`;
-      const data = {
-        url: `/jobs/${job.slug}`,
-        jobId: job.id,
-        tag: 'daily-job',
-      };
-
-      for (const { token } of tokens) {
-        const result = await sendNotification(token, title, body, data);
-        if (result.success) {
-          successCount++;
-        } else {
-          failCount++;
-        }
+    for (const { token } of tokens) {
+      const result = await sendNotification(token, title, body, data);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
       }
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     return NextResponse.json({
@@ -56,7 +75,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Cron job error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
