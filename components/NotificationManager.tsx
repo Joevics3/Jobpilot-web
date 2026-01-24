@@ -128,11 +128,9 @@ export default function NotificationManager() {
 
   if (typeof window === 'undefined') return null;
 
-  const canShowPrompt = 'Notification' in window && Notification.permission === 'default';
-
   return (
     <>
-      {showPrompt && canShowPrompt && (
+      {showPrompt && (
         <div className="fixed top-4 right-4 max-w-sm bg-white border border-gray-200 rounded-lg shadow-xl p-4 z-50">
           <button
             onClick={handleDismiss}
