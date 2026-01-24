@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { sendNotification } from '@/lib/firebase-admin';
 
 const careerTips = [
@@ -17,6 +17,17 @@ const careerTips = [
 
 export async function GET(request: NextRequest) {
   try {
+    // Create a fresh Supabase client for server-side use
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
+
     const { data: tokens } = await supabase
       .from('notification_tokens')
       .select('token');

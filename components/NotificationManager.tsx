@@ -1,65 +1,123 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Loader2 } from 'lucide-react';
 import { requestNotificationPermission, setupForegroundNotifications } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 
 export default function NotificationManager() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [latestNotification, setLatestNotification] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔔 NotificationManager mounted');
     checkAndRequestPermission();
     
     // Setup foreground notification handler
     setupForegroundNotifications((payload) => {
+      console.log('📬 Notification received:', payload);
       setLatestNotification(payload);
-      
-      // Auto-hide notification after 5 seconds
       setTimeout(() => setLatestNotification(null), 5000);
     });
+
+    // Listen for permission changes
+    const checkPermission = () => {
+      if (Notification.permission === 'granted') {
+        console.log('✅ Permission granted, hiding prompt');
+        setShowPrompt(false);
+      } else if (Notification.permission === 'denied') {
+        console.log('🚫 Permission denied, hiding prompt');
+        setShowPrompt(false);
+      }
+    };
+
+    // Check permission every second when prompt is visible
+    const interval = setInterval(checkPermission, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const checkAndRequestPermission = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      console.log('❌ Notifications not supported');
+      return;
+    }
 
     const permission = Notification.permission;
+    console.log('🔔 Current permission:', permission);
 
     if (permission === 'granted') {
-      // Already granted, get token and save
+      console.log('✅ Already granted, getting token...');
       const token = await requestNotificationPermission();
-      if (token) await saveTokenToDatabase(token);
+      if (token) {
+        console.log('✅ Token obtained:', token.substring(0, 20) + '...');
+        await saveTokenToDatabase(token);
+      }
     } else if (permission === 'default') {
-      // Show prompt after 5 seconds
+      console.log('⏳ Permission not requested yet, showing prompt in 30 seconds...');
       setTimeout(() => {
         const dismissed = localStorage.getItem('notification-prompt-dismissed');
-        if (!dismissed) setShowPrompt(true);
-      }, 5000);
+        const dismissedTime = dismissed ? parseInt(dismissed) : 0;
+        const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
+        
+        if (!dismissed || daysSinceDismissed > 3) {
+          console.log('🔔 Showing notification prompt');
+          setShowPrompt(true);
+        } else {
+          console.log('⏭️ Prompt dismissed recently, skipping');
+        }
+      }, 30000); // Changed from 3000 to 30000 (30 seconds)
+    } else {
+      console.log('🚫 Permission already denied by user');
     }
   };
 
   const handleEnableNotifications = async () => {
-    const token = await requestNotificationPermission();
+    console.log('👆 User clicked Enable Notifications');
+    setIsLoading(true);
+    setError(null);
     
-    if (token) {
-      await saveTokenToDatabase(token);
-      setShowPrompt(false);
+    try {
+      const token = await requestNotificationPermission();
+      console.log('📱 Token result:', token ? 'Received' : 'Failed');
       
-      // Show success notification
-      setLatestNotification({
-        notification: {
-          title: '✅ Notifications Enabled',
-          body: 'You\'ll now receive daily job updates!',
-        },
-      });
-      
-      setTimeout(() => setLatestNotification(null), 5000);
+      if (token) {
+        await saveTokenToDatabase(token);
+        setShowPrompt(false);
+        
+        // Show success notification
+        setLatestNotification({
+          notification: {
+            title: '✅ Notifications Enabled',
+            body: 'You\'ll now receive daily job updates!',
+          },
+        });
+        
+        setTimeout(() => setLatestNotification(null), 5000);
+      } else {
+        // Check why it failed
+        const permission = Notification.permission;
+        console.log('❌ Permission after request:', permission);
+        
+        if (permission === 'denied') {
+          setError('Notifications blocked. Please enable them in your browser settings.');
+          setTimeout(() => setShowPrompt(false), 3000);
+        } else {
+          setError('Failed to enable notifications. Please try again.');
+        }
+      }
+    } catch (err) {
+      console.error('❌ Error enabling notifications:', err);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const saveTokenToDatabase = async (token: string) => {
     try {
+      console.log('💾 Saving token to database...');
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
@@ -75,28 +133,35 @@ export default function NotificationManager() {
         });
 
       if (error) {
-        console.error('Error saving token:', error);
+        console.error('❌ Database error:', error);
       } else {
         console.log('✅ Token saved to Supabase');
       }
     } catch (error) {
-      console.error('Error in saveTokenToDatabase:', error);
+      console.error('❌ Error in saveTokenToDatabase:', error);
     }
   };
 
   const handleDismiss = () => {
+    console.log('👋 User dismissed prompt');
     setShowPrompt(false);
     localStorage.setItem('notification-prompt-dismissed', Date.now().toString());
   };
 
+  // Don't show if permission already decided
+  if (Notification.permission !== 'default' && !latestNotification) {
+    return null;
+  }
+
   return (
     <>
       {/* Enable Notifications Prompt */}
-      {showPrompt && (
-        <div className="fixed top-4 right-4 max-w-sm bg-white border border-gray-200 rounded-lg shadow-xl p-4 z-50">
+      {showPrompt && Notification.permission === 'default' && (
+        <div className="fixed top-4 right-4 max-w-sm bg-white border border-gray-200 rounded-lg shadow-xl p-4 z-50 animate-fade-in">
           <button
             onClick={handleDismiss}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Dismiss"
           >
             <X size={20} />
           </button>
@@ -110,11 +175,26 @@ export default function NotificationManager() {
               <p className="text-sm text-gray-600 mt-1">
                 Receive 7 daily job notifications + weekly career tips
               </p>
+              
+              {error && (
+                <p className="text-xs text-red-600 mt-2 bg-red-50 p-2 rounded">
+                  {error}
+                </p>
+              )}
+              
               <button
                 onClick={handleEnableNotifications}
-                className="mt-3 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                disabled={isLoading}
+                className="mt-3 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Enable Notifications
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Enabling...
+                  </>
+                ) : (
+                  'Enable Notifications'
+                )}
               </button>
             </div>
           </div>
@@ -127,6 +207,7 @@ export default function NotificationManager() {
           <button
             onClick={() => setLatestNotification(null)}
             className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            aria-label="Close"
           >
             <X size={18} />
           </button>
