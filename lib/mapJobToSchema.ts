@@ -28,10 +28,19 @@ export function mapJobToSchema(job: any) {
   // Helper: Company Name
   // -----------------------------
   const getCompanyName = () => {
-    if (!job.company) return "Confidential Employer";
+    // For schema, use location instead of "Confidential Employer" to avoid showing in search results
+    if (!job.company) return getLocationAsCompany();
     if (typeof job.company === "string") return job.company;
     if (job.company.name) return job.company.name;
-    return "Confidential Employer";
+    return getLocationAsCompany();
+  };
+
+  // Helper: Get location string to use as company name when confidential
+  const getLocationAsCompany = () => {
+    if (job.location?.remote) return "Remote";
+    if (typeof job.location === "string") return job.location;
+    const parts = [job.location?.city, job.location?.state, job.location?.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "Location";
   };
 
   // -----------------------------
