@@ -49,7 +49,7 @@ export async function GET() {
 ${routes
   .map(
     (route) => `  <url>
-    <loc>${route.url}</loc>
+    <loc>${route.url.replace(/&/g, '&amp;')}</loc>
     <lastmod>${new Date(route.lastModified || new Date()).toISOString()}</lastmod>
     <changefreq>${route.changeFrequency}</changefreq>
     <priority>${route.priority}</priority>
