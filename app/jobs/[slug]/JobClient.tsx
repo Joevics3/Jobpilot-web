@@ -40,6 +40,8 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeErrorType, setUpgradeErrorType] = useState<'PREMIUM_REQUIRED' | 'QUOTA_EXCEEDED' | 'INSUFFICIENT_CREDITS' | null>(null);
   const [upgradeErrorData, setUpgradeErrorData] = useState<any>(null);
+  const [cvServiceModalOpen, setCvServiceModalOpen] = useState(false);
+  const [serviceFormData, setServiceFormData] = useState({ email: '', phone: '' });
   const { balance, hasEnoughCredits, loadCreditBalance } = useCredits();
 
   useEffect(() => {
@@ -905,13 +907,16 @@ const getExperienceLevelWithYears = (level: string) => {
             {/* Auto Apply Button - Only show if job has email application method */}
             {(job.application?.email || job.application_email) && (
             <button
-                onClick={handleAutoApply}
-                disabled={!user || applied}
+                onClick={() => setCvServiceModalOpen(true)}
+                disabled={applied}
                 className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm transition-colors ${
                   applied
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : ''
                 }`}
+                style={{
+                  backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
+                }}
             >
                 {applied ? 'Applied' : 'Auto Apply'}
               </button>
@@ -978,9 +983,12 @@ const getExperienceLevelWithYears = (level: string) => {
                       <Mail size={24} style={{ color: theme.colors.primary.DEFAULT }} />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900">Email Application</p>
-                        <p className="text-sm text-gray-600 truncate">
+                        <a 
+                          href={`mailto:${(job.application?.email || job.application_email || '').replace('mailto:', '')}`}
+                          className="text-sm text-blue-600 hover:text-blue-800 truncate block"
+                        >
                           {(job.application?.email || job.application_email || '').replace('mailto:', '')}
-                        </p>
+                        </a>
                       </div>
                     </div>
                     <button
@@ -992,7 +1000,7 @@ const getExperienceLevelWithYears = (level: string) => {
                   </div>
                 )}
                 
-                {!user && (
+                {!user && process.env.NODE_ENV === 'development' && (
                   <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
                     <p className="text-sm text-yellow-800">
                       Please <button onClick={() => router.push('/auth')} className="underline font-medium">sign in</button> to apply
@@ -1007,12 +1015,26 @@ const getExperienceLevelWithYears = (level: string) => {
                       className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors bg-gray-50 text-left"
                     >
                       <Phone size={24} style={{ color: theme.colors.accent.red }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900">Call to Apply</p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {(job.application?.phone || job.application_phone || '').replace('tel:', '')}
-                        </p>
-                      </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-medium text-gray-900">Call to Apply</p>
+                         <div className="flex items-center gap-2">
+                           <a 
+                             href={`tel:${(job.application?.phone || job.application_phone || '').replace('tel:', '')}`}
+                             className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                           >
+                             {(job.application?.phone || job.application_phone || '').replace('tel:', '')}
+                           </a>
+                           <a 
+                             href={`https://wa.me/${(job.application?.phone || job.application_phone || '').replace(/[^0-9]/g, '')}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-green-600 hover:text-green-800"
+                             title="Open in WhatsApp"
+                           >
+                             🗨️
+                           </a>
+                         </div>
+                       </div>
                     </button>
                     <button
                       onClick={() => handleCopyToClipboard('phone')}
@@ -1030,15 +1052,20 @@ const getExperienceLevelWithYears = (level: string) => {
                       className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors bg-gray-50 text-left"
                     >
                       <ExternalLink size={24} style={{ color: theme.colors.primary.light }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900">Apply Online</p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {(() => {
-                            const link = job.application?.link || job.application?.url || job.application_url || '';
-                            return link.length > 40 ? `${link.substring(0, 40)}...` : link;
-                          })()}
-                        </p>
-                      </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-medium text-gray-900">Apply Online</p>
+                         <a 
+                           href={job.application?.link || job.application?.url || job.application_url || ''}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="text-sm text-blue-600 hover:text-blue-800 truncate block"
+                         >
+                           {(() => {
+                             const link = job.application?.link || job.application?.url || job.application_url || '';
+                             return link.length > 40 ? `${link.substring(0, 40)}...` : link;
+                           })()}
+                         </a>
+                       </div>
                     </button>
                     <button
                       onClick={() => handleCopyToClipboard('link')}
@@ -1059,6 +1086,200 @@ const getExperienceLevelWithYears = (level: string) => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* CV Distribution Service Modal */}
+        {cvServiceModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50"
+            onClick={() => setCvServiceModalOpen(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
+                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A6.955 6.955 0 0115 16.5c-1.887 0-3.603-.724-4.89-1.903A6.955 6.955 0 018 13.255V8.745c0-3.859 3.141-7 7-7s7 3.141 7 7v4.51z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12h.01M12 16h.01" />
+                  </svg>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: theme.colors.text.primary }}>
+                  Land Your Dream Job Faster! 🚀
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Professional CV Distribution Service for Nigerian Job Seekers
+                </p>
+              </div>
+
+              {/* Service Description */}
+              <div className="rounded-xl p-4 sm:p-6 mb-6 sm:mb-8" style={{ backgroundColor: theme.colors.primary.light + '20' }}>
+                <h3 className="font-bold text-base sm:text-lg mb-3" style={{ color: theme.colors.primary.DEFAULT }}>
+                  What We Do For You
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Find matching jobs based on your profile</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Create professional CV & Cover Letter</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Apply to jobs on your behalf</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Set up dedicated email for applications</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Daily updates on application status</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Plans */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                {/* Basic Plan */}
+                <div className="border-2 border-gray-200 rounded-xl p-4 sm:p-6 hover:border-blue-300 transition-colors">
+                  <div className="text-center mb-3 sm:mb-4">
+                    <h3 className="font-bold text-base sm:text-lg mb-2">Starter</h3>
+                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦3,000</div>
+                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>15 Jobs Monthly</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>1 Job Every 2 Days</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Popular Plan */}
+                <div className="border-2 rounded-xl p-4 sm:p-6 relative" style={{ borderColor: theme.colors.primary.DEFAULT, backgroundColor: theme.colors.primary.light + '20' }}>
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>MOST POPULAR</span>
+                  </div>
+                  <div className="text-center mb-3 sm:mb-4 mt-2">
+                    <h3 className="font-bold text-base sm:text-lg mb-2">Professional</h3>
+                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦5,000</div>
+                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>30 Jobs Monthly</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>1 Job Every Day</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Premium Plan */}
+                <div className="border-2 border-gray-200 rounded-xl p-4 sm:p-6 hover:border-blue-300 transition-colors">
+                  <div className="text-center mb-3 sm:mb-4">
+                    <h3 className="font-bold text-base sm:text-lg mb-2">Executive</h3>
+                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦10,000</div>
+                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>70 Jobs Monthly</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>2-3 Jobs Daily</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Contact Form */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                <h4 className="font-bold mb-2 sm:mb-3" style={{ color: theme.colors.text.primary }}>
+                  Interested? Get Started Today!
+                </h4>
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                  Leave your details and we'll contact you within 24 hours to get started.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <input
+                    type="email"
+                    placeholder="Your Email Address"
+                    value={serviceFormData.email}
+                    onChange={(e) => setServiceFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Your Phone Number"
+                    value={serviceFormData.phone}
+                    onChange={(e) => setServiceFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  onClick={() => {
+                    // Handle form submission here
+                    console.log('Service form submitted:', serviceFormData);
+                    setCvServiceModalOpen(false);
+                    setServiceFormData({ email: '', phone: '' });
+                  }}
+                  disabled={!serviceFormData.email && !serviceFormData.phone}
+                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold text-white transition-all text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: theme.colors.primary.DEFAULT,
+                  }}
+                >
+                  Get Started Now
+                </button>
+                <button
+                  onClick={() => setCvServiceModalOpen(false)}
+                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold border border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Maybe Later
+                </button>
+              </div>
             </div>
           </div>
         )}

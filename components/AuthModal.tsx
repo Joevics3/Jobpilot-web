@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import {
@@ -13,8 +13,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, Briefcase } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+
+import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, Briefcase, Upload, FileText, X } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 interface AuthModalProps {
@@ -24,7 +25,10 @@ interface AuthModalProps {
 
 export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signup');
+  const [showSignIn, setShowSignIn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -32,6 +36,12 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  
+  // CV Upload states
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [cvText, setCvText] = useState('');
+  const [isProcessingCV, setIsProcessingCV] = useState(false);
+  const [cvError, setCvError] = useState('');
   
   const [signInData, setSignInData] = useState({
     email: '',
@@ -71,7 +81,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
       showMessage('Signed in successfully!', 'success');
       
-      // Close modal and reload to refresh job matches
       setTimeout(() => {
         onOpenChange(false);
         router.refresh();
@@ -129,73 +138,427 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
     }
   };
 
-  const handleSignUp = () => {
-    onOpenChange(false);
-    router.push('/onboarding');
-  };
-
   const handleClose = () => {
     onOpenChange(false);
-    // Reset form when closing
     setSignInData({ email: '', password: '' });
     setResetEmail('');
     setShowForgotPassword(false);
+    setShowSignIn(false);
     setMessage('');
-    setActiveTab('signin');
+    setActiveTab('signup');
+    setUploadedFile(null);
+    setCvText('');
+    setCvError('');
+  };
+
+  // CV Upload Handlers
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      e.target.value = '';
+      return;
+    }
+
+    if (isProcessingCV) {
+      e.target.value = '';
+      return;
+    }
+
+    const isPDF = file.type === "application/pdf";
+    const isImage = file.type.includes("image");
+    const isDocument = file.type.includes("document") || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+    
+    if (!isPDF && !isImage && !isDocument) {
+      setCvError("Please upload a PDF, Word document (DOC/DOCX), or image file");
+      e.target.value = '';
+      return;
+    }
+
+    setUploadedFile(file);
+    setCvError('');
+    
+    try {
+      await extractFromFile(file);
+    } catch (error) {
+      console.error('File processing failed:', error);
+      setUploadedFile(null);
+    }
+    
+    e.target.value = '';
+  };
+
+  const extractFromFile = async (file: File) => {
+    console.log('📄 Starting file extraction for:', file.name);
+    setIsProcessingCV(true);
+    setCvError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/onboarding/ocr', { 
+        method: 'POST', 
+        body: formData 
+      });
+
+      console.log('📡 OCR API response status:', res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log('❌ OCR API error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error === 'EXTRACTION_FAILED') {
+            throw new Error('Text extraction failed. Please try again or paste your CV text.');
+          }
+        } catch (e) {
+          // Not JSON, continue with normal error
+        }
+        throw new Error(`OCR failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('📄 OCR API response data:', data);
+
+      if (!data?.text) {
+        console.log('❌ No text in OCR response');
+        throw new Error('No text extracted from file');
+      }
+
+      console.log('✅ Text extracted, length:', data.text.length);
+      setCvText(data.text as string);
+
+      await parseCVText(data.text as string);
+
+    } catch (error: any) {
+      console.error('💥 File extraction error:', error);
+      setCvError(error.message || 'Failed to process CV. Please try again.');
+      setUploadedFile(null);
+      setIsProcessingCV(false);
+      throw error;
+    }
+  };
+
+  const parseCVText = async (text: string) => {
+    console.log('🔄 Starting CV parsing, text length:', text.length);
+    setIsProcessingCV(true);
+    setCvError('');
+
+    try {
+      const res = await fetch('/api/onboarding/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      console.log('📡 Parse API response status:', res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log('❌ Parse API error response:', errorText);
+        const errorData = await res.json().catch(() => ({ 
+          error: `Parsing failed: ${res.status}`, 
+          details: errorText 
+        }));
+        throw new Error(errorData.error || `Parsing failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('📄 Parse API response data:', data);
+
+      if (!data?.parsed) {
+        console.log('❌ Missing parsed data in response');
+        throw new Error('Invalid response: missing parsed data');
+      }
+
+      console.log('✅ Parse successful, profile data:', data.parsed);
+
+      const cvRoles = data.parsed.workExperience?.map((exp: any) => exp.title) || [];
+      
+      const profile = {
+        name: data.parsed.fullName || 'Name not found',
+        email: data.parsed.email || 'Email not found',
+        phone: data.parsed.phone || 'Phone not found',
+        location: data.parsed.location || 'Location not found',
+        summary: data.parsed.summary || 'Summary not found',
+        roles: cvRoles,
+        skills: Array.isArray(data.parsed.skills) ? data.parsed.skills : [],
+        experience: 'Experience level to be determined',
+        workExperience: Array.isArray(data.parsed.workExperience) ? data.parsed.workExperience : [],
+        education: Array.isArray(data.parsed.education) ? data.parsed.education : [],
+        projects: Array.isArray(data.parsed.projects) ? data.parsed.projects : [],
+        accomplishments: Array.isArray(data.parsed.accomplishments) ? data.parsed.accomplishments : [],
+        awards: Array.isArray(data.parsed.awards) ? data.parsed.awards : [],
+        certifications: Array.isArray(data.parsed.certifications) ? data.parsed.certifications : [],
+        languages: Array.isArray(data.parsed.languages) ? data.parsed.languages : [],
+        interests: Array.isArray(data.parsed.interests) ? data.parsed.interests : [],
+        linkedin: data.parsed.linkedin || '',
+        github: data.parsed.github || '',
+        portfolio: data.parsed.portfolio || '',
+        publications: Array.isArray(data.parsed.publications) ? data.parsed.publications : [],
+        volunteerWork: Array.isArray(data.parsed.volunteerWork) ? data.parsed.volunteerWork : [],
+        additionalSections: Array.isArray(data.parsed.additionalSections) ? data.parsed.additionalSections : [],
+        cvAiSuggestedRoles: Array.isArray(data.parsed.suggestedRoles) ? data.parsed.suggestedRoles : []
+      };
+
+      try {
+        localStorage.setItem('onboarding_cv_data', JSON.stringify(profile));
+        localStorage.setItem('onboarding_cv_file', JSON.stringify({ text }));
+        console.log('✅ Saved parsed data to localStorage');
+      } catch (storageError) {
+        console.warn('Failed to save to localStorage:', storageError);
+      }
+
+      console.log('🔄 Redirecting to /onboarding...');
+      onOpenChange(false);
+      router.push('/onboarding');
+
+    } catch (error: any) {
+      console.error('💥 CV parsing error:', error);
+      setCvError(error.message || 'Failed to parse CV. Please try again.');
+      setUploadedFile(null);
+      throw error;
+    } finally {
+      setIsProcessingCV(false);
+    }
+  };
+
+  const handlePasteCV = async () => {
+    if (!cvText.trim()) {
+      setCvError('Please paste your CV text');
+      return;
+    }
+    await parseCVText(cvText.trim());
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
-              <Briefcase className="h-5 w-5 text-white" />
-            </div>
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              JobMeter
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-center">
-            Sign in to get personalized job matches
-          </DialogDescription>
-        </DialogHeader>
+        {!showSignIn ? (
+          <>
+            <DialogHeader>
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: theme.colors.primary.DEFAULT + '20' }}>
+                  <svg className="w-8 h-8" style={{ color: theme.colors.primary.DEFAULT }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <DialogTitle className="text-xl font-bold" style={{ color: theme.colors.text.primary }}>
+                  Let Top Recruiters Find You! 🎯
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-600">
+                  Upload your CV once and get discovered by hundreds of companies looking for talent like you
+                </DialogDescription>
+              </div>
+            </DialogHeader>
 
-        {/* Message Display */}
-        {message && (
-          <div className={`p-3 rounded-lg flex items-center gap-3 ${
-            messageType === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
-          }`}>
-            {messageType === 'success' ? (
-              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-            ) : (
-              <div className="h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent animate-spin flex-shrink-0" />
+            {message && (
+              <div className={`p-3 rounded-lg flex items-center gap-3 ${
+                messageType === 'success' 
+                  ? 'bg-green-50 border border-green-200 text-green-800' 
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}>
+                {messageType === 'success' ? (
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent animate-spin flex-shrink-0" />
+                )}
+                <span className="text-sm font-medium">{message}</span>
+              </div>
             )}
-            <span className="text-sm font-medium">{message}</span>
-          </div>
-        )}
 
-        <Tabs value={activeTab} onValueChange={(v) => {
-          setActiveTab(v as 'signin' | 'signup');
-          setShowForgotPassword(false);
-          setMessage('');
-        }} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin" className="flex items-center gap-2">
-              <LogIn size={16} />
-              Sign In
-            </TabsTrigger>
-            <TabsTrigger value="signup" className="flex items-center gap-2">
-              <UserPlus size={16} />
-              Sign Up
-            </TabsTrigger>
-          </TabsList>
+<div className="space-y-4">
+              {/* Benefits Section */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Daily job matches sent to your inbox</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Get contacted directly by recruiters</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Track your applications in one place</p>
+                  </div>
+                </div>
+              </div>
 
-          <TabsContent value="signin" className="mt-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/jpg,image/png"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isProcessingCV}
+              />
+
+              <Button
+                type="button"
+                className="w-full h-14 text-white font-medium shadow-md hover:shadow-lg transition-all"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingCV}
+                style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+              >
+                {uploadedFile ? (
+                  <div className="flex items-center gap-2 w-full">
+                    <FileText className="h-5 w-5 flex-shrink-0" />
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-medium truncate">{uploadedFile.name}</p>
+                      <p className="text-xs opacity-90">Click to change</p>
+                    </div>
+                    <X 
+                      className="h-4 w-4 flex-shrink-0" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadedFile(null);
+                        setCvError('');
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5 mr-2" />
+                    Upload Your CV & Get Started
+                  </>
+                )}
+              </Button>
+
+              {!uploadedFile && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = document.getElementById('paste-cv-textarea');
+                      if (textarea) {
+                        textarea.classList.toggle('hidden');
+                      }
+                    }}
+                    className="text-sm text-gray-600 hover:text-gray-800 underline"
+                    disabled={isProcessingCV}
+                  >
+                    Or paste your CV text instead
+                  </button>
+
+                  <Textarea
+                    id="paste-cv-textarea"
+                    placeholder="Paste your CV content here..."
+                    value={cvText}
+                    onChange={(e) => {
+                      setCvText(e.target.value);
+                      setCvError('');
+                    }}
+                    rows={6}
+                    disabled={isProcessingCV}
+                    className="resize-none border-2 hidden"
+                    style={{ borderColor: theme.colors.primary.DEFAULT + '40' }}
+                  />
+
+                  {cvText.trim() && !isProcessingCV && (
+                    <Button
+                      onClick={handlePasteCV}
+                      className="w-full h-12 text-white font-medium shadow-md hover:shadow-lg transition-all"
+                      style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+                    >
+                      Continue with Pasted CV
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {cvError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent animate-spin flex-shrink-0" />
+                  <span className="text-sm text-red-800">{cvError}</span>
+                </div>
+              )}
+
+              {isProcessingCV && (
+                <div className="p-4 rounded-lg border-2 flex items-center gap-3" style={{ 
+                  backgroundColor: theme.colors.primary.DEFAULT + '10',
+                  borderColor: theme.colors.primary.DEFAULT 
+                }}>
+                  <Loader2 className="h-6 w-6 animate-spin flex-shrink-0" style={{ color: theme.colors.primary.DEFAULT }} />
+                  <div>
+                    <p className="font-medium" style={{ color: theme.colors.primary.DEFAULT }}>
+                      Analyzing Your CV...
+                    </p>
+                    <p className="text-sm opacity-70">This may take a moment</p>
+                  </div>
+                </div>
+)}
+
+              {/* Sign In Link */}
+              <div className="text-center pt-2">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <button
+                    onClick={() => setShowSignIn(true)}
+                    className="font-medium hover:underline"
+                    style={{ color: theme.colors.primary.DEFAULT }}
+                  >
+                    Sign In
+                  </button>
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={() => setShowSignIn(false)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <DialogTitle className="text-xl font-bold" style={{ color: theme.colors.text.primary }}>
+                  Welcome Back! 👋
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-gray-600">
+                Sign in to access your job matches and applications
+              </DialogDescription>
+            </DialogHeader>
+
+            {message && (
+              <div className={`p-3 rounded-lg flex items-center gap-3 ${
+                messageType === 'success' 
+                  ? 'bg-green-50 border border-green-200 text-green-800' 
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}>
+                {messageType === 'success' ? (
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent animate-spin flex-shrink-0" />
+                )}
+                <span className="text-sm font-medium">{message}</span>
+              </div>
+            )}
+
             {!showForgotPassword ? (
-              // Sign In Form
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
@@ -249,7 +612,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
-                    className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                    className="text-sm hover:underline"
+                    style={{ color: theme.colors.primary.DEFAULT }}
                     disabled={isLoading}
                   >
                     Forgot password?
@@ -259,7 +623,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 <Button 
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12 text-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  className="w-full h-12 text-lg text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  style={{ backgroundColor: theme.colors.primary.DEFAULT }}
                 >
                   {isLoading ? (
                     <>
@@ -272,7 +637,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 </Button>
               </form>
             ) : (
-              // Forgot Password Form
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email</Label>
@@ -298,7 +662,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       setShowForgotPassword(false);
                       setResetEmail('');
                     }}
-                    className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                    className="text-sm hover:underline"
+                    style={{ color: theme.colors.primary.DEFAULT }}
                     disabled={isResetting}
                   >
                     Back to sign in
@@ -308,7 +673,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 <Button 
                   type="submit"
                   disabled={isResetting}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12 text-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  className="w-full h-12 text-lg text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  style={{ backgroundColor: theme.colors.primary.DEFAULT }}
                 >
                   {isResetting ? (
                     <>
@@ -320,24 +686,9 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   )}
                 </Button>
               </form>
-            )}
-          </TabsContent>
-
-          <TabsContent value="signup" className="mt-4">
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                Create an account to get personalized job recommendations and match scores
-              </p>
-              <Button
-                onClick={handleSignUp}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Get Started
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+)}
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

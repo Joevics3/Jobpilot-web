@@ -308,6 +308,7 @@ export default function JobList() {
     const finalBreakdown = user ? breakdown : null;
     
     let locationStr = 'Location not specified';
+    let townStateStr = '';
     if (typeof job.location === 'string') {
       locationStr = job.location;
     } else if (job.location && typeof job.location === 'object') {
@@ -317,6 +318,10 @@ export default function JobList() {
       } else {
         const parts = [loc.city, loc.state, loc.country].filter(Boolean);
         locationStr = parts.length > 0 ? parts.join(', ') : 'Location not specified';
+        
+        // Extract town and state for title construction
+        const townStateParts = [loc.city, loc.state].filter(Boolean);
+        townStateStr = townStateParts.length > 0 ? townStateParts.join(' ') : '';
       }
     }
 
@@ -325,6 +330,16 @@ export default function JobList() {
       companyStr = job.company;
     } else if (job.company && typeof job.company === 'object') {
       companyStr = job.company.name || 'Unknown Company';
+    }
+
+    // Create custom title for confidential employers in search
+    const isConfidential = !companyStr || 
+      companyStr.toLowerCase().includes('confidential') || 
+      companyStr.toLowerCase().includes('unknown company');
+    
+    let displayTitle = job.title || 'Untitled Job';
+    if (isConfidential && townStateStr) {
+      displayTitle = `${job.title || 'Job'} in ${townStateStr}`;
     }
 
     let salaryStr = '';
@@ -367,7 +382,7 @@ export default function JobList() {
     return {
       id: job.id,
       slug: job.slug || job.id,
-      title: job.title || 'Untitled Job',
+      title: displayTitle,
       company: companyStr,
       location: locationStr,
       salary: salaryStr,

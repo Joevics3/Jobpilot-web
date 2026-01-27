@@ -215,7 +215,7 @@ export default function OnboardingPage() {
     confirmPassword: ''
   });
 
-  // Auto-fill signup form with extracted CV data (similar to mobile app)
+// Auto-fill signup form with extracted CV data (similar to mobile app)
   React.useEffect(() => {
     if (extractedData.name && !signUpData.fullName) {
       setSignUpData(prev => ({ ...prev, fullName: extractedData.name }));
@@ -224,6 +224,30 @@ export default function OnboardingPage() {
       setSignUpData(prev => ({ ...prev, email: extractedData.email }));
     }
   }, [extractedData.name, extractedData.email]); // Only run when extracted data changes
+
+  // Load saved CV data from localStorage on mount (from AuthModal)
+  useEffect(() => {
+    try {
+      const savedCvData = localStorage.getItem('onboarding_cv_data');
+      const savedCvFile = localStorage.getItem('onboarding_cv_file');
+      
+      if (savedCvData) {
+        const parsedData = JSON.parse(savedCvData);
+        console.log('📥 Loading saved CV data from localStorage:', parsedData);
+        setExtractedData(parsedData);
+        
+        // Also set the CV text if available
+        if (savedCvFile) {
+          const fileData = JSON.parse(savedCvFile);
+          if (fileData.text) {
+            setCvText(fileData.text);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load saved CV data:', error);
+    }
+  }, []); // Empty dependency array = run once on mount
 
   // Check for temporarily stored CV file on component mount
   // REMOVED: No network calls on mount - user can re-upload if needed
@@ -464,7 +488,7 @@ export default function OnboardingPage() {
           setTimeout(() => {
             console.log('Attempting to redirect to dashboard...');
             try {
-              router.push('/');
+              router.push('/jobs');
             } catch (redirectError) {
               console.error('Router redirect failed:', redirectError);
               // Fallback to window.location
@@ -596,7 +620,7 @@ export default function OnboardingPage() {
             
             // Redirect to homepage
             setTimeout(() => {
-              router.push('/');
+              router.push('/jobs');
             }, 1500);
           } catch (saveError: any) {
             console.error('Error saving onboarding data:', saveError);

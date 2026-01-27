@@ -305,12 +305,3 @@ export default function SignInModal({ open, onOpenChange }: SignInModalProps) {
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-

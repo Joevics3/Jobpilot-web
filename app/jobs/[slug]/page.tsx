@@ -58,7 +58,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const salaryStr = getSalaryString();
 
   // FIX: Remove duplicate "JobMeter" - only ONE at the end
-  const title = `${job.title} at ${companyName}`;
+  // Use location instead of "Confidential Employer" in meta title
+  const titleCompany = (companyName === 'Company' || !companyName) ? locationStr : companyName;
+  const title = `${job.title} at ${titleCompany}`;
   
   // FIX: Don't include salary if it's null/undefined
   let description = `Apply for ${job.title} at ${companyName} in ${locationStr}`;
