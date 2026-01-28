@@ -79,20 +79,22 @@ export function handleEzoicConsent(): void {
   if (consent === 'rejected') {
     // User rejected non-essential cookies
     // Signal to Ezoic that user has opted out
-    if (window.ezstandalone) {
-      window.ezstandalone.cmd = window.ezstandalone.cmd || [];
-      window.ezstandalone.cmd.push(() => {
+    const ezstandalone = window.ezstandalone;
+    if (ezstandalone) {
+      ezstandalone.cmd = ezstandalone.cmd || [];
+      ezstandalone.cmd.push(() => {
         // Disable personalized ads
-        window.ezstandalone.setDisablePersonalizedStatistics(true);
+        ezstandalone.setDisablePersonalizedStatistics(true);
       });
     }
   } else if (consent === 'accepted') {
     // User accepted cookies - Ezoic scripts already loaded
     // Enable personalized ads
-    if (window.ezstandalone) {
-      window.ezstandalone.cmd = window.ezstandalone.cmd || [];
-      window.ezstandalone.cmd.push(() => {
-        window.ezstandalone.setDisablePersonalizedStatistics(false);
+    const ezstandalone = window.ezstandalone;
+    if (ezstandalone) {
+      ezstandalone.cmd = ezstandalone.cmd || [];
+      ezstandalone.cmd.push(() => {
+        ezstandalone.setDisablePersonalizedStatistics(false);
       });
     }
   }
