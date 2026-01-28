@@ -243,7 +243,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
 
   const handleShare = (type: 'whatsapp' | 'email') => {
     const jobUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const companyName = getCompanyName();
+    const companyName = getCompanyName(job.company);
     const shareText = `${job.title} at ${companyName}`;
     
     if (type === 'whatsapp') {
@@ -986,7 +986,7 @@ const getExperienceLevelWithYears = (level: string) => {
                   const jobsData = [{
                     id: job.id,
                     title: job.title || 'Untitled Job',
-                    company: getCompanyName(),
+                    company: getCompanyName(job.company),
                     location: getLocationString(),
                   }];
                   localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
