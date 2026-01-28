@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles, Share2 } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles, Share2, Link } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
+import { getCompanyName, findCompanyByName } from '@/lib/utils/companyUtils';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
@@ -43,11 +44,13 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   const [cvServiceModalOpen, setCvServiceModalOpen] = useState(false);
   const [serviceFormData, setServiceFormData] = useState({ email: '', phone: '' });
   const { balance, hasEnoughCredits, loadCreditBalance } = useCredits();
+  const [companies, setCompanies] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuth();
     loadSavedStatus();
     loadAppliedStatus();
+    loadCompanies();
   }, []);
 
   useEffect(() => {
@@ -104,6 +107,24 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     } catch (error) {
       console.error('Error fetching onboarding data:', error);
       setUserOnboardingData({});
+    }
+  };
+
+  const loadCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, slug, logo_url')
+        .eq('is_published', true);
+
+      if (error) {
+        console.error('Error loading companies:', error);
+        return;
+      }
+
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error loading companies:', error);
     }
   };
 
@@ -421,12 +442,18 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     return theme.colors.match.bad;
   };
   const matchColor = getMatchColor(matchScore);
+  
+  const companyInfo = getCompanyInfo();
 
-  const getCompanyName = () => {
-    if (!job.company) return 'Confidential Employer';
-    if (typeof job.company === 'string') return job.company;
-    if (typeof job.company === 'object' && job.company.name) return job.company.name;
-    return 'Confidential Employer';
+  const getCompanyInfo = () => {
+    const companyName = getCompanyName(job.company);
+    const company = findCompanyByName(companyName, companies);
+    
+    return {
+      name: companyName,
+      company: company,
+      slug: company?.slug
+    };
   };
 
   const getLocationString = () => {
@@ -522,11 +549,28 @@ const getExperienceLevelWithYears = (level: string) => {
               >
                 {job.title || 'Untitled Job'}
               </h1>
-              <p
-                className="text-lg font-medium mb-4 text-white/90"
-              >
-                {getCompanyName()}
-              </p>
+              <div className="flex items-center gap-2 mb-4">
+                {companyInfo.company?.logo_url && (
+                  <img 
+                    src={companyInfo.company.logo_url} 
+                    alt={companyInfo.name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
+                {companyInfo.slug ? (
+                  <a 
+                    href={`/company/${companyInfo.slug}`}
+                    className="text-lg font-medium text-white/90 hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    {companyInfo.name}
+                    <Link size={16} className="text-white/70" />
+                  </a>
+                ) : (
+                  <p className="text-lg font-medium text-white/90">
+                    {companyInfo.name}
+                  </p>
+                )}
+              </div>
               
               {/* Match Score Badge, Save Icon, and Share Icon */}
               <div className="flex items-center justify-between">
