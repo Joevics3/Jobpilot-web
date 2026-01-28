@@ -35,6 +35,46 @@ export function mapJobToSchema(job: any) {
   };
 
   // -----------------------------
+  // Helper: Job Title (NEW - with location logic)
+  // -----------------------------
+  const getJobTitle = () => {
+    const baseTitle = job.title || "Untitled Job";
+    const companyName = getCompanyName();
+
+    // If company is "Confidential Employer", append location to title
+    if (companyName === "Confidential Employer") {
+      const location = getLocationString();
+      if (location) {
+        return `${baseTitle} in ${location}`;
+      }
+    }
+
+    // Otherwise, return title as-is
+    return baseTitle;
+  };
+
+  // -----------------------------
+  // Helper: Get Location String for Title
+  // -----------------------------
+  const getLocationString = () => {
+    // Priority: State > City > Country
+    if (job.location?.state) {
+      return job.location.state;
+    }
+    if (job.location?.city) {
+      return job.location.city;
+    }
+    if (job.location?.country && job.location.country !== "NG") {
+      return job.location.country;
+    }
+    // If remote, you might want to say "Remote" instead
+    if (job.location?.remote) {
+      return "Remote";
+    }
+    return null;
+  };
+
+  // -----------------------------
   // Helper: Employment Type
   // -----------------------------
   const getEmploymentType = () => {
@@ -151,7 +191,8 @@ export function mapJobToSchema(job: any) {
     "@context": "https://schema.org",
     "@type": "JobPosting",
 
-    title: job.title || "Untitled Job",
+    title: getJobTitle(), // UPDATED: Now uses the new helper function
+
     description: getCleanDescription(),
 
     datePosted:

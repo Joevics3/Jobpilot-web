@@ -107,6 +107,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://qyuzuooxenyjqnjplrya.supabase.co" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-315B0S5RGE"></script>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-315B0S5RGE');
+          `
+        }} />
       </head>
       <body className={inter.className}>
         <RootLayoutClient>{children}</RootLayoutClient>

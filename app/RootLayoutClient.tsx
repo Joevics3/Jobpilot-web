@@ -3,6 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import BottomNavigation from '@/components/navigation/BottomNavigation';
+import Footer from '@/components/navigation/Footer';
 import { theme } from '@/lib/theme';
 
 export default function RootLayoutClient({
@@ -12,6 +13,9 @@ export default function RootLayoutClient({
 }) {
   const pathname = usePathname();
   
+  // Bottom nav pages that show bottom navigation
+  const bottomNavPages = ['/jobs', '/saved', '/cv', '/tools', '/settings'];
+  
   // Hide bottom nav on job details pages and auth/onboarding pages
   const hideBottomNav = 
     (pathname?.startsWith('/jobs/') && pathname !== '/jobs') ||
@@ -20,6 +24,9 @@ export default function RootLayoutClient({
     pathname?.startsWith('/dashboard') ||
     (pathname?.startsWith('/tools/interview/') && pathname !== '/tools/interview');
 
+  // Show footer on pages that don't have bottom nav
+  const showFooter = !bottomNavPages.includes(pathname || '') && !hideBottomNav;
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.colors.background.DEFAULT }}>
       {/* Main content with bottom padding for nav (unless hidden) */}
@@ -27,7 +34,7 @@ export default function RootLayoutClient({
         className="flex-1" 
         style={{ 
           backgroundColor: theme.colors.background.muted,
-          paddingBottom: hideBottomNav ? '0' : '80px'
+          paddingBottom: hideBottomNav && !showFooter ? '0' : '80px'
         }}
       >
         {children}
@@ -35,6 +42,9 @@ export default function RootLayoutClient({
       
       {/* Bottom Navigation - hidden on job details and auth pages */}
       {!hideBottomNav && <BottomNavigation />}
+      
+      {/* Footer - shown on pages without bottom nav */}
+      {showFooter && <Footer />}
     </div>
   );
 }

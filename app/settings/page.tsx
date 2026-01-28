@@ -403,8 +403,26 @@ export default function SettingsPage() {
               <ChevronRight size={20} className="text-gray-400" />
             </Link>
             <Link
+              href="/contact"
+              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: theme.colors.success + '15' }}
+                >
+                  <Mail size={20} style={{ color: theme.colors.success }} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-900">Contact Us</h3>
+                  <p className="text-xs text-gray-600">Get help and support</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-400" />
+            </Link>
+            <Link
               href="/terms-of-service"
-              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
             >
               <div className="flex items-center gap-3">
                 <div

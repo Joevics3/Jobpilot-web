@@ -1,8 +1,5 @@
 "use client";
 
-// This page uses the EXACT SAME matching logic as your JobList.tsx
-// Just filters jobs by state first, then applies your existing matching
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -15,7 +12,6 @@ import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
-import { extractTownsFromJobs, TownJobCount } from '@/lib/utils/locationUtils';
 
 const NIGERIAN_STATES = [
   'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
@@ -30,10 +26,13 @@ const STORAGE_KEYS = {
   APPLIED_JOBS: 'applied_jobs',
 };
 
-export default function JobsByStatePage() {
+export default function JobsByTownPage() {
   const params = useParams();
   const state = params?.state as string;
+  const town = params?.town as string;
+  
   const formattedState = state ? state.charAt(0).toUpperCase() + state.slice(1) : '';
+  const formattedTown = town ? town.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '';
   
   const [user, setUser] = useState<any>(null);
   const [jobs, setJobs] = useState<JobUI[]>([]);
@@ -44,8 +43,6 @@ export default function JobsByStatePage() {
   const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [towns, setTowns] = useState<TownJobCount[]>([]);
-  const [stateOnlyJobs, setStateOnlyJobs] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -60,10 +57,10 @@ export default function JobsByStatePage() {
   }, [user]);
 
   useEffect(() => {
-    if (formattedState && NIGERIAN_STATES.includes(formattedState)) {
-      fetchJobsByState();
+    if (formattedState && NIGERIAN_STATES.includes(formattedState) && formattedTown) {
+      fetchJobsByTown();
     }
-  }, [formattedState, userOnboardingData, user]);
+  }, [formattedState, formattedTown, userOnboardingData, user]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -104,7 +101,7 @@ export default function JobsByStatePage() {
     }
   };
 
-  const fetchJobsByState = async () => {
+  const fetchJobsByTown = async () => {
     try {
       setLoading(true);
       
@@ -121,14 +118,12 @@ export default function JobsByStatePage() {
 
       if (error) throw error;
 
-      // Filter jobs by state in JavaScript (since location can be string or JSON object)
+      // First filter by state
       const stateFilteredJobs = (data || []).filter((job) => {
-        // Handle string location format
         if (typeof job.location === 'string') {
           return job.location.toLowerCase().includes(formattedState.toLowerCase());
         }
         
-        // Handle object location format
         if (job.location && typeof job.location === 'object') {
           const locState = job.location.state || '';
           return locState.toLowerCase() === formattedState.toLowerCase();
@@ -137,16 +132,25 @@ export default function JobsByStatePage() {
         return false;
       });
 
-      // Extract towns and state-only jobs
-      const { townCounts, stateOnlyJobs: noTownJobs } = extractTownsFromJobs(stateFilteredJobs, formattedState);
-      setTowns(townCounts);
-      setStateOnlyJobs(noTownJobs);
+      // Then filter by town/city
+      const townFilteredJobs = stateFilteredJobs.filter((job) => {
+        if (typeof job.location === 'string') {
+          return job.location.toLowerCase().includes(formattedTown.toLowerCase());
+        }
+        
+        if (job.location && typeof job.location === 'object') {
+          const locCity = job.location.city || '';
+          return locCity.toLowerCase() === formattedTown.toLowerCase();
+        }
+        
+        return false;
+      });
 
-      // Set total count for this state
-      setTotalJobs(stateFilteredJobs.length);
+      // Set total count for this town
+      setTotalJobs(townFilteredJobs.length);
 
       // Use EXACT SAME matching logic as JobList.tsx
-      const processedJobs = await processJobsWithMatching(stateFilteredJobs);
+      const processedJobs = await processJobsWithMatching(townFilteredJobs);
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
       setJobs(processedJobs);
     } catch (error) {
@@ -403,6 +407,19 @@ export default function JobsByStatePage() {
     );
   }
 
+  if (!formattedTown) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Town Not Found</h1>
+          <Link href={`/jobs/state/${state.toLowerCase()}`} className="text-blue-600 hover:underline">
+            Back to {formattedState} Jobs
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
@@ -411,52 +428,39 @@ export default function JobsByStatePage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-4">
               <MapPin size={32} />
-              <h1 className="text-4xl font-bold">Jobs in {formattedState}</h1>
+              <h1 className="text-4xl font-bold">Jobs in {formattedTown}, {formattedState}</h1>
             </div>
             <p className="text-lg text-white">
-              {totalJobs} job{totalJobs !== 1 ? 's' : ''} available in {formattedState}
+              {totalJobs} job{totalJobs !== 1 ? 's' : ''} available in {formattedTown}, {formattedState}
             </p>
           </div>
         </div>
 
-        {/* Back Button */}
+        {/* Breadcrumb */}
         <div className="px-6 py-4">
+          <nav className="flex items-center gap-2 text-sm text-gray-600">
+            <Link href="/" className="hover:text-blue-600">Home</Link>
+            <span>/</span>
+            <Link href="/jobs" className="hover:text-blue-600">Jobs</Link>
+            <span>/</span>
+            <Link href="/jobs/state/" className="hover:text-blue-600">States</Link>
+            <span>/</span>
+            <Link href={`/jobs/state/${state.toLowerCase()}`} className="hover:text-blue-600">{formattedState}</Link>
+            <span>/</span>
+            <span className="text-gray-900 font-medium">{formattedTown}</span>
+          </nav>
+        </div>
+
+        {/* Back Button */}
+        <div className="px-6 pb-4">
           <Link
-            href="/jobs/state/"
+            href={`/jobs/state/${state.toLowerCase()}`}
             className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
           >
             <ArrowLeft size={20} />
-            Back to All Locations
+            Back to {formattedState} Jobs
           </Link>
         </div>
-
-        {/* Towns List */}
-        {!loading && towns.length > 0 && (
-          <div className="px-6 py-4">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Jobs by Town in {formattedState}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {towns.map((town) => (
-                  <Link
-                    key={town.slug}
-                    href={`/jobs/state/${state.toLowerCase()}/${town.slug}`}
-                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <MapPin size={20} className="text-gray-400 group-hover:text-blue-600" />
-                      <span className="font-medium text-gray-900 group-hover:text-blue-600">
-                        {town.city}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {town.count} {town.count === 1 ? 'job' : 'jobs'}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Jobs List */}
         <div className="px-6 py-4">
@@ -468,16 +472,16 @@ export default function JobsByStatePage() {
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <Briefcase size={48} className="mx-auto text-gray-400 mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                No jobs found in {formattedState}
+                No jobs found in {formattedTown}, {formattedState}
               </h2>
               <p className="text-gray-600 mb-6">
                 Check back soon or explore jobs in other locations.
               </p>
               <Link
-                href="/jobs"
+                href={`/jobs/state/${state.toLowerCase()}`}
                 className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                Browse All Jobs
+                Browse {formattedState} Jobs
               </Link>
             </div>
           ) : (
