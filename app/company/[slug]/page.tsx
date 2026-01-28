@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, MapPin, Users, Briefcase, Globe, Linkedin, Twitter, Facebook, Instagram, CheckCircle, Mail, Phone, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Briefcase, Globe, Linkedin, Twitter, Facebook, Instagram, CheckCircle, Mail, Phone, ExternalLink, Calendar, DollarSign, Clock } from 'lucide-react';
 import { CompanySchema, FAQSchema } from '@/components/seo/StructuredData';
+import { getCompanyName } from '@/lib/utils/companyUtils';
 
 interface Company {
   id: string;
@@ -64,6 +65,31 @@ async function incrementViewCount(slug: string) {
     await supabase.rpc('increment_company_views', { company_slug: slug });
   } catch (error) {
     console.error('Error incrementing view count:', error);
+  }
+}
+
+async function getCompanyJobs(companyName: string) {
+  try {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('status', 'active')
+      .order('posted_date', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching company jobs:', error);
+      return [];
+    }
+
+    // Filter jobs by company name matching
+    return data.filter(job => {
+      const jobCompanyName = getCompanyName(job.company);
+      return jobCompanyName.toLowerCase() === companyName.toLowerCase();
+    });
+  } catch (error) {
+    console.error('Error fetching company jobs:', error);
+    return [];
   }
 }
 
@@ -132,6 +158,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
 
   // Increment view count (non-blocking)
   incrementViewCount(params.slug);
+
+  // Get company jobs
+  const companyJobs = await getCompanyJobs(company.name);
 
   // Prepare social media links
   const socialLinks = [
@@ -315,7 +344,7 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
               <div className="bg-blue-600 rounded-lg shadow-sm p-6 text-white">
                 <h3 className="text-xl font-bold mb-2">Join Our Team</h3>
                 <p className="text-blue-100 mb-4">
-                  {company.job_count} open {company.job_count === 1 ? 'position' : 'positions'}
+                  {companyJobs.length} open {companyJobs.length === 1 ? 'position' : 'positions'}
                 </p>
                 <Link
                   href={company.careers_page_url || `/jobs?company=${company.slug}`}
@@ -431,6 +460,100 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                   </div>
                 </div>
               </div>
+
+              {/* Company Jobs */}
+              {companyJobs.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Open Positions</h2>
+                  <div className="space-y-4">
+                    {companyJobs.map((job) => (
+                      <div key={job.id} className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition-colors">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <Link 
+                              href={`/jobs/${job.slug}`}
+                              className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              {job.title}
+                            </Link>
+                            
+                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
+                              {(() => {
+                                const location = typeof job.location === 'string' 
+                                  ? job.location 
+                                  : (job.location?.remote 
+                                      ? 'Remote'
+                                      : [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified');
+                                return location && location !== 'Not specified' && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin size={14} />
+                                    <span>{location}</span>
+                                  </div>
+                                );
+                              })()}
+                              
+                              {job.employment_type && (
+                                <div className="flex items-center gap-1">
+                                  <Clock size={14} />
+                                  <span>{job.employment_type}</span>
+                                </div>
+                              )}
+                              
+                              {(() => {
+                                if (job.salary_range && typeof job.salary_range === 'object' && job.salary_range.min) {
+                                  const { min, currency, period } = job.salary_range;
+                                  return (
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign size={14} />
+                                      <span>{currency} {min.toLocaleString()} {period || ''}</span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              
+                              {job.posted_date && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar size={14} />
+                                  <span>{new Date(job.posted_date).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {job.description && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                                {typeof job.description === 'string' 
+                                  ? job.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
+                                  : 'Great opportunity at ' + company.name
+                                }
+                              </p>
+                            )}
+                          </div>
+                          
+                          <Link
+                            href={`/jobs/${job.slug}`}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            View Job
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {companyJobs.length >= 10 && (
+                    <div className="mt-6 text-center">
+                      <Link
+                        href={`/jobs?company=${company.name}`}
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        View all positions
+                        <ExternalLink size={16} />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
