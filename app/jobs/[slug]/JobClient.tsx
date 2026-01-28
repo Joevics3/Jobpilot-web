@@ -441,9 +441,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     if (match >= 31) return theme.colors.match.average;
     return theme.colors.match.bad;
   };
-  const matchColor = getMatchColor(matchScore);
-  
-  const companyInfo = getCompanyInfo();
 
   const getCompanyInfo = () => {
     const companyName = getCompanyName(job.company);
@@ -455,6 +452,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
       slug: company?.slug
     };
   };
+
+  const matchColor = getMatchColor(matchScore);
+  const companyInfo = getCompanyInfo();
 
   const getLocationString = () => {
     if (!job.location) return 'Not specified';
