@@ -152,7 +152,7 @@ export default function ContactPage() {
               </div>
               <p className="text-sm text-gray-700 mb-2">
                 <a 
-                  href="mailto:help.jobpilot@gmail.com" 
+                  href="mailto:help.jobmeter@gmail.com" 
                   className="font-medium text-blue-600 hover:text-blue-800 transition-colors"
                 >
                   help.jobpilot@gmail.com

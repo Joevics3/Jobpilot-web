@@ -317,15 +317,10 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
   };
 
   const handleCTAClick = (type: 'seeker' | 'recruiter') => {
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
-
     if (type === 'seeker') {
       router.push('/jobs');
     } else {
-      router.push('/recruiter/post-job');
+      router.push('/submit');
     }
   };
 

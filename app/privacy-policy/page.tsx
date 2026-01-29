@@ -339,8 +339,8 @@ export default function PrivacyPolicyPage() {
           
           <div className="p-5 bg-blue-50 rounded-xl border border-blue-200">
             <p className="text-sm text-gray-700">
-              <span className="font-semibold text-blue-700">Email:</span> help.jobpilot@gmail.com<br />
-              <span className="font-semibold text-blue-700">WhatsApp:</span> +234 809 299 8662<br />
+              <span className="font-semibold text-blue-700">Email:</span> help.jobmeter@gmail.com<br />
+              <span className="font-semibold text-blue-700">WhatsApp:</span> +234 705 692 8186<br />
               <span className="font-semibold text-blue-700">Response Time:</span> We respond to privacy inquiries within 30 days
             </p>
           </div>

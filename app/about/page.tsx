@@ -222,8 +222,8 @@ export default function AboutPage() {
           
           <div className="p-5 bg-green-50 rounded-xl border border-green-200">
             <p className="text-sm text-gray-700 leading-relaxed">
-              <span className="font-semibold text-green-700">Email:</span> help.jobpilot@gmail.com<br />
-              <span className="font-semibold text-green-700">WhatsApp:</span> +234 809 299 8662<br />
+              <span className="font-semibold text-green-700">Email:</span> help.jobmeter@gmail.com<br />
+              <span className="font-semibold text-green-700">WhatsApp:</span> +234 705 692 8186<br />
               <span className="font-semibold text-green-700">Response Time:</span> We aim to respond to all inquiries within 24-48 hours
             </p>
           </div>
