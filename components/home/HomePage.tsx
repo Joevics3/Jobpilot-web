@@ -475,6 +475,37 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </div>
 
+        {/* Search Section */}
+        <div className="px-6 py-8 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Your Next Job</h2>
+              <p className="text-gray-600">Search thousands of job opportunities</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search jobs by title, company, or keywords..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      router.push(`/jobs?search=${encodeURIComponent(e.currentTarget.value.trim())}`);
+                    }
+                  }}
+                />
+              </div>
+              <button
+                onClick={() => router.push('/jobs')}
+                className="px-6 py-3 rounded-lg font-semibold text-white transition-colors"
+                style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+              >
+                Go to Job List
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Banner Ad */}
         <div className="px-6">
           <BannerAd />

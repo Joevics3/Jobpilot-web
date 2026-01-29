@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
 import JobFeedHeader from '@/components/jobs/JobFeedHeader';
@@ -9,6 +9,7 @@ import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
 import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
+import JobFilters from '@/components/jobs/JobFilters';
 import { ChevronDown, LogIn, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthModal from '@/components/AuthModal';
@@ -27,6 +28,8 @@ const STORAGE_KEYS = {
 
 export default function JobList() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobUI[]>([]);
@@ -37,12 +40,21 @@ export default function JobList() {
   const [refreshingMatches, setRefreshingMatches] = useState(false);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
-  const [sortBy, setSortBy] = useState<'match' | 'date' | 'role'>('match');
+  const [sortBy, setSortBy] = useState<'match' | 'latest' | 'salary'>('match');
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    location: [] as string[],
+    sector: [] as string[],
+    employmentType: [] as string[],
+    salaryRange: undefined as { min: number; max: number } | undefined,
+    remote: false,
+  });
 
   useEffect(() => {
     checkAuth();
@@ -61,6 +73,53 @@ export default function JobList() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Initialize search query and filters from URL parameters
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const locationParam = searchParams.get('location');
+    const sectorParam = searchParams.get('sector');
+    const employmentTypeParam = searchParams.get('employmentType');
+    const salaryMinParam = searchParams.get('salaryMin');
+    const salaryMaxParam = searchParams.get('salaryMax');
+    const remoteParam = searchParams.get('remote');
+    const sortParam = searchParams.get('sort');
+
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setFilters(prev => ({ ...prev, search: searchParam }));
+    }
+
+    if (locationParam) {
+      setFilters(prev => ({ ...prev, location: locationParam.split(',') }));
+    }
+
+    if (sectorParam) {
+      setFilters(prev => ({ ...prev, sector: sectorParam.split(',') }));
+    }
+
+    if (employmentTypeParam) {
+      setFilters(prev => ({ ...prev, employmentType: employmentTypeParam.split(',') }));
+    }
+
+    if (salaryMinParam || salaryMaxParam) {
+      setFilters(prev => ({
+        ...prev,
+        salaryRange: {
+          min: salaryMinParam ? parseInt(salaryMinParam) : 0,
+          max: salaryMaxParam ? parseInt(salaryMaxParam) : 0,
+        }
+      }));
+    }
+
+    if (remoteParam === 'true') {
+      setFilters(prev => ({ ...prev, remote: true }));
+    }
+
+    if (sortParam === 'latest' || sortParam === 'salary') {
+      setSortBy(sortParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
@@ -529,16 +588,69 @@ export default function JobList() {
     setMatchModalOpen(true);
   };
 
-  // Filter jobs based on search query
+  // Filter jobs based on search query and filters
   const searchFilteredJobs = jobs.filter(job => {
-    if (!searchQuery.trim()) return true;
+    // Pre-calculate common values
+    const jobLocationLower = job.location.toLowerCase();
+    const jobTypeLower = job.type?.toLowerCase() || '';
     
-    const query = searchQuery.toLowerCase();
-    const titleMatch = job.title.toLowerCase().includes(query);
-    const companyMatch = job.company.toLowerCase().includes(query);
-    const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
+    // Search filter
+    const query = filters.search.toLowerCase();
+    if (query) {
+      const titleMatch = job.title.toLowerCase().includes(query);
+      const companyMatch = job.company.toLowerCase().includes(query);
+      const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
+      if (!titleMatch && !companyMatch && !descriptionMatch) return false;
+    }
     
-    return titleMatch || companyMatch || descriptionMatch;
+    // Location filter
+    if (filters.location && filters.location.length > 0) {
+      const locationMatch = filters.location.some(loc => 
+        jobLocationLower.includes(loc.toLowerCase())
+      );
+      if (!locationMatch) return false;
+    }
+    
+    // Remote filter
+    if (filters.remote && !jobLocationLower.includes('remote')) {
+      return false;
+    }
+    
+    // Sector filter - need to check if job sector matches any selected sectors
+    if (filters.sector && filters.sector.length > 0) {
+      // Since job data doesn't have explicit sector field, we'll skip this for now
+      // This would require adding sector data to job objects or API
+    }
+    
+    // Employment type filter
+    if (filters.employmentType && filters.employmentType.length > 0) {
+      const typeMatch = filters.employmentType.some(type => {
+        if (type.toLowerCase() === 'remote') {
+          return jobLocationLower.includes('remote');
+        }
+        return jobTypeLower.includes(type.toLowerCase()) || type.toLowerCase().includes(jobTypeLower);
+      });
+      if (!typeMatch) return false;
+    }
+    
+    // Salary filter
+    if (filters.salaryRange) {
+      const getSalaryNumber = (salary: string) => {
+        if (!salary) return 0;
+        const match = salary.match(/[\d,]+/);
+        return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+      };
+      const jobSalary = getSalaryNumber(job.salary || '');
+      
+      if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) {
+        return false;
+      }
+      if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
+        return false;
+      }
+    }
+    
+    return true;
   });
 
   const filteredJobs = searchFilteredJobs.filter(job => !appliedJobs.includes(job.id));
@@ -546,6 +658,17 @@ export default function JobList() {
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     if (sortBy === 'match') {
       return (b.calculatedTotal || b.match || 0) - (a.calculatedTotal || a.match || 0);
+    } else if (sortBy === 'latest') {
+      // Sort by latest (posted_date, descending)
+      return new Date(b.postedDate || '').getTime() - new Date(a.postedDate || '').getTime();
+    } else if (sortBy === 'salary') {
+      // Sort by salary (descending)
+      const getSalaryNumber = (salary: string) => {
+        if (!salary) return 0;
+        const match = salary.match(/[\d,]+/);
+        return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+      };
+      return getSalaryNumber(b.salary || '') - getSalaryNumber(a.salary || '');
     }
     return 0;
   });
@@ -600,8 +723,8 @@ export default function JobList() {
           <BannerAd />
         </div>
 
-        {/* Search Bar */}
-        <div className="px-6 py-4">
+        {/* Search Bar and Filters */}
+        <div className="px-6 py-4 space-y-4">
           <div className="relative">
             <Search 
               size={20} 
@@ -611,8 +734,12 @@ export default function JobList() {
             <input
               type="text"
               placeholder="Search jobs by title, company, or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={filters.search}
+              onChange={(e) => {
+                const newSearch = e.target.value;
+                setFilters(prev => ({ ...prev, search: newSearch }));
+                setSearchQuery(newSearch);
+              }}
               className="w-full pl-10 pr-10 py-3 rounded-lg border outline-none focus:ring-2 transition-all"
               style={{
                 backgroundColor: theme.colors.background.DEFAULT,
@@ -620,17 +747,76 @@ export default function JobList() {
                 color: theme.colors.text.primary,
               }}
             />
-            {searchQuery && (
+            {filters.search && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, search: '' }));
+                  setSearchQuery('');
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X size={16} style={{ color: theme.colors.text.secondary }} />
               </button>
             )}
           </div>
-          {searchQuery && (
-            <p className="mt-2 text-sm" style={{ color: theme.colors.text.secondary }}>
+          
+          {/* Filters Component */}
+          <JobFilters
+            filters={filters}
+            onFiltersChange={(newFilters) => {
+              setFilters(newFilters);
+              
+              // Update URL parameters
+              const params = new URLSearchParams();
+              
+              if (newFilters.search) {
+                params.set('search', newFilters.search);
+              }
+              
+              if (newFilters.location && newFilters.location.length > 0) {
+                params.set('location', newFilters.location.join(','));
+              }
+              
+              if (newFilters.sector && newFilters.sector.length > 0) {
+                params.set('sector', newFilters.sector.join(','));
+              }
+              
+              if (newFilters.employmentType && newFilters.employmentType.length > 0) {
+                params.set('employmentType', newFilters.employmentType.join(','));
+              }
+              
+              if (newFilters.salaryRange) {
+                if (newFilters.salaryRange.min > 0) {
+                  params.set('salaryMin', newFilters.salaryRange.min.toString());
+                }
+                if (newFilters.salaryRange.max > 0) {
+                  params.set('salaryMax', newFilters.salaryRange.max.toString());
+                }
+              }
+              
+              if (newFilters.remote) {
+                params.set('remote', 'true');
+              }
+              
+              if (sortBy !== 'match') {
+                params.set('sort', sortBy);
+              }
+              
+              const queryString = params.toString();
+              const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+              router.replace(newUrl);
+            }}
+            isOpen={filtersOpen}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
+          />
+          
+          {(filters.search || 
+            (filters.location && filters.location.length > 0) ||
+            (filters.sector && filters.sector.length > 0) ||
+            (filters.employmentType && filters.employmentType.length > 0) ||
+            filters.salaryRange ||
+            filters.remote) && (
+            <p className="text-sm" style={{ color: theme.colors.text.secondary }}>
               Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
             </p>
           )}
@@ -646,13 +832,28 @@ export default function JobList() {
           <div className="flex items-center gap-3">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'match' | 'date' | 'role')}
+              onChange={(e) => {
+                const newSortBy = e.target.value as 'match' | 'latest' | 'salary';
+                setSortBy(newSortBy);
+                
+                // Update URL parameter for sort
+                const params = new URLSearchParams(searchParams.toString());
+                if (newSortBy !== 'match') {
+                  params.set('sort', newSortBy);
+                } else {
+                  params.delete('sort');
+                }
+                
+                const queryString = params.toString();
+                const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                router.replace(newUrl);
+              }}
               className="text-sm font-medium border-none outline-none appearance-none pr-6 cursor-pointer"
               style={{ color: theme.colors.text.primary }}
             >
               <option value="match">Sort by Match</option>
-              <option value="date">Sort by Date</option>
-              <option value="role">Sort by Role</option>
+              <option value="latest">Sort by Latest</option>
+              <option value="salary">Sort by Salary</option>
             </select>
             <ChevronDown size={16} style={{ color: theme.colors.text.secondary }} className="-ml-5 pointer-events-none" />
           </div>
