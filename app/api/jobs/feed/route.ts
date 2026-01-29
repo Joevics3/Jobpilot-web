@@ -11,9 +11,26 @@ const getJobService = async () => {
   }
 };
 
+// Format date for RSS (RFC 822)
+const formatRSSDate = (dateString?: string) => {
+  if (!dateString) return new Date().toUTCString();
+  return new Date(dateString).toUTCString();
+};
+
+// Escape XML special characters
+const escapeXML = (text?: string) => {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('Feed API called');
+    console.log('RSS Feed API called');
     
     const { searchParams } = new URL(request.url);
     
@@ -39,77 +56,98 @@ export async function GET(request: NextRequest) {
     const result = await jobService.getJobs(page, limit, filters);
     console.log('JobService result:', { jobsCount: result.jobs?.length, total: result.total });
 
-    const feedItems = result.jobs.map(job => ({
-      id: job.id,
-      title: `${job.title} at ${job.company}`,
-      content_html: job.description,
-      content_text: job.description?.replace(/<[^>]*>/g, ''),
-      url: job.source_url,
-      date_published: job.posted_date,
-      date_modified: job.updated_at || job.posted_date,
-      author: {
-        name: job.company
-      },
-      tags: [
-        ...(job.skills || []),
-        job.job_type,
-        job.remote ? 'remote' : 'onsite',
-        job.location
-      ].filter(Boolean),
-      salary: job.salary_min || job.salary_max ? {
-        min: job.salary_min,
-        max: job.salary_max,
-        currency: job.salary_currency
-      } : undefined,
-      _meta: {
-        location: job.location,
-        job_type: job.job_type,
-        remote: job.remote,
-        experience_level: job.experience_level,
-        source: job.source,
-        expires_date: job.expires_date
-      }
-    }));
-
     const baseUrl = request.nextUrl.origin;
-    const currentPage = page;
-    const totalPages = Math.ceil(result.total / limit);
-    
-    const nextUrl = currentPage < totalPages 
-      ? `${baseUrl}/api/jobs/feed?page=${currentPage + 1}&limit=${limit}${location ? `&location=${encodeURIComponent(location)}` : ''}${remote ? '&remote=true' : ''}${source ? `&source=${encodeURIComponent(source)}` : ''}${search ? `&search=${encodeURIComponent(search)}` : ''}`
-      : null;
 
-    const feed = {
-      version: "https://jsonfeed.org/version/1.0",
-      title: "JobPilot Jobs Feed",
-      home_page_url: baseUrl,
-      feed_url: `${baseUrl}/api/jobs/feed`,
-      items: feedItems,
-      _meta: {
-        total_items: result.total,
-        page: currentPage,
-        limit: limit,
-        total_pages: totalPages,
-        next_url: nextUrl
+    // Generate RSS XML
+    const rssItems = result.jobs.map(job => {
+      const title = `${job.title} at ${job.company}`;
+      const link = job.source_url || `${baseUrl}/jobs/${job.id}`;
+      const description = job.description?.replace(/<[^>]*>/g, '') || `${job.title} position at ${job.company} in ${job.location || 'Unknown location'}`;
+      
+      // Build description with job details
+      let fullDescription = `<![CDATA[<p><strong>${escapeXML(job.title)}</strong> at ${escapeXML(job.company)}</p>`;
+      if (job.location) fullDescription += `<p><strong>Location:</strong> ${escapeXML(job.location)}</p>`;
+      if (job.job_type) fullDescription += `<p><strong>Type:</strong> ${escapeXML(job.job_type)}</p>`;
+      if (job.remote) fullDescription += `<p><strong>Remote:</strong> Yes</p>`;
+      if (job.salary_min || job.salary_max) {
+        const salary = job.salary_min && job.salary_max 
+          ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
+          : job.salary_min 
+          ? `$${job.salary_min.toLocaleString()}+`
+          : `$${job.salary_max?.toLocaleString()}`;
+        fullDescription += `<p><strong>Salary:</strong> ${escapeXML(salary)}</p>`;
       }
-    };
+      if (job.description) {
+        fullDescription += `<p><strong>Description:</strong></p><div>${escapeXML(job.description.replace(/<[^>]*>/g, ''))}</div>`;
+      }
+      if (job.skills && job.skills.length > 0) {
+        fullDescription += `<p><strong>Skills:</strong> ${escapeXML(job.skills.join(', '))}</p>`;
+      }
+      fullDescription += ']]>';
 
-    const response = NextResponse.json(feed);
-    
-    // Add caching headers
-    response.headers.set('Cache-Control', 'public, max-age=300'); // 5 minutes
-    response.headers.set('Last-Modified', new Date().toUTCString());
+      return `
+  <item>
+    <title>${escapeXML(title)}</title>
+    <link>${escapeXML(link)}</link>
+    <description>${fullDescription}</description>
+    <pubDate>${formatRSSDate(job.posted_date)}</pubDate>
+    <guid>${escapeXML(job.id)}</guid>
+    <author>${escapeXML(job.company)}</author>
+    ${job.location ? `<category>${escapeXML(job.location)}</category>` : ''}
+    ${job.job_type ? `<category>${escapeXML(job.job_type)}</category>` : ''}
+    ${job.remote ? `<category>Remote</category>` : ''}
+    ${job.skills ? job.skills.map(skill => `<category>${escapeXML(skill)}</category>`).join('') : ''}
+  </item>`;
+    }).join('\n');
+
+    const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>JobPilot Jobs Feed</title>
+    <link>${escapeXML(baseUrl)}</link>
+    <description>Latest job listings from JobPilot</description>
+    <language>en-us</language>
+    <atom:link href="${escapeXML(`${baseUrl}/api/jobs/feed`)}" rel="self" type="application/rss+xml" />
+    <lastBuildDate>${formatRSSDate()}</lastBuildDate>
+    <generator>JobPilot RSS Feed Generator</generator>
+    <docs>https://www.rssboard.org/rss-specification</docs>
+    <ttl>60</ttl>
+    ${rssItems}
+  </channel>
+</rss>`;
+
+    const response = new NextResponse(rssXml, {
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=300', // 5 minutes
+        'Last-Modified': new Date().toUTCString(),
+      },
+    });
     
     return response;
   } catch (error) {
-    console.error('Feed API error:', error);
+    console.error('RSS Feed API error:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate feed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+    
+    // Return XML error response
+    const errorXml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Error</title>
+    <description>Failed to generate RSS feed</description>
+    <item>
+      <title>Feed Generation Error</title>
+      <description>Error: ${escapeXML(error instanceof Error ? error.message : 'Unknown error')}</description>
+      <pubDate>${formatRSSDate()}</pubDate>
+    </item>
+  </channel>
+</rss>`;
+
+    return new NextResponse(errorXml, {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
       },
-      { status: 500 }
-    );
+    });
   }
 }
