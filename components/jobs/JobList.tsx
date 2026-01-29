@@ -10,7 +10,7 @@ import { JobUI } from '@/components/jobs/JobCard';
 import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
 import JobFilters from '@/components/jobs/JobFilters';
-import { ChevronDown, LogIn, Search, X } from 'lucide-react';
+import { ChevronDown, LogIn, Search, X, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthModal from '@/components/AuthModal';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';

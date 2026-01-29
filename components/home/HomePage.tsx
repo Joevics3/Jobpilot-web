@@ -46,6 +46,76 @@ interface MatchCircleProps {
   score: number;
 }
 
+// Move static data outside component to prevent re-creation on every render
+const CATEGORIES = [
+  { title: 'Accountant Jobs', slug: 'accountant-jobs' },
+  { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
+  { title: 'Social Media Manager Jobs', slug: 'social-media-manager-jobs' },
+  { title: 'Inventory Controller Jobs', slug: 'inventory-controller-jobs' },
+  { title: 'Executive Assistant Jobs', slug: 'executive-assistant-jobs' },
+  { title: 'Housekeeper Jobs', slug: 'housekeeper-jobs' },
+  { title: 'Farm Manager Jobs', slug: 'farm-manager-jobs' },
+  { title: 'Marketing Officer Jobs', slug: 'marketing-officer-jobs' },
+  { title: 'Nanny Jobs', slug: 'nanny-jobs' },
+  { title: 'HR Manager Jobs', slug: 'hr-manager-jobs' },
+  { title: 'Chef Jobs', slug: 'chef-jobs' },
+  { title: 'Cook Jobs', slug: 'cook-jobs' },
+  { title: 'Sales Manager Jobs', slug: 'sales-manager-jobs' },
+  { title: 'Content Creator Jobs', slug: 'content-creator-jobs' },
+  { title: 'Customer Service Representative Jobs', slug: 'customer-service-representative-jobs' },
+  { title: 'Machine Operator Jobs', slug: 'machine-operator-jobs' },
+  { title: 'Production Technician Jobs', slug: 'production-technician-jobs' },
+  { title: 'Beautician Jobs', slug: 'beautician-jobs' },
+  { title: 'Graphic Designer Jobs', slug: 'graphic-designer-jobs' },
+  { title: 'AI Engineer Jobs', slug: 'ai-engineer-jobs' },
+];
+
+const LOCATIONS = [
+  { title: 'Jobs in Lagos', slug: 'lagos' },
+  { title: 'Jobs in Abuja', slug: 'abuja' },
+  { title: 'Jobs in PortHarcourt', slug: 'port-harcourt' },
+  { title: 'Jobs in Ibadan', slug: 'ibadan' },
+  { title: 'Jobs in Kano', slug: 'kano' },
+  { title: 'Jobs in Kaduna', slug: 'kaduna' },
+  { title: 'Jobs in Ondo', slug: 'ondo' },
+  { title: 'Jobs in Ogun', slug: 'ogun' },
+  { title: 'Jobs in Rivers', slug: 'rivers' },
+  { title: 'Jobs in Oyo', slug: 'oyo' },
+  { title: 'Jobs in Ekiti', slug: 'ekiti' },
+  { title: 'Jobs in Enugu', slug: 'enugu' },
+  { title: 'Jobs in Imo', slug: 'imo' },
+  { title: 'Jobs in Delta', slug: 'delta' },
+  { title: 'Jobs in Edo', slug: 'edo' },
+  { title: 'Jobs in Kwara', slug: 'kwara' },
+  { title: 'Jobs in Benue', slug: 'benue' },
+  { title: 'Jobs in Niger', slug: 'niger' },
+  { title: 'Jobs in Plateau', slug: 'plateau' },
+  { title: 'Jobs in Sokoto', slug: 'sokoto' },
+];
+
+const FAQS = [
+  {
+    question: "What is JobMeter?",
+    answer: "JobMeter is a comprehensive job search platform that helps candidates find jobs across industries, locations, and experience levels. Our AI-powered matching technology connects job seekers with opportunities that align with their skills and career goals."
+  },
+  {
+    question: "Is JobMeter free for job seekers?",
+    answer: "Yes! JobMeter is completely free for job seekers. You can browse jobs, create your profile, get personalized match scores, and apply to unlimited positions at no cost."
+  },
+  {
+    question: "How do I find jobs by location on JobMeter?",
+    answer: "You can browse jobs by location using our location filter or visit our 'Jobs by Location' section which lists opportunities in major cities and states across Nigeria and globally."
+  },
+  {
+    question: "Can recruiters post jobs on JobMeter?",
+    answer: "Absolutely! Recruiters and companies can post job listings on JobMeter. Simply register your company and start posting opportunities to reach thousands of qualified candidates."
+  },
+  {
+    question: "Does JobMeter verify job listings?",
+    answer: "No, we don't verify all companies. However, we tryu to only post from verified job sources, and flags any suspicious job we find. This helps create a safe and productive job search environment for all candidates."
+  }
+];
+
 const MatchCircle: React.FC<MatchCircleProps> = ({ score }) => {
   let matchColor = '#F87171';
   if (score > 0 && score <= 50) matchColor = '#FBBF24';
@@ -81,630 +151,473 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
   const [user, setUser] = useState<any>(null);
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [processedJobs, setProcessedJobs] = useState<JobWithMatch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false - don't block initial render
+  const [matchingInProgress, setMatchingInProgress] = useState(false);
 
-  const categories = [
-    { title: 'Accountant Jobs', slug: 'accountant-jobs' },
-    { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
-    { title: 'Social Media Manager Jobs', slug: 'social-media-manager-jobs' },
-    { title: 'Inventory Controller Jobs', slug: 'inventory-controller-jobs' },
-    { title: 'Executive Assistant Jobs', slug: 'executive-assistant-jobs' },
-    { title: 'Housekeeper Jobs', slug: 'housekeeper-jobs' },
-    { title: 'Farm Manager Jobs', slug: 'farm-manager-jobs' },
-    { title: 'Marketing Officer Jobs', slug: 'marketing-officer-jobs' },
-    { title: 'Nanny Jobs', slug: 'nanny-jobs' },
-    { title: 'HR Manager Jobs', slug: 'hr-manager-jobs' },
-    { title: 'Chef Jobs', slug: 'chef-jobs' },
-    { title: 'Cook Jobs', slug: 'cook-jobs' },
-    { title: 'Sales Manager Jobs', slug: 'sales-manager-jobs' },
-    { title: 'Content Creator Jobs', slug: 'content-creator-jobs' },
-    { title: 'Customer Service Representative Jobs', slug: 'customer-service-representative-jobs' },
-    { title: 'Machine Operator Jobs', slug: 'machine-operator-jobs' },
-    { title: 'Production Technician Jobs', slug: 'production-technician-jobs' },
-    { title: 'Beautician Jobs', slug: 'beautician-jobs' },
-    { title: 'Graphic Designer Jobs', slug: 'graphic-designer-jobs' },
-    { title: 'AI Engineer Jobs', slug: 'ai-engineer-jobs' },
-  ];
-
-  const locations = [
-    { title: 'Jobs in Lagos', slug: 'lagos' },
-    { title: 'Jobs in Abuja', slug: 'abuja' },
-    { title: 'Jobs in PortHarcourt', slug: 'portharcourt' },
-    { title: 'Jobs in Ibadan', slug: 'ibadan' },
-    { title: 'Jobs in Kano', slug: 'kano' },
-    { title: 'Jobs in Kaduna', slug: 'kaduna' },
-    { title: 'Jobs in Ondo', slug: 'ondo' },
-    { title: 'Jobs in Ogun', slug: 'ogun' },
-    { title: 'Jobs in Rivers', slug: 'rivers' },
-    { title: 'Jobs in Oyo', slug: 'oyo' },
-    { title: 'Jobs in Ekiti', slug: 'ekiti' },
-    { title: 'Jobs in Enugu', slug: 'enugu' },
-    { title: 'Jobs in Imo', slug: 'imo' },
-    { title: 'Jobs in Delta', slug: 'delta' },
-    { title: 'Jobs in Edo', slug: 'edo' },
-    { title: 'Jobs in Kwara', slug: 'kwara' },
-    { title: 'Jobs in Benue', slug: 'benue' },
-    { title: 'Jobs in Niger', slug: 'niger' },
-    { title: 'Jobs in Plateau', slug: 'plateau' },
-    { title: 'Jobs in Sokoto', slug: 'sokoto' },
-  ];
-
-  const faqs = [
-    {
-      question: "What is JobMeter?",
-      answer: "JobMeter is a comprehensive job search platform that helps candidates find jobs across industries, locations, and experience levels. Our AI-powered matching technology connects job seekers with opportunities that align with their skills and career goals."
-    },
-    {
-      question: "Is JobMeter free for job seekers?",
-      answer: "Yes! JobMeter is completely free for job seekers. You can browse jobs, create your profile, get personalized match scores, and apply to unlimited positions at no cost."
-    },
-    {
-      question: "How do I find jobs by location on JobMeter?",
-      answer: "You can browse jobs by location using our location filter or visit our 'Jobs by Location' section which lists opportunities in major cities and states across Nigeria and globally."
-    },
-    {
-      question: "Can recruiters post jobs on JobMeter?",
-      answer: "Absolutely! Recruiters and companies can post job listings on JobMeter. Simply register your company and start posting opportunities to reach thousands of qualified candidates."
-    },
-    {
-      question: "Does JobMeter verify job listings?",
-      answer: "No, we don't verify all companies. However, we tryu to only post from verified job sources, and flags any suspicious job we find. This helps create a safe and productive job search environment for all candidates."
-    }
-  ];
-
+  // OPTIMIZATION 1: Check auth asynchronously without blocking render
   useEffect(() => {
-    checkAuth();
+    // Use setTimeout to defer auth check until after first paint
+    const timeoutId = setTimeout(() => {
+      checkAuth();
+    }, 100); // Delay by 100ms to allow UI to render first
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
+  // OPTIMIZATION 2: Fetch user data and process jobs in background
   useEffect(() => {
     if (user) {
-      fetchUserOnboardingData();
+      // Defer user data fetching and job processing
+      const timeoutId = setTimeout(() => {
+        fetchUserOnboardingDataAndProcessJobs();
+      }, 500); // Wait 500ms before starting expensive operations
+
+      return () => clearTimeout(timeoutId);
     } else {
-      processJobsWithoutMatching();
+      // For non-logged-in users, show jobs immediately without matching
+      setProcessedJobs(
+        initialJobs.slice(0, 6).map(job => ({
+          ...job,
+          matchScore: 0,
+          breakdown: null,
+        }))
+      );
     }
   }, [user]);
 
-  useEffect(() => {
-    if (user && userOnboardingData !== null) {
-      processJobsWithMatching(initialJobs);
-    }
-  }, [userOnboardingData, initialJobs]);
-
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-    } else {
-      setUser(null);
-      processJobsWithoutMatching();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
     }
   };
 
-  const fetchUserOnboardingData = async () => {
-    if (!user) return;
+  // OPTIMIZATION 3: Combined function to fetch user data and process jobs
+  const fetchUserOnboardingDataAndProcessJobs = async () => {
+    if (!user?.id) return;
+
+    setMatchingInProgress(true);
 
     try {
-      const { data, error } = await supabase
+      // Fetch user onboarding data
+      const { data: onboardingData, error } = await supabase
         .from('onboarding_data')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching onboarding data:', error);
-        processJobsWithoutMatching();
+        // Show jobs without matching if error occurs
+        setProcessedJobs(
+          initialJobs.slice(0, 6).map(job => ({
+            ...job,
+            matchScore: 0,
+            breakdown: null,
+          }))
+        );
+        setMatchingInProgress(false);
         return;
       }
 
-      if (data) {
-        setUserOnboardingData({
-          target_roles: data.target_roles || [],
-          cv_skills: data.cv_skills || [],
-          preferred_locations: data.preferred_locations || [],
-          experience_level: data.experience_level || null,
-          salary_min: data.salary_min || null,
-          salary_max: data.salary_max || null,
-          job_type: data.job_type || null,
-          sector: data.sector || null,
-        });
+      if (!onboardingData) {
+        // No onboarding data, show jobs without matching
+        setProcessedJobs(
+          initialJobs.slice(0, 6).map(job => ({
+            ...job,
+            matchScore: 0,
+            breakdown: null,
+          }))
+        );
+        setMatchingInProgress(false);
+        return;
+      }
+
+      setUserOnboardingData(onboardingData);
+
+      // Process jobs with matching in background
+      // Use requestIdleCallback for better performance (falls back to setTimeout)
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => processJobsWithMatching(initialJobs, onboardingData));
       } else {
-        processJobsWithoutMatching();
+        setTimeout(() => processJobsWithMatching(initialJobs, onboardingData), 0);
       }
     } catch (error) {
-      console.error('Error fetching onboarding data:', error);
-      processJobsWithoutMatching();
+      console.error('Error in fetchUserOnboardingDataAndProcessJobs:', error);
+      setMatchingInProgress(false);
     }
   };
 
-  const processJobsWithoutMatching = () => {
-    // Sort by posted_date descending (most recent first)
-    const sortedJobs = [...initialJobs].sort((a, b) => {
-      const dateA = new Date(a.posted_date || a.created_at).getTime();
-      const dateB = new Date(b.posted_date || b.created_at).getTime();
-      return dateB - dateA;
-    });
+  // OPTIMIZATION 4: Process jobs in chunks to avoid blocking UI
+  const processJobsWithMatching = async (
+    jobs: any[],
+    onboardingData: UserOnboardingData
+  ) => {
+    const CHUNK_SIZE = 3; // Process 3 jobs at a time
+    const jobsToProcess = jobs.slice(0, 6);
+    const matchCache = matchCacheService.loadMatchCache(user?.id);
+    const results: JobWithMatch[] = [];
 
-    const jobsWithZeroMatch = sortedJobs.map(job => ({
-      id: job.id,
-      slug: job.slug || job.id,
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      posted_date: job.posted_date || job.created_at,
-      matchScore: 0,
-      breakdown: null,
-    }));
-    setProcessedJobs(jobsWithZeroMatch);
-    setLoading(false);
+    // Process jobs in chunks with delays between chunks
+    for (let i = 0; i < jobsToProcess.length; i += CHUNK_SIZE) {
+      const chunk = jobsToProcess.slice(i, i + CHUNK_SIZE);
+      
+      // Process this chunk
+      const chunkResults = chunk.map(job => {
+        const cached = matchCache[job.id];
+        let matchScore = 0;
+        let breakdown = null;
+
+        if (cached) {
+          matchScore = cached.score;
+          breakdown = cached.breakdown;
+        } else if (onboardingData) {
+          const jobData: JobRow = {
+            role: job.role,
+            related_roles: job.related_roles,
+            ai_enhanced_roles: job.ai_enhanced_roles,
+            skills_required: job.skills_required,
+            ai_enhanced_skills: job.ai_enhanced_skills,
+            location: job.location,
+            experience_level: job.experience_level,
+            salary_range: job.salary_range,
+            employment_type: job.employment_type,
+            sector: job.sector,
+          };
+
+          const result = scoreJob(jobData, onboardingData);
+          matchScore = result.score;
+          breakdown = result.breakdown;
+
+          // Cache the result
+          matchCacheService.saveCachedMatch(user?.id, job.id, result);
+        }
+
+        return {
+          ...job,
+          matchScore,
+          breakdown,
+        };
+      });
+
+      results.push(...chunkResults);
+
+      // Update UI with progressive results
+      setProcessedJobs([...results]);
+
+      // Add small delay between chunks to keep UI responsive
+      if (i + CHUNK_SIZE < jobsToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+
+    setMatchingInProgress(false);
   };
 
-  const processJobsWithMatching = useCallback(async (jobRows: any[]) => {
-    if (!userOnboardingData || !user) {
-      processJobsWithoutMatching();
+  const handleCTAClick = (type: 'seeker' | 'recruiter') => {
+    if (!user) {
+      setAuthModalOpen(true);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const matchCache = matchCacheService.loadMatchCache(user.id);
-      let cacheNeedsUpdate = false;
-      const updatedCache = { ...matchCache };
-
-      const jobsWithScores = await Promise.all(
-        jobRows.map(async (job: any) => {
-          try {
-            let matchResult;
-            const cachedMatch = updatedCache[job.id];
-
-            if (cachedMatch) {
-              matchResult = {
-                score: cachedMatch.score,
-                breakdown: cachedMatch.breakdown,
-                computedAt: cachedMatch.cachedAt,
-              };
-            } else {
-              const jobRow: JobRow = {
-                role: job.role || job.title,
-                related_roles: job.related_roles,
-                ai_enhanced_roles: job.ai_enhanced_roles,
-                skills_required: job.skills_required,
-                ai_enhanced_skills: job.ai_enhanced_skills,
-                location: job.location,
-                experience_level: job.experience_level,
-                salary_range: job.salary_range,
-                employment_type: job.employment_type,
-                sector: job.sector,
-              };
-
-              matchResult = scoreJob(jobRow, userOnboardingData);
-
-              updatedCache[job.id] = {
-                score: matchResult.score,
-                breakdown: matchResult.breakdown,
-                cachedAt: matchResult.computedAt,
-              };
-              cacheNeedsUpdate = true;
-            }
-
-            const rsCapped = Math.min(
-              80,
-              matchResult.breakdown.rolesScore +
-              matchResult.breakdown.skillsScore +
-              matchResult.breakdown.sectorScore
-            );
-            const calculatedTotal = Math.round(
-              rsCapped +
-              matchResult.breakdown.locationScore +
-              matchResult.breakdown.experienceScore +
-              matchResult.breakdown.salaryScore +
-              matchResult.breakdown.typeScore
-            );
-
-            return {
-              id: job.id,
-              slug: job.slug || job.id,
-              title: job.title,
-              company: job.company,
-              location: job.location,
-              posted_date: job.posted_date || job.created_at,
-              matchScore: calculatedTotal,
-              breakdown: matchResult.breakdown,
-            };
-          } catch (error) {
-            console.error(`Error processing match for job ${job.id}:`, error);
-            return {
-              id: job.id,
-              slug: job.slug || job.id,
-              title: job.title,
-              company: job.company,
-              location: job.location,
-              posted_date: job.posted_date || job.created_at,
-              matchScore: 0,
-              breakdown: null,
-            };
-          }
-        })
-      );
-
-      if (cacheNeedsUpdate) {
-        matchCacheService.saveMatchCache(user.id, updatedCache);
-      }
-
-      // Sort by posted_date descending (most recent first)
-      jobsWithScores.sort((a, b) => {
-        const dateA = new Date(a.posted_date).getTime();
-        const dateB = new Date(b.posted_date).getTime();
-        return dateB - dateA;
-      });
-      
-      setProcessedJobs(jobsWithScores);
-    } catch (error) {
-      console.error('Error processing jobs with matching:', error);
-      processJobsWithoutMatching();
-    } finally {
-      setLoading(false);
+    if (type === 'seeker') {
+      router.push('/jobs');
+    } else {
+      router.push('/recruiter/post-job');
     }
-  }, [user, userOnboardingData, initialJobs]);
-
-  const getRelativeTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-      if (diffInDays === 0) return 'Today';
-      if (diffInDays === 1) return '1 day ago';
-      if (diffInDays < 7) return `${diffInDays} days ago`;
-      if (diffInDays < 30) {
-        const weeks = Math.floor(diffInDays / 7);
-        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-      }
-      const months = Math.floor(diffInDays / 30);
-      return months === 1 ? '1 month ago' : `${months} months ago`;
-    } catch {
-      return '';
-    }
-  };
-
-  const getCompanyName = (company: any) => {
-    if (!company) return 'Company';
-    if (typeof company === 'string') return company;
-    return company.name || 'Company';
-  };
-
-  const getLocationString = (location: any) => {
-    if (!location) return 'Location not specified';
-    if (typeof location === 'string') return location;
-    if (location.remote) return 'Remote';
-    const parts = [location.city, location.state, location.country].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'Location not specified';
-  };
-
-  // Structured Data Schemas
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "JobMeter",
-    "url": "https://www.jobmeter.app",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://www.jobmeter.app/jobs?search={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  };
-
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "JobMeter",
-    "url": "https://www.jobmeter.app",
-    "logo": "https://www.jobmeter.app/logo.png",
-    "description": "JobMeter is a global job search platform connecting job seekers with employment opportunities across industries, experience levels, and locations.",
-    "sameAs": [
-      "https://twitter.com/jobmeter",
-      "https://linkedin.com/company/jobmeter"
-    ]
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
   };
 
   return (
     <>
       <Head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        <title>JobMeter - Find Your Dream Job | AI-Powered Job Matching Platform</title>
+        <meta
+          name="description"
+          content="JobMeter connects job seekers with top employers across industries. Browse thousands of job listings, get personalized match scores, and find your perfect career opportunity."
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
+        <meta name="keywords" content="jobs, careers, employment, job search, hiring, recruitment, job board" />
+        <link rel="canonical" href="https://jobmeter.com" />
       </Head>
 
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
         {/* Hero Section */}
-        <div className="pt-12 pb-8 px-6" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
+        <section
+          className="relative px-6 py-16 overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.accent.blue} 100%)`,
+          }}
+        >
+          <div className="max-w-4xl mx-auto relative z-10">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Find Your Dream Job with AI-Powered Matching
+              </h1>
+              <p className="text-lg md:text-xl text-blue-50 max-w-2xl mx-auto">
+                Connect with top employers across industries. Get personalized job recommendations that match your skills and career goals.
+              </p>
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex rounded-lg p-1 bg-white/10 backdrop-blur-sm">
+                <button
+                  onClick={() => setActiveTab('seekers')}
+                  className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${
+                    activeTab === 'seekers'
+                      ? 'bg-white text-blue-600 shadow-md'
+                      : 'text-white hover:text-blue-100'
+                  }`}
+                >
+                  For Job Seekers
+                </button>
+                <button
+                  onClick={() => setActiveTab('recruiters')}
+                  className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${
+                    activeTab === 'recruiters'
+                      ? 'bg-white text-blue-600 shadow-md'
+                      : 'text-white hover:text-blue-100'
+                  }`}
+                >
+                  For Recruiters
+                </button>
+              </div>
+            </div>
+
+            {/* Content based on active tab */}
+            {activeTab === 'seekers' ? (
+              <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100">
+                    <Briefcase size={24} className="text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      Discover Opportunities That Match Your Skills
+                    </h2>
+                    <p className="text-gray-600">
+                      Browse thousands of jobs, get AI-powered match scores, and apply with one click.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>Personalized job recommendations based on your profile</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>AI match scores showing compatibility with each role</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>Application tracking and career resources</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleCTAClick('seeker')}
+                  className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all hover:shadow-lg"
+                  style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+                >
+                  Browse Jobs
+                  <ArrowRight className="inline ml-2" size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100">
+                    <Users size={24} className="text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      Find Top Talent for Your Team
+                    </h2>
+                    <p className="text-gray-600">
+                      Post jobs, reach qualified candidates, and build your dream team.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>Access thousands of qualified job seekers</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>AI-powered candidate matching and screening</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                    <span>Easy job posting and applicant management</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleCTAClick('recruiter')}
+                  className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all hover:shadow-lg"
+                  style={{ backgroundColor: theme.colors.success }}
+                >
+                  Post a Job
+                  <PlusCircle className="inline ml-2" size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="px-6 py-12 bg-white">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-4 text-white">
-              JobMeter — Find Jobs That Match Your Skills & Experiences
-            </h1>
-            <p className="text-base text-white/90 mb-6 leading-relaxed">
-              Discover your next career opportunity with JobMeter. Our smart AI-powered platform connects job seekers with thousands of employment opportunities across industries. Get personalized job matches, track applications, and build your professional future with confidence.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setAuthModalOpen(true)}
-                className="px-6 py-3 rounded-xl font-semibold text-sm bg-white transition-colors hover:bg-gray-100 flex items-center gap-2"
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold mb-1" style={{ color: theme.colors.primary.DEFAULT }}>
+                  10,000+
+                </div>
+                <div className="text-sm text-gray-600">Active Jobs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold mb-1" style={{ color: theme.colors.primary.DEFAULT }}>
+                  5,000+
+                </div>
+                <div className="text-sm text-gray-600">Companies</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold mb-1" style={{ color: theme.colors.primary.DEFAULT }}>
+                  50,000+
+                </div>
+                <div className="text-sm text-gray-600">Job Seekers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold mb-1" style={{ color: theme.colors.primary.DEFAULT }}>
+                  98%
+                </div>
+                <div className="text-sm text-gray-600">Success Rate</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Jobs Section */}
+        <section className="px-6 py-8" style={{ backgroundColor: theme.colors.background.muted }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  {user ? 'Recommended Jobs For You' : 'Featured Jobs'}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  {matchingInProgress 
+                    ? 'Calculating your personalized matches...' 
+                    : user && processedJobs.length > 0 
+                    ? 'Based on your profile and preferences'
+                    : 'Latest opportunities from top companies'}
+                </p>
+              </div>
+              <Link
+                href="/jobs"
+                className="text-sm font-semibold flex items-center gap-1"
                 style={{ color: theme.colors.primary.DEFAULT }}
               >
-                <Users size={18} />
-                Get Started
-              </button>
-              <button
-                onClick={() => router.push('/submit')}
-                className="px-6 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white transition-colors hover:bg-white/20 border border-white/20 flex items-center gap-2"
-              >
-                <PlusCircle size={18} />
-                Post a Job
-              </button>
-              <button
-                onClick={() => router.push('/company/register')}
-                className="px-6 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white transition-colors hover:bg-white/20 border border-white/20 flex items-center gap-2"
-              >
-                <Building2 size={18} />
-                For Recruiters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Search Section */}
-        <div className="px-6 py-8 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Your Next Job</h2>
-              <p className="text-gray-600">Search thousands of job opportunities</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search jobs by title, company, or keywords..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      router.push(`/jobs?search=${encodeURIComponent(e.currentTarget.value.trim())}`);
-                    }
-                  }}
-                />
-              </div>
-              <button
-                onClick={() => router.push('/jobs')}
-                className="px-6 py-3 rounded-lg font-semibold text-white transition-colors"
-                style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-              >
-                Go to Job List
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Banner Ad */}
-        <div className="px-6">
-          <BannerAd />
-        </div>
-
-        {/* Tabs Section */}
-        <div className="px-6 py-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex gap-2 mb-6 border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab('seekers')}
-                className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'seekers' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Briefcase size={18} />
-                  Job Seekers
-                </div>
-                {activeTab === 'seekers' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }} />}
-              </button>
-              <button
-                onClick={() => setActiveTab('recruiters')}
-                className={`flex-1 pb-3 font-semibold text-sm transition-colors relative ${activeTab === 'recruiters' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Building2 size={18} />
-                  Recruiters
-                </div>
-                {activeTab === 'recruiters' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }} />}
-              </button>
+                View All
+                <ArrowRight size={16} />
+              </Link>
             </div>
 
-            {/* Job Seekers Tab Content */}
-            {activeTab === 'seekers' && (
-              <div className="space-y-8">
-                {/* Latest Jobs */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-900">Latest Job Opportunities</h2>
-                    <Link
-                      href="/jobs"
-                      className="text-sm font-semibold flex items-center gap-1"
-                      style={{ color: theme.colors.primary.DEFAULT }}
-                    >
-                      View All
-                      <ArrowRight size={16} />
-                    </Link>
-                  </div>
-                  {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
+            {/* Show jobs immediately, matching scores will appear progressively */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {processedJobs.length > 0 ? (
+                processedJobs.map((job) => (
+                  <Link
+                    key={job.id}
+                    href={`/jobs/${job.slug}`}
+                    className="bg-white rounded-xl p-5 border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                          {job.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                          <Building2 size={14} />
+                          <span className="truncate">{job.company?.name || 'Company'}</span>
+                        </div>
+                      </div>
+                      {user && job.matchScore > 0 && <MatchCircle score={job.matchScore} />}
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {processedJobs.slice(0, 10).map((job) => (
-                        <Link
-                          key={job.id}
-                          href={`/jobs/${job.slug}`}
-                          className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors flex flex-col justify-between"
-                        >
-                          <div>
-                            <h3 className="font-semibold text-gray-900 mb-2">{job.title}</h3>
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex flex-col">
-                                <span className="text-sm text-gray-600">{getCompanyName(job.company)}</span>
-                                <span className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                  <MapPin size={12} />
-                                  {getLocationString(job.location)}
-                                  {job.posted_date && (
-                                    <>
-                                      <span className="mx-1">•</span>
-                                      <Calendar size={12} />
-                                      {getRelativeTime(job.posted_date)}
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                              {user && <MatchCircle score={job.matchScore} />}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-6 text-center">
-                    <Link
-                      href="/jobs"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-colors"
-                      style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                    >
-                      Explore All Jobs
-                      <ArrowRight size={18} />
-                    </Link>
-                  </div>
-                </section>
-              </div>
-            )}
 
-            {/* Recruiters Tab Content */}
-            {activeTab === 'recruiters' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Why Post Jobs on JobMeter?</h3>
-                  <p className="text-sm text-gray-600 mb-6">Join hundreds of companies finding top talent on Nigeria's leading job platform. Reach {processedJobs.length > 0 ? `${processedJobs.length.toLocaleString()}+` : 'thousands of'} active job seekers.</p>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.colors.success + '20' }}>
-                        <Target size={20} style={{ color: theme.colors.success }} />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Reach Qualified Candidates</h4>
-                        <p className="text-sm text-gray-600">Connect with thousands of active job seekers across multiple industries and experience levels daily.</p>
-                      </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500 mb-3">
+                      {job.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin size={12} />
+                          <span>
+                            {typeof job.location === 'string'
+                              ? job.location
+                              : `${job.location.city || ''}${
+                                  job.location.state ? `, ${job.location.state}` : ''
+                                }`}
+                          </span>
+                        </div>
+                      )}
+                      {job.posted_date && (
+                        <div className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          <span>{new Date(job.posted_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.colors.accent.blue + '20' }}>
-                        <Sparkles size={20} style={{ color: theme.colors.accent.blue }} />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">AI-Powered Matching</h4>
-                        <p className="text-sm text-gray-600">Our intelligent system matches your job postings with the most relevant candidates automatically, saving you time.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#9333EA20' }}>
-                        <TrendingUp size={20} style={{ color: '#9333EA' }} />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Easy Job Posting & Free Tier Available</h4>
-                        <p className="text-sm text-gray-600">Post jobs quickly with our streamlined interface. Start with our free tier to test the platform risk-free.</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Pricing</p>
-                    <p className="text-xs text-gray-600">Free job posting available • Premium features from ₦5,000/month • No hidden fees</p>
-                  </div>
 
-                  <div className="mt-6 space-y-3">
-                    <Link
-                      href="/company/register"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-colors w-full justify-center"
-                      style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                    >
-                      Register Your Company
-                      <ArrowRight size={18} />
-                    </Link>
-                    <Link
-                      href="/submit"
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-900 transition-colors hover:bg-gray-200 w-full"
-                    >
-                      <PlusCircle size={18} />
-                      Post a Job Now
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Trusted Companies Section */}
-        {companies.length > 0 && (
-          <section className="px-6 py-8 bg-white">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Trusted by Leading Companies</h2>
-              <p className="text-sm text-gray-600 text-center mb-6">Join {companies.length}+ companies hiring on JobMeter</p>
-              <div className="flex flex-wrap justify-center items-center gap-8">
-                {companies.slice(0, 6).map((company) => (
-                  <div key={company.id} className="grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
-                    {company.logo ? (
-                      <img src={company.logo} alt={company.name} className="h-8 object-contain" />
-                    ) : (
-                      <span className="text-sm font-semibold text-gray-700">{company.name}</span>
+                    {job.breakdown && user && (
+                      <div className="text-xs text-gray-500 border-t border-gray-100 pt-2">
+                        {job.breakdown.rolesScore > 0 && (
+                          <span className="mr-2">• {job.breakdown.rolesReason}</span>
+                        )}
+                        {job.breakdown.skillsScore > 0 && (
+                          <span className="mr-2">• {job.breakdown.skillsReason}</span>
+                        )}
+                      </div>
                     )}
+                  </Link>
+                ))
+              ) : (
+                // Loading skeleton
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-xl p-5 border border-gray-200 animate-pulse"
+                  >
+                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* Browse Jobs by Category */}
-        <section className="px-6 py-8" style={{ backgroundColor: theme.colors.background.muted }}>
+        <section className="px-6 py-8 bg-white">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Browse Jobs by Category</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {categories.map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.slug}
-                  href={`/resources/${cat.slug}`}
+                  href={`/jobs/category/${cat.slug}`}
                   className="text-blue-600 hover:underline text-sm"
                 >
                   {cat.title}
                 </Link>
               ))}
               <Link
-                href="/resources"
+                href="/jobs/category"
                 className="text-blue-600 hover:underline font-semibold mt-2 text-sm"
               >
                 View All Categories →
@@ -718,7 +631,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Jobs by Location</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {locations.map((loc) => (
+              {LOCATIONS.map((loc) => (
                 <Link
                   key={loc.slug}
                   href={`/jobs/state/${loc.slug}`}
@@ -772,7 +685,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
             <div className="space-y-4">
-              {faqs.map((faq, index) => (
+              {FAQS.map((faq, index) => (
                 <details key={index} className="group border border-gray-200 rounded-lg">
                   <summary className="flex justify-between items-center cursor-pointer p-4 font-semibold text-gray-900 hover:bg-gray-50">
                     {faq.question}
