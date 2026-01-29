@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+
+// OPTIMIZATION: Import only the icons you need (not entire library)
 import { 
   Briefcase, 
   Building2, 
@@ -13,15 +16,25 @@ import {
   CheckCircle, 
   ArrowRight,
   Sparkles,
-  Target,
   Shield,
   Calendar,
   PlusCircle
 } from 'lucide-react';
+
 import Link from 'next/link';
 import Head from 'next/head';
-import BannerAd from '@/components/ads/BannerAd';
-import AuthModal from '@/components/AuthModal';
+
+// OPTIMIZATION: Lazy load components that aren't needed immediately
+const BannerAd = dynamic(() => import('@/components/ads/BannerAd'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const AuthModal = dynamic(() => import('@/components/AuthModal'), {
+  ssr: false, // Don't render on server
+  loading: () => null
+});
+
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
 
@@ -46,7 +59,7 @@ interface MatchCircleProps {
   score: number;
 }
 
-// Move static data outside component to prevent re-creation on every render
+// OPTIMIZATION: Move static data outside component (created once, not on every render)
 const CATEGORIES = [
   { title: 'Accountant Jobs', slug: 'accountant-jobs' },
   { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
@@ -68,12 +81,12 @@ const CATEGORIES = [
   { title: 'Beautician Jobs', slug: 'beautician-jobs' },
   { title: 'Graphic Designer Jobs', slug: 'graphic-designer-jobs' },
   { title: 'AI Engineer Jobs', slug: 'ai-engineer-jobs' },
-];
+] as const;
 
 const LOCATIONS = [
   { title: 'Jobs in Lagos', slug: 'lagos' },
   { title: 'Jobs in Abuja', slug: 'abuja' },
-  { title: 'Jobs in PortHarcourt', slug: 'port-harcourt' },
+  { title: 'Jobs in PortHarcourt', slug: 'portharcourt' },
   { title: 'Jobs in Ibadan', slug: 'ibadan' },
   { title: 'Jobs in Kano', slug: 'kano' },
   { title: 'Jobs in Kaduna', slug: 'kaduna' },
@@ -91,7 +104,7 @@ const LOCATIONS = [
   { title: 'Jobs in Niger', slug: 'niger' },
   { title: 'Jobs in Plateau', slug: 'plateau' },
   { title: 'Jobs in Sokoto', slug: 'sokoto' },
-];
+] as const;
 
 const FAQS = [
   {
@@ -112,11 +125,12 @@ const FAQS = [
   },
   {
     question: "Does JobMeter verify job listings?",
-    answer: "No, we don't verify all companies. However, we tryu to only post from verified job sources, and flags any suspicious job we find. This helps create a safe and productive job search environment for all candidates."
+    answer: "No, we don't verify all companies. However, we try to only post from verified job sources, and flags any suspicious job we find. This helps create a safe and productive job search environment for all candidates."
   }
-];
+] as const;
 
-const MatchCircle: React.FC<MatchCircleProps> = ({ score }) => {
+// OPTIMIZATION: Memoized MatchCircle component
+const MatchCircle: React.FC<MatchCircleProps> = React.memo(({ score }) => {
   let matchColor = '#F87171';
   if (score > 0 && score <= 50) matchColor = '#FBBF24';
   if (score > 50) matchColor = '#34D399';
@@ -142,7 +156,9 @@ const MatchCircle: React.FC<MatchCircleProps> = ({ score }) => {
       </span>
     </div>
   );
-};
+});
+
+MatchCircle.displayName = 'MatchCircle';
 
 export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] }: HomePageProps) {
   const router = useRouter();
@@ -151,39 +167,37 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
   const [user, setUser] = useState<any>(null);
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [processedJobs, setProcessedJobs] = useState<JobWithMatch[]>([]);
-  const [loading, setLoading] = useState(false); // Changed to false - don't block initial render
   const [matchingInProgress, setMatchingInProgress] = useState(false);
 
-  // OPTIMIZATION 1: Check auth asynchronously without blocking render
+  // OPTIMIZATION 1: Defer auth check to allow immediate render
   useEffect(() => {
-    // Use setTimeout to defer auth check until after first paint
-    const timeoutId = setTimeout(() => {
+    // Wait 100ms for critical UI to render first
+    const authTimer = setTimeout(() => {
       checkAuth();
-    }, 100); // Delay by 100ms to allow UI to render first
+    }, 100);
 
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(authTimer);
   }, []);
 
-  // OPTIMIZATION 2: Fetch user data and process jobs in background
+  // OPTIMIZATION 2: Background job processing (non-blocking)
   useEffect(() => {
     if (user) {
-      // Defer user data fetching and job processing
-      const timeoutId = setTimeout(() => {
+      // Wait 500ms before starting expensive operations
+      const processingTimer = setTimeout(() => {
         fetchUserOnboardingDataAndProcessJobs();
-      }, 500); // Wait 500ms before starting expensive operations
+      }, 500);
 
-      return () => clearTimeout(timeoutId);
+      return () => clearTimeout(processingTimer);
     } else {
       // For non-logged-in users, show jobs immediately without matching
-      setProcessedJobs(
-        initialJobs.slice(0, 6).map(job => ({
-          ...job,
-          matchScore: 0,
-          breakdown: null,
-        }))
-      );
+      const jobsWithoutMatch = initialJobs.slice(0, 6).map(job => ({
+        ...job,
+        matchScore: 0,
+        breakdown: null,
+      }));
+      setProcessedJobs(jobsWithoutMatch);
     }
-  }, [user]);
+  }, [user, initialJobs]);
 
   const checkAuth = async () => {
     try {
@@ -196,36 +210,21 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
     }
   };
 
-  // OPTIMIZATION 3: Combined function to fetch user data and process jobs
+  // OPTIMIZATION 3: Combined data fetching to reduce waterfall
   const fetchUserOnboardingDataAndProcessJobs = async () => {
     if (!user?.id) return;
 
     setMatchingInProgress(true);
 
     try {
-      // Fetch user onboarding data
       const { data: onboardingData, error } = await supabase
         .from('onboarding_data')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (error) {
-        console.error('Error fetching onboarding data:', error);
-        // Show jobs without matching if error occurs
-        setProcessedJobs(
-          initialJobs.slice(0, 6).map(job => ({
-            ...job,
-            matchScore: 0,
-            breakdown: null,
-          }))
-        );
-        setMatchingInProgress(false);
-        return;
-      }
-
-      if (!onboardingData) {
-        // No onboarding data, show jobs without matching
+      if (error || !onboardingData) {
+        // Show jobs without matching if error or no data
         setProcessedJobs(
           initialJobs.slice(0, 6).map(job => ({
             ...job,
@@ -239,8 +238,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
 
       setUserOnboardingData(onboardingData);
 
-      // Process jobs with matching in background
-      // Use requestIdleCallback for better performance (falls back to setTimeout)
+      // OPTIMIZATION 4: Use requestIdleCallback for non-critical work
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
         requestIdleCallback(() => processJobsWithMatching(initialJobs, onboardingData));
       } else {
@@ -252,7 +250,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
     }
   };
 
-  // OPTIMIZATION 4: Process jobs in chunks to avoid blocking UI
+  // OPTIMIZATION 5: Chunked processing to maintain UI responsiveness
   const processJobsWithMatching = async (
     jobs: any[],
     onboardingData: UserOnboardingData
@@ -262,12 +260,12 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
     const matchCache = matchCacheService.loadMatchCache(user?.id);
     const results: JobWithMatch[] = [];
 
-    // Process jobs in chunks with delays between chunks
+    // Process jobs in chunks with delays to prevent blocking
     for (let i = 0; i < jobsToProcess.length; i += CHUNK_SIZE) {
       const chunk = jobsToProcess.slice(i, i + CHUNK_SIZE);
       
-      // Process this chunk
       const chunkResults = chunk.map(job => {
+        // Check cache first
         const cached = matchCache[job.id];
         let matchScore = 0;
         let breakdown = null;
@@ -293,7 +291,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           matchScore = result.score;
           breakdown = result.breakdown;
 
-          // Cache the result
+          // Cache for future use
           matchCacheService.saveCachedMatch(user?.id, job.id, result);
         }
 
@@ -306,10 +304,10 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
 
       results.push(...chunkResults);
 
-      // Update UI with progressive results
+      // OPTIMIZATION 6: Progressive rendering - update UI with each chunk
       setProcessedJobs([...results]);
 
-      // Add small delay between chunks to keep UI responsive
+      // Small delay between chunks to keep UI responsive
       if (i + CHUNK_SIZE < jobsToProcess.length) {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
@@ -341,6 +339,10 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
         />
         <meta name="keywords" content="jobs, careers, employment, job search, hiring, recruitment, job board" />
         <link rel="canonical" href="https://jobmeter.com" />
+        
+        {/* OPTIMIZATION: Preconnect to critical domains */}
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.ezojs.com" />
       </Head>
 
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
@@ -371,6 +373,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                       ? 'bg-white text-blue-600 shadow-md'
                       : 'text-white hover:text-blue-100'
                   }`}
+                  aria-label="For Job Seekers"
                 >
                   For Job Seekers
                 </button>
@@ -381,13 +384,14 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                       ? 'bg-white text-blue-600 shadow-md'
                       : 'text-white hover:text-blue-100'
                   }`}
+                  aria-label="For Recruiters"
                 >
                   For Recruiters
                 </button>
               </div>
             </div>
 
-            {/* Content based on active tab */}
+            {/* Tab Content */}
             {activeTab === 'seekers' ? (
               <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
                 <div className="flex items-start gap-4 mb-6">
@@ -423,6 +427,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   onClick={() => handleCTAClick('seeker')}
                   className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all hover:shadow-lg"
                   style={{ backgroundColor: theme.colors.primary.DEFAULT }}
+                  aria-label="Browse all jobs"
                 >
                   Browse Jobs
                   <ArrowRight className="inline ml-2" size={18} />
@@ -463,6 +468,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   onClick={() => handleCTAClick('recruiter')}
                   className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all hover:shadow-lg"
                   style={{ backgroundColor: theme.colors.success }}
+                  aria-label="Post a job"
                 >
                   Post a Job
                   <PlusCircle className="inline ml-2" size={18} />
@@ -504,7 +510,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </section>
 
-        {/* Featured Jobs Section */}
+        {/* Featured Jobs Section - OPTIMIZATION: Shows immediately, matches calculate in background */}
         <section className="px-6 py-8" style={{ backgroundColor: theme.colors.background.muted }}>
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
@@ -530,7 +536,6 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
               </Link>
             </div>
 
-            {/* Show jobs immediately, matching scores will appear progressively */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {processedJobs.length > 0 ? (
                 processedJobs.map((job) => (
@@ -586,7 +591,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </Link>
                 ))
               ) : (
-                // Loading skeleton
+                // OPTIMIZATION: Skeleton loading for better perceived performance
                 Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
@@ -735,7 +740,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </section>
         )}
 
-        {/* Banner Ad */}
+        {/* OPTIMIZATION: Lazy-loaded Banner Ad */}
         <div className="px-6">
           <BannerAd />
         </div>
@@ -783,7 +788,8 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </section>
 
-        <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+        {/* OPTIMIZATION: Lazy-loaded Auth Modal (only loads when needed) */}
+        {authModalOpen && <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />}
       </div>
     </>
   );
