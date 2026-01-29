@@ -43,6 +43,8 @@ export default function JobsByTownPage() {
   const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [otherStateJobs, setOtherStateJobs] = useState<JobUI[]>([]);
+  const [nationalJobs, setNationalJobs] = useState<JobUI[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -153,12 +155,74 @@ export default function JobsByTownPage() {
       const processedJobs = await processJobsWithMatching(townFilteredJobs);
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
       setJobs(processedJobs);
+
+      // Fetch other state jobs and national jobs
+      await fetchAdditionalJobs(stateFilteredJobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchAdditionalJobs = async (stateJobs: any[]) => {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Fetch other jobs from the same state (excluding current town)
+      const otherTownJobs = stateJobs.filter((job) => {
+        if (typeof job.location === 'string') {
+          return !job.location.toLowerCase().includes(formattedTown.toLowerCase());
+        }
+        if (job.location && typeof job.location === 'object') {
+          const locCity = job.location.city || '';
+          return locCity.toLowerCase() !== formattedTown.toLowerCase();
+        }
+        return true;
+      }).slice(0, 30);
+
+      const processedOtherStateJobs = await processJobsWithMatching(otherTownJobs);
+      processedOtherStateJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+      setOtherStateJobs(processedOtherStateJobs);
+
+      // Fetch national jobs (excluding current state)
+      const { data: nationalJobsData, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'active')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(60);
+
+      if (error) throw error;
+
+      // Filter out jobs from current state
+      const filteredNationalJobs = (nationalJobsData || [])
+        .filter(job => {
+          if (typeof job.location === 'string') {
+            return !job.location.toLowerCase().includes(formattedState.toLowerCase());
+          }
+          if (job.location && typeof job.location === 'object') {
+            const locState = job.location.state || '';
+            return locState.toLowerCase() !== formattedState.toLowerCase();
+          }
+          return true;
+        })
+        .slice(0, 30);
+
+      const processedNationalJobs = await processJobsWithMatching(filteredNationalJobs);
+      processedNationalJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+      setNationalJobs(processedNationalJobs);
+    } catch (error) {
+      console.error('Error fetching additional jobs:', error);
+    }
+  };
+  };
+
+  // ========================================
+  // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
+  // ========================================
 
   // ========================================
   // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
@@ -495,10 +559,56 @@ export default function JobsByTownPage() {
                 onApply={handleApply}
                 onShowBreakdown={handleShowBreakdown}
               />
-            ))
+             ))
+           )}
+
+          {/* Other Jobs in State */}
+          {!loading && otherStateJobs.length > 0 && (
+            <div className="px-6 py-4">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Other Jobs in {formattedState}</h2>
+                <p className="text-gray-600 mb-4">More opportunities in nearby towns and cities</p>
+                <div className="space-y-4">
+                  {otherStateJobs.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      savedJobs={savedJobs}
+                      appliedJobs={appliedJobs}
+                      onSave={handleSave}
+                      onApply={handleApply}
+                      onShowBreakdown={handleShowBreakdown}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
-        </div>
-      </div>
+
+          {/* Trending National Jobs */}
+          {!loading && nationalJobs.length > 0 && (
+            <div className="px-6 py-4">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Trending National Jobs</h2>
+                <p className="text-gray-600 mb-4">Popular job opportunities from across Nigeria</p>
+                <div className="space-y-4">
+                  {nationalJobs.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      savedJobs={savedJobs}
+                      appliedJobs={appliedJobs}
+                      onSave={handleSave}
+                      onApply={handleApply}
+                      onShowBreakdown={handleShowBreakdown}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+         </div>
+       </div>
 
       <MatchBreakdownModal
         open={matchModalOpen}
