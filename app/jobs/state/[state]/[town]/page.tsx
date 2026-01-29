@@ -170,7 +170,7 @@ export default function JobsByTownPage() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Fetch other jobs from the same state (excluding current town)
+      // Fetch other jobs from same state (excluding current town)
       const otherTownJobs = stateJobs.filter((job) => {
         if (typeof job.location === 'string') {
           return !job.location.toLowerCase().includes(formattedTown.toLowerCase());
@@ -218,11 +218,6 @@ export default function JobsByTownPage() {
       console.error('Error fetching additional jobs:', error);
     }
   };
-  };
-
-  // ========================================
-  // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
-  // ========================================
 
   // ========================================
   // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
@@ -559,7 +554,7 @@ export default function JobsByTownPage() {
                 onApply={handleApply}
                 onShowBreakdown={handleShowBreakdown}
               />
-             ))
+            ))
            )}
 
           {/* Other Jobs in State */}

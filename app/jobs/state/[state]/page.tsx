@@ -523,17 +523,17 @@ export default function JobsByStatePage() {
               </Link>
             </div>
           ) : (
-             jobs.map((job) => (
-               <JobCard
-                 key={job.id}
-                 job={job}
-                 savedJobs={savedJobs}
-                 appliedJobs={appliedJobs}
-                 onSave={handleSave}
-                 onApply={handleApply}
-                 onShowBreakdown={handleShowBreakdown}
-               />
-             ))
+            jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                savedJobs={savedJobs}
+                appliedJobs={appliedJobs}
+                onSave={handleSave}
+                onApply={handleApply}
+                onShowBreakdown={handleShowBreakdown}
+              />
+))
            )}
 
           {/* Trending National Jobs */}
