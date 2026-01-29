@@ -19,9 +19,11 @@ interface JobFiltersProps {
 }
 
 const locations = [
-  'Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Kaduna', 
-  'Ondo', 'Ogun', 'Rivers', 'Oyo', 'Ekiti', 'Enugu', 'Imo', 
-  'Delta', 'Edo', 'Kwara', 'Benue', 'Niger', 'Plateau', 'Sokoto'
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
+  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT - Abuja',
+  'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 
+  'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 
+  'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
 ];
 
 const sectors = [
@@ -82,14 +84,16 @@ export default function JobFilters({ filters, onFiltersChange, isOpen, onToggle 
   };
 
   const clearAllFilters = () => {
-    onFiltersChange({
+    // Optimized clearing - create new object once
+    const clearedFilters = {
       search: filters.search,
-      location: [],
-      sector: [],
-      employmentType: [],
+      location: [] as string[],
+      sector: [] as string[],
+      employmentType: [] as string[],
       salaryRange: undefined,
       remote: false
-    });
+    };
+    onFiltersChange(clearedFilters);
   };
 
   const hasActiveFilters = (
@@ -101,162 +105,171 @@ export default function JobFilters({ filters, onFiltersChange, isOpen, onToggle 
   );
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Filter size={18} />
-          <span className="font-semibold">Filters</span>
-          {hasActiveFilters && (
-            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
-              Active
-            </span>
-          )}
-        </div>
-        {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-      </button>
-
+    <>
+      {/* Overlay */}
       {isOpen && (
-        <div className="border-t border-gray-200 p-4 space-y-4">
-          {hasActiveFilters && (
-            <button
-              onClick={clearAllFilters}
-              className="text-sm text-red-600 hover:text-red-700 font-medium"
-            >
-              Clear All Filters
-            </button>
-          )}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={onToggle}
+        />
+      )}
 
-          {/* Location Filter */}
-          <div>
+      {/* Side Modal */}
+      <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold">Filters</h2>
             <button
-              onClick={() => toggleSection('location')}
-              className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
+              onClick={onToggle}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Location
-              {expandedSections.includes('location') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              <X size={20} />
             </button>
-            {expandedSections.includes('location') && (
-              <div className="mt-2 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                {locations.map(location => (
-                  <label key={location} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.location?.includes(location) || false}
-                      onChange={() => handleLocationToggle(location)}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{location}</span>
-                  </label>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Sector Filter */}
-          <div>
-            <button
-              onClick={() => toggleSection('sector')}
-              className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
-            >
-              Sector
-              {expandedSections.includes('sector') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {expandedSections.includes('sector') && (
-              <div className="mt-2 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                {sectors.map(sector => (
-                  <label key={sector} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.sector?.includes(sector) || false}
-                      onChange={() => handleSectorToggle(sector)}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{sector}</span>
-                  </label>
-                ))}
-              </div>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="w-full text-sm text-red-600 hover:text-red-700 font-medium py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Clear All Filters
+              </button>
             )}
-          </div>
 
-          {/* Employment Type Filter */}
-          <div>
-            <button
-              onClick={() => toggleSection('employmentType')}
-              className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
-            >
-              Employment Type
-              {expandedSections.includes('employmentType') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {expandedSections.includes('employmentType') && (
-              <div className="mt-2 space-y-2">
-                {employmentTypes.map(type => (
-                  <label key={type} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.employmentType?.includes(type) || false}
-                      onChange={() => handleEmploymentTypeToggle(type)}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{type}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Salary Range Filter */}
-          <div>
-            <button
-              onClick={() => toggleSection('salary')}
-              className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
-            >
-              Salary Range
-              {expandedSections.includes('salary') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {expandedSections.includes('salary') && (
-              <div className="mt-2 space-y-3">
-                <div>
-                  <label className="text-sm text-gray-600">Min Salary (₦)</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={filters.salaryRange?.min || ''}
-                    onChange={(e) => handleSalaryRangeChange('min', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+            {/* Location Filter */}
+            <div>
+              <button
+                onClick={() => toggleSection('location')}
+                className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
+              >
+                Location ({locations.length} states)
+                {expandedSections.includes('location') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {expandedSections.includes('location') && (
+                <div className="mt-2 grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                  {locations.map(location => (
+                    <label key={location} className="flex items-center gap-2 cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        checked={filters.location?.includes(location) || false}
+                        onChange={() => handleLocationToggle(location)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{location}</span>
+                    </label>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-sm text-gray-600">Max Salary (₦)</label>
-                  <input
-                    type="number"
-                    placeholder="No limit"
-                    value={filters.salaryRange?.max || ''}
-                    onChange={(e) => handleSalaryRangeChange('max', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Remote Work Filter */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="remote-filter"
-              checked={filters.remote || false}
-              onChange={handleRemoteToggle}
-              className="rounded text-blue-600 focus:ring-blue-500"
-            />
-            <label htmlFor="remote-filter" className="text-sm font-medium text-gray-700 cursor-pointer">
-              Remote Only
-            </label>
+            {/* Sector Filter */}
+            <div>
+              <button
+                onClick={() => toggleSection('sector')}
+                className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
+              >
+                Sector
+                {expandedSections.includes('sector') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {expandedSections.includes('sector') && (
+                <div className="mt-2 grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                  {sectors.map(sector => (
+                    <label key={sector} className="flex items-center gap-2 cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        checked={filters.sector?.includes(sector) || false}
+                        onChange={() => handleSectorToggle(sector)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{sector}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Employment Type Filter */}
+            <div>
+              <button
+                onClick={() => toggleSection('employmentType')}
+                className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
+              >
+                Employment Type
+                {expandedSections.includes('employmentType') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {expandedSections.includes('employmentType') && (
+                <div className="mt-2 space-y-2">
+                  {employmentTypes.map(type => (
+                    <label key={type} className="flex items-center gap-2 cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        checked={filters.employmentType?.includes(type) || false}
+                        onChange={() => handleEmploymentTypeToggle(type)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{type}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Salary Range Filter */}
+            <div>
+              <button
+                onClick={() => toggleSection('salary')}
+                className="w-full flex items-center justify-between py-2 font-semibold text-gray-900"
+              >
+                Salary Range
+                {expandedSections.includes('salary') ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {expandedSections.includes('salary') && (
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <label className="text-sm text-gray-600">Min Salary (₦)</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.salaryRange?.min || ''}
+                      onChange={(e) => handleSalaryRangeChange('min', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Max Salary (₦)</label>
+                    <input
+                      type="number"
+                      placeholder="No limit"
+                      value={filters.salaryRange?.max || ''}
+                      onChange={(e) => handleSalaryRangeChange('max', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Remote Work Filter */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="remote-filter"
+                checked={filters.remote || false}
+                onChange={handleRemoteToggle}
+                className="rounded text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="remote-filter" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Remote Only
+              </label>
+            </div>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

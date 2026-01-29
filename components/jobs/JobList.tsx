@@ -739,6 +739,17 @@ export default function JobList() {
                 const newSearch = e.target.value;
                 setFilters(prev => ({ ...prev, search: newSearch }));
                 setSearchQuery(newSearch);
+                
+                // Update URL for search
+                const params = new URLSearchParams(searchParams.toString());
+                if (newSearch) {
+                  params.set('search', newSearch);
+                } else {
+                  params.delete('search');
+                }
+                const queryString = params.toString();
+                const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                router.replace(newUrl);
               }}
               className="w-full pl-10 pr-10 py-3 rounded-lg border outline-none focus:ring-2 transition-all"
               style={{
@@ -752,6 +763,13 @@ export default function JobList() {
                 onClick={() => {
                   setFilters(prev => ({ ...prev, search: '' }));
                   setSearchQuery('');
+                  
+                  // Update URL to remove search
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.delete('search');
+                  const queryString = params.toString();
+                  const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                  router.replace(newUrl);
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -760,55 +778,59 @@ export default function JobList() {
             )}
           </div>
           
-          {/* Filters Component */}
-          <JobFilters
-            filters={filters}
-            onFiltersChange={(newFilters) => {
-              setFilters(newFilters);
-              
-              // Update URL parameters
-              const params = new URLSearchParams();
-              
-              if (newFilters.search) {
-                params.set('search', newFilters.search);
-              }
-              
-              if (newFilters.location && newFilters.location.length > 0) {
-                params.set('location', newFilters.location.join(','));
-              }
-              
-              if (newFilters.sector && newFilters.sector.length > 0) {
-                params.set('sector', newFilters.sector.join(','));
-              }
-              
-              if (newFilters.employmentType && newFilters.employmentType.length > 0) {
-                params.set('employmentType', newFilters.employmentType.join(','));
-              }
-              
-              if (newFilters.salaryRange) {
-                if (newFilters.salaryRange.min > 0) {
-                  params.set('salaryMin', newFilters.salaryRange.min.toString());
-                }
-                if (newFilters.salaryRange.max > 0) {
-                  params.set('salaryMax', newFilters.salaryRange.max.toString());
-                }
-              }
-              
-              if (newFilters.remote) {
-                params.set('remote', 'true');
-              }
-              
-              if (sortBy !== 'match') {
-                params.set('sort', sortBy);
-              }
-              
-              const queryString = params.toString();
-              const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-              router.replace(newUrl);
-            }}
-            isOpen={filtersOpen}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
-          />
+          {/* Filter and Sort Row */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => setFiltersOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Filter size={18} />
+              <span className="font-medium">Filters</span>
+              {(
+                (filters.location && filters.location.length > 0) ||
+                (filters.sector && filters.sector.length > 0) ||
+                (filters.employmentType && filters.employmentType.length > 0) ||
+                filters.salaryRange ||
+                filters.remote
+              ) && (
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
+                  Active
+                </span>
+              )}
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  const newSortBy = e.target.value as 'match' | 'latest' | 'salary';
+                  setSortBy(newSortBy);
+                  
+                  // Update URL parameter for sort
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (newSortBy !== 'match') {
+                    params.set('sort', newSortBy);
+                  } else {
+                    params.delete('sort');
+                  }
+                  
+                  const queryString = params.toString();
+                  const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                  router.replace(newUrl);
+                }}
+                className="text-sm font-medium border border-gray-300 rounded-lg pl-3 pr-8 outline-none appearance-none cursor-pointer"
+                style={{ 
+                  backgroundColor: theme.colors.background.DEFAULT,
+                  color: theme.colors.text.primary 
+                }}
+              >
+                <option value="match">Sort by Match</option>
+                <option value="latest">Sort by Latest</option>
+                <option value="salary">Sort by Salary</option>
+              </select>
+              <ChevronDown size={16} style={{ color: theme.colors.text.secondary }} className="pointer-events-none" />
+            </div>
+          </div>
           
           {(filters.search || 
             (filters.location && filters.location.length > 0) ||
@@ -822,42 +844,72 @@ export default function JobList() {
           )}
         </div>
 
-        <div
-          className="sticky top-0 z-10 px-6 py-3 flex items-center justify-between border-b"
-          style={{
-            backgroundColor: theme.colors.background.DEFAULT,
-            borderColor: theme.colors.border.DEFAULT,
+        {/* Filters Modal */}
+        <JobFilters
+          filters={filters}
+          onFiltersChange={(newFilters) => {
+            setFilters(newFilters);
+            
+            // Update URL parameters
+            const params = new URLSearchParams();
+            
+            if (newFilters.search) {
+              params.set('search', newFilters.search);
+            }
+            
+            if (newFilters.location && newFilters.location.length > 0) {
+              params.set('location', newFilters.location.join(','));
+            } else {
+              params.delete('location');
+            }
+            
+            if (newFilters.sector && newFilters.sector.length > 0) {
+              params.set('sector', newFilters.sector.join(','));
+            } else {
+              params.delete('sector');
+            }
+            
+            if (newFilters.employmentType && newFilters.employmentType.length > 0) {
+              params.set('employmentType', newFilters.employmentType.join(','));
+            } else {
+              params.delete('employmentType');
+            }
+            
+            if (newFilters.salaryRange) {
+              if (newFilters.salaryRange.min > 0) {
+                params.set('salaryMin', newFilters.salaryRange.min.toString());
+              } else {
+                params.delete('salaryMin');
+              }
+              if (newFilters.salaryRange.max > 0) {
+                params.set('salaryMax', newFilters.salaryRange.max.toString());
+              } else {
+                params.delete('salaryMax');
+              }
+            } else {
+              params.delete('salaryMin');
+              params.delete('salaryMax');
+            }
+            
+            if (newFilters.remote) {
+              params.set('remote', 'true');
+            } else {
+              params.delete('remote');
+            }
+            
+            if (sortBy !== 'match') {
+              params.set('sort', sortBy);
+            } else {
+              params.delete('sort');
+            }
+            
+            const queryString = params.toString();
+            const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+            router.replace(newUrl);
           }}
-        >
-          <div className="flex items-center gap-3">
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                const newSortBy = e.target.value as 'match' | 'latest' | 'salary';
-                setSortBy(newSortBy);
-                
-                // Update URL parameter for sort
-                const params = new URLSearchParams(searchParams.toString());
-                if (newSortBy !== 'match') {
-                  params.set('sort', newSortBy);
-                } else {
-                  params.delete('sort');
-                }
-                
-                const queryString = params.toString();
-                const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-                router.replace(newUrl);
-              }}
-              className="text-sm font-medium border-none outline-none appearance-none pr-6 cursor-pointer"
-              style={{ color: theme.colors.text.primary }}
-            >
-              <option value="match">Sort by Match</option>
-              <option value="latest">Sort by Latest</option>
-              <option value="salary">Sort by Salary</option>
-            </select>
-            <ChevronDown size={16} style={{ color: theme.colors.text.secondary }} className="-ml-5 pointer-events-none" />
-          </div>
-        </div>
+          isOpen={filtersOpen}
+          onToggle={() => setFiltersOpen(!filtersOpen)}
+        />
 
         <div className="px-6 py-4">
           {loading ? (
