@@ -18,9 +18,10 @@ const formatRSSDate = (dateString?: string) => {
 };
 
 // Escape XML special characters
-const escapeXML = (text?: string) => {
-  if (!text) return '';
-  return text
+const escapeXML = (text?: any) => {
+  if (text === null || text === undefined) return '';
+  const str = String(text); // Convert to string
+  return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -55,17 +56,21 @@ export async function GET(request: NextRequest) {
     console.log('Calling jobService.getJobs...');
     const result = await jobService.getJobs(page, limit, filters);
     console.log('JobService result:', { jobsCount: result.jobs?.length, total: result.total });
+    
+    // Log first job structure for debugging
+    if (result.jobs && result.jobs.length > 0) {
+      console.log('First job structure:', JSON.stringify(result.jobs[0], null, 2));
+    }
 
     const baseUrl = request.nextUrl.origin;
 
     // Generate RSS XML
     const rssItems = result.jobs.map(job => {
-      const title = `${job.title} at ${job.company}`;
-      const link = job.source_url || `${baseUrl}/jobs/${job.id}`;
-      const description = job.description?.replace(/<[^>]*>/g, '') || `${job.title} position at ${job.company} in ${job.location || 'Unknown location'}`;
+      const title = `${escapeXML(job.title || '')} at ${escapeXML(job.company || '')}`;
+      const link = escapeXML(job.source_url || `${baseUrl}/jobs/${job.id}`);
       
-      // Build description with job details
-      let fullDescription = `<![CDATA[<p><strong>${escapeXML(job.title)}</strong> at ${escapeXML(job.company)}</p>`;
+      // Build description with job details safely
+      let fullDescription = `<![CDATA[<p><strong>${escapeXML(job.title || '')}</strong> at ${escapeXML(job.company || '')}</p>`;
       if (job.location) fullDescription += `<p><strong>Location:</strong> ${escapeXML(job.location)}</p>`;
       if (job.job_type) fullDescription += `<p><strong>Type:</strong> ${escapeXML(job.job_type)}</p>`;
       if (job.remote) fullDescription += `<p><strong>Remote:</strong> Yes</p>`;
@@ -78,25 +83,33 @@ export async function GET(request: NextRequest) {
         fullDescription += `<p><strong>Salary:</strong> ${escapeXML(salary)}</p>`;
       }
       if (job.description) {
-        fullDescription += `<p><strong>Description:</strong></p><div>${escapeXML(job.description.replace(/<[^>]*>/g, ''))}</div>`;
+        const cleanDescription = String(job.description).replace(/<[^>]*>/g, '');
+        fullDescription += `<p><strong>Description:</strong></p><div>${escapeXML(cleanDescription)}</div>`;
       }
-      if (job.skills && job.skills.length > 0) {
+      if (job.skills && Array.isArray(job.skills) && job.skills.length > 0) {
         fullDescription += `<p><strong>Skills:</strong> ${escapeXML(job.skills.join(', '))}</p>`;
       }
       fullDescription += ']]>';
 
+      const categories = [];
+      if (job.location) categories.push(`<category>${escapeXML(job.location)}</category>`);
+      if (job.job_type) categories.push(`<category>${escapeXML(job.job_type)}</category>`);
+      if (job.remote) categories.push(`<category>Remote</category>`);
+      if (job.skills && Array.isArray(job.skills)) {
+        job.skills.forEach(skill => {
+          if (skill) categories.push(`<category>${escapeXML(skill)}</category>`);
+        });
+      }
+
       return `
   <item>
-    <title>${escapeXML(title)}</title>
-    <link>${escapeXML(link)}</link>
+    <title>${title}</title>
+    <link>${link}</link>
     <description>${fullDescription}</description>
     <pubDate>${formatRSSDate(job.posted_date)}</pubDate>
     <guid>${escapeXML(job.id)}</guid>
-    <author>${escapeXML(job.company)}</author>
-    ${job.location ? `<category>${escapeXML(job.location)}</category>` : ''}
-    ${job.job_type ? `<category>${escapeXML(job.job_type)}</category>` : ''}
-    ${job.remote ? `<category>Remote</category>` : ''}
-    ${job.skills ? job.skills.map(skill => `<category>${escapeXML(skill)}</category>`).join('') : ''}
+    <author>${escapeXML(job.company || '')}</author>
+    ${categories.join('\n    ')}
   </item>`;
     }).join('\n');
 
@@ -127,7 +140,17 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('RSS Feed API error:', error);
+    console.error('Error type:', typeof error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      errorMessage = JSON.stringify(error);
+    }
     
     // Return XML error response
     const errorXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -137,7 +160,7 @@ export async function GET(request: NextRequest) {
     <description>Failed to generate RSS feed</description>
     <item>
       <title>Feed Generation Error</title>
-      <description>Error: ${escapeXML(error instanceof Error ? error.message : 'Unknown error')}</description>
+      <description>Error: ${escapeXML(errorMessage)}</description>
       <pubDate>${formatRSSDate()}</pubDate>
     </item>
   </channel>
