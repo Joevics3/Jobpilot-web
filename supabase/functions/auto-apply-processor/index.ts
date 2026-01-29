@@ -34,7 +34,7 @@ async function processUserAutoApply(
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', userId)
-    .eq('is_active', true)
+    .eq('status', 'active')
     .single();
 
   if (subError || !subscription) {

@@ -17,7 +17,7 @@ export class JobExpirationService {
       const { count } = await supabaseAdmin
         .from('jobs')
         .select('*', { count: 'exact', head: true })
-        .eq('is_active', false)
+        .eq('status', 'expired')
         .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       return count || 0;
@@ -156,7 +156,7 @@ export class JobService {
         source_url: jobData.url,
         posted_date: jobData.posted_date ? new Date(jobData.posted_date).toISOString() : new Date().toISOString(),
         expires_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        is_active: true,
+        status: 'active',
         duplicate_hash: this.generateDuplicateHash(jobData.title, jobData.company, jobData.url)
       };
 
@@ -323,7 +323,7 @@ export class JobService {
     let query = supabaseAdmin
       .from('jobs')
       .select('*', { count: 'exact' })
-      .eq('is_active', true)
+      .eq('status', 'active')
       .order('created_at', { ascending: false });
 
     // Apply filters

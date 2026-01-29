@@ -212,7 +212,7 @@ async function getUserPremiumSubscription(supabase: any, userId: string): Promis
         )
       `)
       .eq('user_id', userId)
-      .eq('is_active', true)
+      .eq('status', 'active')
       .single();
 
     if (error || !subscription) {

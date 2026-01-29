@@ -169,7 +169,7 @@ export interface Job {
   source_url?: string
   posted_date?: string
   expires_date?: string
-  is_active?: boolean
+  status?: 'active' | 'expired' | 'cancelled'
   duplicate_hash?: string
   created_at?: string
   updated_at?: string
