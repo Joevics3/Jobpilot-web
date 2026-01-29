@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jobService } from '@/lib/job-service';
+
+// Dynamic import to avoid import issues
+const getJobService = async () => {
+  try {
+    const { jobService } = await import('@/lib/job-service');
+    return jobService;
+  } catch (error) {
+    console.error('Failed to import jobService:', error);
+    throw error;
+  }
+};
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Feed API called');
+    
     const { searchParams } = new URL(request.url);
     
     const page = parseInt(searchParams.get('page') || '1');
@@ -12,6 +24,8 @@ export async function GET(request: NextRequest) {
     const remote = searchParams.get('remote') ? searchParams.get('remote') === 'true' : undefined;
     const source = searchParams.get('source') || '';
 
+    console.log('Filters:', { page, limit, search, location, remote, source });
+
     const filters = {
       search: search || undefined,
       location: location || undefined,
@@ -19,7 +33,11 @@ export async function GET(request: NextRequest) {
       source: source || undefined
     };
 
+    console.log('Getting jobService instance...');
+    const jobService = await getJobService();
+    console.log('Calling jobService.getJobs...');
     const result = await jobService.getJobs(page, limit, filters);
+    console.log('JobService result:', { jobsCount: result.jobs?.length, total: result.total });
 
     const feedItems = result.jobs.map(job => ({
       id: job.id,
@@ -85,8 +103,12 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Feed API error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to generate feed' },
+      { 
+        error: 'Failed to generate feed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
