@@ -6,19 +6,12 @@ import BottomNavigation from '@/components/navigation/BottomNavigation';
 import Footer from '@/components/navigation/Footer';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
 import { theme } from '@/lib/theme';
-import { handleEzoicConsent } from '@/lib/cookies';
-
 export default function RootLayoutClient({
   children,
 }: {
-  children: React.ReactNode;
-}) {
+    children: React.ReactNode;
+  }) {
   const pathname = usePathname();
-
-  // Handle Ezoic consent on mount
-  useEffect(() => {
-    handleEzoicConsent();
-  }, []);
   
   // Bottom nav pages that show bottom navigation
   const bottomNavPages = ['/jobs', '/saved', '/cv', '/tools', '/settings'];
@@ -55,8 +48,8 @@ export default function RootLayoutClient({
       
       {/* Cookie Consent Banner */}
       <CookieConsentBanner 
-        onAccept={() => handleEzoicConsent()}
-        onReject={() => handleEzoicConsent()}
+        onAccept={() => {}}
+        onReject={() => {}}
       />
     </div>
   );

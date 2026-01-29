@@ -10,16 +10,20 @@ export interface CookiePreferences {
   analytics: boolean;
 }
 
+// Ezoic consent handling removed for simpler implementation
+
 /**
- * Get the current cookie consent status
+ * Get current cookie consent status
  */
-export function getCookieConsent(): CookieConsent {
+export function getCookieConsent(): CookieConsent | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(COOKIE_CONSENT_KEY) as CookieConsent;
+  
+  const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+  return consent as CookieConsent;
 }
 
 /**
- * Check if user has given consent for advertising cookies
+ * Check if user has given Consent for advertising cookies
  */
 export function hasAdvertisingConsent(): boolean {
   const consent = getCookieConsent();
@@ -68,44 +72,4 @@ export function clearNonEssentialData(): void {
   });
 }
 
-/**
- * Handle Ezoic script loading based on consent
- */
-export function handleEzoicConsent(): void {
-  if (typeof window === 'undefined') return;
-  
-  const consent = getCookieConsent();
-  
-  if (consent === 'rejected') {
-    // User rejected non-essential cookies
-    // Signal to Ezoic that user has opted out
-    const ezstandalone = window.ezstandalone;
-    if (ezstandalone) {
-      ezstandalone.cmd = ezstandalone.cmd || [];
-      ezstandalone.cmd.push(() => {
-        // Disable personalized ads
-        ezstandalone.setDisablePersonalizedStatistics(true);
-      });
-    }
-  } else if (consent === 'accepted') {
-    // User accepted cookies - Ezoic scripts already loaded
-    // Enable personalized ads
-    const ezstandalone = window.ezstandalone;
-    if (ezstandalone) {
-      ezstandalone.cmd = ezstandalone.cmd || [];
-      ezstandalone.cmd.push(() => {
-        ezstandalone.setDisablePersonalizedStatistics(false);
-      });
-    }
-  }
-}
-
-// Extend Window interface for Ezoic
-declare global {
-  interface Window {
-    ezstandalone?: {
-      cmd: Array<() => void>;
-      setDisablePersonalizedStatistics: (disable: boolean) => void;
-    };
-  }
-}
+// Ezoic consent handling removed for simpler implementation

@@ -155,7 +155,7 @@ export default function ContactPage() {
                   href="mailto:help.jobmeter@gmail.com" 
                   className="font-medium text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  help.jobpilot@gmail.com
+                  help.jobmeter@gmail.com
                 </a>
               </p>
               <p className="text-xs text-gray-600">

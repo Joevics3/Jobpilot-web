@@ -38,7 +38,7 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onAccept, onR
 
   const handleCustomize = () => {
     // For minimal implementation, just show basic info
-    alert('Cookie Preferences:\n\nEssential cookies: Required for the website to function\nAdvertising cookies: Enable personalized ads through Ezoic\n\nYou can change these preferences anytime in your browser settings.');
+    alert('Cookie Preferences:\n\nEssential cookies: Required for the website to function\nYou can change these preferences anytime in your browser settings.');
   };
 
   const handleShowSettings = () => {
@@ -78,9 +78,13 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onAccept, onR
                 Cookie Consent
               </h3>
               <p className="text-xs text-gray-600 leading-relaxed max-w-2xl">
-                We use cookies to enhance your experience and serve personalized advertisements through Ezoic. 
-                Your consent helps us provide relevant job recommendations and improve our services. 
-                You can manage your preferences anytime.
+                We use cookies to enhance your experience and improve our services. 
+                Your consent helps us provide relevant content and features. 
+                You can manage your preferences anytime. View our 
+                <a href="/privacy-policy" className="text-blue-600 hover:text-blue-800 underline ml-1">
+                  Privacy Policy
+                </a>
+                for more details.
               </p>
             </div>
           </div>
