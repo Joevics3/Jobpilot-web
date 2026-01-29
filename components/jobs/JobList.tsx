@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
@@ -25,6 +25,10 @@ const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
   APPLIED_JOBS: 'applied_jobs',
 };
+
+// ✅ OPTIMIZATION: Pagination constants
+const JOBS_PER_PAGE = 100;
+const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours
 
 export default function JobList() {
   const router = useRouter();
@@ -55,6 +59,10 @@ export default function JobList() {
     salaryRange: undefined as { min: number; max: number } | undefined,
     remote: false,
   });
+
+  // ✅ OPTIMIZATION: Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -128,6 +136,7 @@ export default function JobList() {
     }
   }, [user]);
 
+  // ✅ OPTIMIZATION: Improved caching logic - only fetch if cache is invalid or missing
   useEffect(() => {
     if (!authChecked) {
       return;
@@ -135,54 +144,28 @@ export default function JobList() {
 
     const cachedJobsKey = 'jobs_cache';
     const cacheTimestampKey = 'jobs_cache_timestamp';
-    const CACHE_DURATION = 3 * 60 * 60 * 1000;
+    const cacheUserIdKey = 'jobs_cache_user_id';
     
     try {
       const cachedJobs = localStorage.getItem(cachedJobsKey);
       const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
+      const cachedUserId = localStorage.getItem(cacheUserIdKey);
       
+      // ✅ Check if cache is valid
       if (cachedJobs && cacheTimestamp) {
         const timestamp = parseInt(cacheTimestamp, 10);
         const now = Date.now();
+        const isCacheValid = now - timestamp < CACHE_DURATION;
+        const isUserMatching = (!user && !cachedUserId) || (user && cachedUserId === user.id);
         
-        if (now - timestamp < CACHE_DURATION) {
+        if (isCacheValid && isUserMatching) {
           try {
             const parsedJobs = JSON.parse(cachedJobs);
             setJobs(parsedJobs);
             setLoading(false);
             
-            try {
-              const jobsData = parsedJobs.map((job: any) => ({
-                id: job.id,
-                slug: job.slug || job.id,
-                title: job.title || 'Untitled Job',
-                company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-                location: typeof job.location === 'string' ? job.location : 
-                  (job.location?.remote ? 'Remote' : 
-                  [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-                postedDate: job.postedDate || job.posted_date || job.created_at,
-              }));
-              localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
-            } catch (cacheError) {
-              console.error('Error updating cached_jobs:', cacheError);
-            }
-            
-            if (user && userOnboardingData !== null) {
-              const rawDataArray = parsedJobs.map((job: any) => {
-                if (job.rawData) return job.rawData;
-                return {
-                  id: job.id,
-                  title: job.title,
-                  company: job.company,
-                  location: job.location,
-                  role: job.title,
-                  skills_required: [],
-                };
-              });
-              processJobsWithMatching(rawDataArray).then((processed) => {
-                setJobs(processed);
-              });
-            }
+            // ✅ CRITICAL FIX: Don't re-process matches for cached jobs!
+            // The cached jobs already have match scores calculated
             return;
           } catch (error) {
             console.error('Error parsing cached jobs:', error);
@@ -193,6 +176,7 @@ export default function JobList() {
       console.error('Error checking job cache:', error);
     }
 
+    // ✅ Only fetch if cache was invalid or missing
     if (user && userOnboardingData !== null) {
       fetchJobs();
     } else if (user && userOnboardingData === null) {
@@ -259,97 +243,82 @@ export default function JobList() {
     }
   };
 
+  // ✅ OPTIMIZATION: Improved processJobsWithMatching - removed unnecessary localStorage operations
   const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
-    try {
-      const jobsData = jobRows.map((job: any) => ({
-        id: job.id,
-        title: job.title || 'Untitled Job',
-        company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-        location: typeof job.location === 'string' ? job.location : 
-          (job.location?.remote ? 'Remote' : 
-          [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-      }));
-      localStorage.setItem('cached_jobs', JSON.stringify(jobsData));
-    } catch (error) {
-      console.error('Error saving jobs to cache:', error);
-    }
-
     if (!userOnboardingData || !user) {
-      return jobRows.map((job: any) => {
-        return transformJobToUI(job, 0, null);
-      });
+      return jobRows.map((job: any) => transformJobToUI(job, 0, null));
     }
 
     const matchCache = matchCacheService.loadMatchCache(user.id);
     let cacheNeedsUpdate = false;
     const updatedCache = { ...matchCache };
 
-    const batchSize = 10;
+    // ✅ OPTIMIZATION: Process in batches to avoid blocking
+    const batchSize = 20; // Increased batch size for better performance
     const processedJobs: JobUI[] = [];
 
     for (let i = 0; i < jobRows.length; i += batchSize) {
       const batch = jobRows.slice(i, i + batchSize);
       
-      const batchResults = await Promise.all(
-        batch.map(async (job: any) => {
-          try {
-            let matchResult;
-            const cachedMatch = updatedCache[job.id];
+      const batchResults = batch.map((job: any) => {
+        try {
+          let matchResult;
+          const cachedMatch = updatedCache[job.id];
 
-            if (cachedMatch) {
-              matchResult = {
-                score: cachedMatch.score,
-                breakdown: cachedMatch.breakdown,
-                computedAt: cachedMatch.cachedAt,
-              };
-            } else {
-              const jobRow: JobRow = {
-                role: job.role || job.title,
-                related_roles: job.related_roles,
-                ai_enhanced_roles: job.ai_enhanced_roles,
-                skills_required: job.skills_required,
-                ai_enhanced_skills: job.ai_enhanced_skills,
-                location: job.location,
-                experience_level: job.experience_level,
-                salary_range: job.salary_range,
-                employment_type: job.employment_type,
-                sector: job.sector,
-              };
+          if (cachedMatch) {
+            matchResult = {
+              score: cachedMatch.score,
+              breakdown: cachedMatch.breakdown,
+              computedAt: cachedMatch.cachedAt,
+            };
+          } else {
+            const jobRow: JobRow = {
+              role: job.role || job.title,
+              related_roles: job.related_roles,
+              ai_enhanced_roles: job.ai_enhanced_roles,
+              skills_required: job.skills_required,
+              ai_enhanced_skills: job.ai_enhanced_skills,
+              location: job.location,
+              experience_level: job.experience_level,
+              salary_range: job.salary_range,
+              employment_type: job.employment_type,
+              sector: job.sector,
+            };
 
-              matchResult = scoreJob(jobRow, userOnboardingData);
+            matchResult = scoreJob(jobRow, userOnboardingData);
 
-              updatedCache[job.id] = {
-                score: matchResult.score,
-                breakdown: matchResult.breakdown,
-                cachedAt: matchResult.computedAt,
-              };
-              cacheNeedsUpdate = true;
-            }
-
-            const rsCapped = Math.min(
-              80,
-              matchResult.breakdown.rolesScore +
-              matchResult.breakdown.skillsScore +
-              matchResult.breakdown.sectorScore
-            );
-            const calculatedTotal = Math.round(
-              rsCapped +
-              matchResult.breakdown.locationScore +
-              matchResult.breakdown.experienceScore +
-              matchResult.breakdown.salaryScore +
-              matchResult.breakdown.typeScore
-            );
-
-            return transformJobToUI(job, calculatedTotal, matchResult.breakdown);
-          } catch (error) {
-            console.error(`Error processing match for job ${job.id}:`, error);
-            return transformJobToUI(job, 0, null);
+            updatedCache[job.id] = {
+              score: matchResult.score,
+              breakdown: matchResult.breakdown,
+              cachedAt: matchResult.computedAt,
+            };
+            cacheNeedsUpdate = true;
           }
-        })
-      );
+
+          const rsCapped = Math.min(
+            80,
+            matchResult.breakdown.rolesScore +
+            matchResult.breakdown.skillsScore +
+            matchResult.breakdown.sectorScore
+          );
+          const calculatedTotal = Math.round(
+            rsCapped +
+            matchResult.breakdown.locationScore +
+            matchResult.breakdown.experienceScore +
+            matchResult.breakdown.salaryScore +
+            matchResult.breakdown.typeScore
+          );
+
+          return transformJobToUI(job, calculatedTotal, matchResult.breakdown);
+        } catch (error) {
+          console.error(`Error processing match for job ${job.id}:`, error);
+          return transformJobToUI(job, 0, null);
+        }
+      });
 
       processedJobs.push(...batchResults);
 
+      // ✅ Yield to main thread between batches
       if (i + batchSize < jobRows.length) {
         await new Promise(resolve => setTimeout(resolve, 0));
       }
@@ -435,44 +404,44 @@ export default function JobList() {
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
       postedDate: getRelativeTime(job.posted_date || job.created_at),
-      // Store description for search if available
       description: job.description || job.job_description || '',
     };
   };
 
+  // ✅ OPTIMIZATION: Fetch only 100 latest jobs per page
   const fetchJobs = async () => {
     try {
       setLoading(true);
       
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('jobs')
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .range(0, JOBS_PER_PAGE - 1); // ✅ Limit to 100 jobs
 
       if (error) throw error;
 
-      console.log(`Fetched ${data?.length || 0} most recent active jobs out of ${count || 0} total`);
+      console.log(`Fetched ${data?.length || 0} latest active jobs`);
 
       const processedJobs = await processJobsWithMatching(data || []);
       
+      // ✅ Sort by match score (default sorting)
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
 
+      // ✅ OPTIMIZATION: Cache with user ID to prevent wrong cache usage
       try {
-        const jobsToCache = processedJobs.map(job => ({
-          ...job,
-          rawData: data?.find((j: any) => j.id === job.id),
-        }));
-        localStorage.setItem('jobs_cache', JSON.stringify(jobsToCache));
+        localStorage.setItem('jobs_cache', JSON.stringify(processedJobs));
         localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
+        localStorage.setItem('jobs_cache_user_id', user?.id || '');
         
-        console.log(`Cached ${jobsToCache.length} jobs`);
+        console.log(`Cached ${processedJobs.length} jobs for user ${user?.id || 'anonymous'}`);
       } catch (cacheError) {
         console.error('Error caching jobs:', cacheError);
       }
 
       setJobs(processedJobs);
+      setHasMore(data?.length === JOBS_PER_PAGE);
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
@@ -546,6 +515,7 @@ export default function JobList() {
     if (!user) {
       localStorage.removeItem('jobs_cache');
       localStorage.removeItem('jobs_cache_timestamp');
+      localStorage.removeItem('jobs_cache_user_id');
       await fetchJobs();
       return;
     }
@@ -559,6 +529,7 @@ export default function JobList() {
       
       localStorage.removeItem('jobs_cache');
       localStorage.removeItem('jobs_cache_timestamp');
+      localStorage.removeItem('jobs_cache_user_id');
       
       await fetchJobs();
     } catch (error) {
@@ -571,8 +542,11 @@ export default function JobList() {
   const handleShowBreakdown = (job: JobUI) => {
     const breakdown = job.breakdown || {
       rolesScore: 0,
+      rolesReason: '',
       skillsScore: 0,
+      skillsReason: '',
       sectorScore: 0,
+      sectorReason: '',
       locationScore: 0,
       experienceScore: 0,
       salaryScore: 0,
@@ -588,90 +562,91 @@ export default function JobList() {
     setMatchModalOpen(true);
   };
 
-  // Filter jobs based on search query and filters
-  const searchFilteredJobs = jobs.filter(job => {
-    // Pre-calculate common values
-    const jobLocationLower = job.location.toLowerCase();
-    const jobTypeLower = job.type?.toLowerCase() || '';
+  // ✅ OPTIMIZATION: Use useMemo to prevent filtering/sorting during loading
+  const filteredJobs = useMemo(() => {
+    if (loading) return []; // ✅ Don't filter while loading
     
-    // Search filter
-    const query = filters.search.toLowerCase();
-    if (query) {
-      const titleMatch = job.title.toLowerCase().includes(query);
-      const companyMatch = job.company.toLowerCase().includes(query);
-      const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
-      if (!titleMatch && !companyMatch && !descriptionMatch) return false;
-    }
-    
-    // Location filter
-    if (filters.location && filters.location.length > 0) {
-      const locationMatch = filters.location.some(loc => 
-        jobLocationLower.includes(loc.toLowerCase())
-      );
-      if (!locationMatch) return false;
-    }
-    
-    // Remote filter
-    if (filters.remote && !jobLocationLower.includes('remote')) {
-      return false;
-    }
-    
-    // Sector filter - need to check if job sector matches any selected sectors
-    if (filters.sector && filters.sector.length > 0) {
-      // Since job data doesn't have explicit sector field, we'll skip this for now
-      // This would require adding sector data to job objects or API
-    }
-    
-    // Employment type filter
-    if (filters.employmentType && filters.employmentType.length > 0) {
-      const typeMatch = filters.employmentType.some(type => {
-        if (type.toLowerCase() === 'remote') {
-          return jobLocationLower.includes('remote');
-        }
-        return jobTypeLower.includes(type.toLowerCase()) || type.toLowerCase().includes(jobTypeLower);
-      });
-      if (!typeMatch) return false;
-    }
-    
-    // Salary filter
-    if (filters.salaryRange) {
-      const getSalaryNumber = (salary: string) => {
-        if (!salary) return 0;
-        const match = salary.match(/[\d,]+/);
-        return match ? parseInt(match[0].replace(/,/g, '')) : 0;
-      };
-      const jobSalary = getSalaryNumber(job.salary || '');
+    return jobs.filter(job => {
+      // Skip applied jobs
+      if (appliedJobs.includes(job.id)) return false;
       
-      if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) {
+      const jobLocationLower = job.location.toLowerCase();
+      const jobTypeLower = job.type?.toLowerCase() || '';
+      
+      // Search filter
+      const query = filters.search.toLowerCase();
+      if (query) {
+        const titleMatch = job.title.toLowerCase().includes(query);
+        const companyMatch = job.company.toLowerCase().includes(query);
+        const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
+        if (!titleMatch && !companyMatch && !descriptionMatch) return false;
+      }
+      
+      // Location filter
+      if (filters.location && filters.location.length > 0) {
+        const locationMatch = filters.location.some(loc => 
+          jobLocationLower.includes(loc.toLowerCase())
+        );
+        if (!locationMatch) return false;
+      }
+      
+      // Remote filter
+      if (filters.remote && !jobLocationLower.includes('remote')) {
         return false;
       }
-      if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
-        return false;
+      
+      // Employment type filter
+      if (filters.employmentType && filters.employmentType.length > 0) {
+        const typeMatch = filters.employmentType.some(type => {
+          if (type.toLowerCase() === 'remote') {
+            return jobLocationLower.includes('remote');
+          }
+          return jobTypeLower.includes(type.toLowerCase()) || type.toLowerCase().includes(jobTypeLower);
+        });
+        if (!typeMatch) return false;
       }
-    }
+      
+      // Salary filter
+      if (filters.salaryRange) {
+        const getSalaryNumber = (salary: string) => {
+          if (!salary) return 0;
+          const match = salary.match(/[\d,]+/);
+          return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+        };
+        const jobSalary = getSalaryNumber(job.salary || '');
+        
+        if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) {
+          return false;
+        }
+        if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [jobs, filters, appliedJobs, loading]);
+
+  // ✅ OPTIMIZATION: Use useMemo to prevent sorting during loading
+  const sortedJobs = useMemo(() => {
+    if (loading) return []; // ✅ Don't sort while loading
     
-    return true;
-  });
-
-  const filteredJobs = searchFilteredJobs.filter(job => !appliedJobs.includes(job.id));
-
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
-    if (sortBy === 'match') {
-      return (b.calculatedTotal || b.match || 0) - (a.calculatedTotal || a.match || 0);
-    } else if (sortBy === 'latest') {
-      // Sort by latest (posted_date, descending)
-      return new Date(b.postedDate || '').getTime() - new Date(a.postedDate || '').getTime();
-    } else if (sortBy === 'salary') {
-      // Sort by salary (descending)
-      const getSalaryNumber = (salary: string) => {
-        if (!salary) return 0;
-        const match = salary.match(/[\d,]+/);
-        return match ? parseInt(match[0].replace(/,/g, '')) : 0;
-      };
-      return getSalaryNumber(b.salary || '') - getSalaryNumber(a.salary || '');
-    }
-    return 0;
-  });
+    return [...filteredJobs].sort((a, b) => {
+      if (sortBy === 'match') {
+        return (b.calculatedTotal || b.match || 0) - (a.calculatedTotal || a.match || 0);
+      } else if (sortBy === 'latest') {
+        return new Date(b.postedDate || '').getTime() - new Date(a.postedDate || '').getTime();
+      } else if (sortBy === 'salary') {
+        const getSalaryNumber = (salary: string) => {
+          if (!salary) return 0;
+          const match = salary.match(/[\d,]+/);
+          return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+        };
+        return getSalaryNumber(b.salary || '') - getSalaryNumber(a.salary || '');
+      }
+      return 0;
+    });
+  }, [filteredJobs, sortBy, loading]);
 
   return (
     <>
@@ -740,7 +715,6 @@ export default function JobList() {
                 setFilters(prev => ({ ...prev, search: newSearch }));
                 setSearchQuery(newSearch);
                 
-                // Update URL for search
                 const params = new URLSearchParams(searchParams.toString());
                 if (newSearch) {
                   params.set('search', newSearch);
@@ -764,7 +738,6 @@ export default function JobList() {
                   setFilters(prev => ({ ...prev, search: '' }));
                   setSearchQuery('');
                   
-                  // Update URL to remove search
                   const params = new URLSearchParams(searchParams.toString());
                   params.delete('search');
                   const queryString = params.toString();
@@ -806,7 +779,6 @@ export default function JobList() {
                   const newSortBy = e.target.value as 'match' | 'latest' | 'salary';
                   setSortBy(newSortBy);
                   
-                  // Update URL parameter for sort
                   const params = new URLSearchParams(searchParams.toString());
                   if (newSortBy !== 'match') {
                     params.set('sort', newSortBy);
@@ -832,7 +804,7 @@ export default function JobList() {
             </div>
           </div>
           
-          {(filters.search || 
+          {!loading && (filters.search || 
             (filters.location && filters.location.length > 0) ||
             (filters.sector && filters.sector.length > 0) ||
             (filters.employmentType && filters.employmentType.length > 0) ||
@@ -850,7 +822,6 @@ export default function JobList() {
           onFiltersChange={(newFilters) => {
             setFilters(newFilters);
             
-            // Update URL parameters
             const params = new URLSearchParams();
             
             if (newFilters.search) {
@@ -859,48 +830,31 @@ export default function JobList() {
             
             if (newFilters.location && newFilters.location.length > 0) {
               params.set('location', newFilters.location.join(','));
-            } else {
-              params.delete('location');
             }
             
             if (newFilters.sector && newFilters.sector.length > 0) {
               params.set('sector', newFilters.sector.join(','));
-            } else {
-              params.delete('sector');
             }
             
             if (newFilters.employmentType && newFilters.employmentType.length > 0) {
               params.set('employmentType', newFilters.employmentType.join(','));
-            } else {
-              params.delete('employmentType');
             }
             
             if (newFilters.salaryRange) {
               if (newFilters.salaryRange.min > 0) {
                 params.set('salaryMin', newFilters.salaryRange.min.toString());
-              } else {
-                params.delete('salaryMin');
               }
               if (newFilters.salaryRange.max > 0) {
                 params.set('salaryMax', newFilters.salaryRange.max.toString());
-              } else {
-                params.delete('salaryMax');
               }
-            } else {
-              params.delete('salaryMin');
-              params.delete('salaryMax');
             }
             
             if (newFilters.remote) {
               params.set('remote', 'true');
-            } else {
-              params.delete('remote');
             }
             
             if (sortBy !== 'match') {
               params.set('sort', sortBy);
-            } else {
-              params.delete('sort');
             }
             
             const queryString = params.toString();

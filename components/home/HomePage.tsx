@@ -86,7 +86,7 @@ const CATEGORIES = [
 const LOCATIONS = [
   { title: 'Jobs in Lagos', slug: 'lagos' },
   { title: 'Jobs in Abuja', slug: 'abuja' },
-  { title: 'Jobs in PortHarcourt', slug: 'portharcourt' },
+  { title: 'Jobs in PortHarcourt', slug: 'port-harcourt' },
   { title: 'Jobs in Ibadan', slug: 'ibadan' },
   { title: 'Jobs in Kano', slug: 'kano' },
   { title: 'Jobs in Kaduna', slug: 'kaduna' },
