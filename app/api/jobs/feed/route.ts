@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Dynamic import to avoid import issues
-const getJobService = async () => {
-  try {
-    const { jobService } = await import('@/lib/job-service');
-    return jobService;
-  } catch (error) {
-    console.error('Failed to import jobService:', error);
-    throw error;
-  }
-};
-
 // Format date for RSS (RFC 822)
 const formatRSSDate = (dateString?: string) => {
   if (!dateString) return new Date().toUTCString();
@@ -29,100 +18,168 @@ const escapeXML = (text?: any) => {
     .replace(/'/g, '&#39;');
 };
 
+// Helper function to extract text from objects
+const extractText = (obj: any): string => {
+  if (typeof obj === 'string') return obj;
+  if (typeof obj === 'object' && obj !== null) {
+    if (obj.name) return obj.name;
+    if (obj.city || obj.state) {
+      const parts = [obj.city, obj.state, obj.country].filter(Boolean);
+      return parts.join(', ');
+    }
+  }
+  return String(obj || '');
+};
+
+// Helper function to format salary
+const formatSalary = (salaryRange: any): string => {
+  if (!salaryRange || typeof salaryRange !== 'object') return '';
+  
+  const { min, max, currency, period } = salaryRange;
+  if (!min && !max) return '';
+  
+  const currencySymbol = currency || 'NGN';
+  const periodText = period ? `/${period}` : '';
+  
+  if (min && max) {
+    return `${currencySymbol} ${min?.toLocaleString()} - ${max?.toLocaleString()}${periodText}`;
+  } else if (min) {
+    return `${currencySymbol} ${min?.toLocaleString()}+${periodText}`;
+  } else if (max) {
+    return `${currencySymbol} up to ${max?.toLocaleString()}${periodText}`;
+  }
+  
+  return '';
+};
+
 export async function GET(request: NextRequest) {
   try {
     console.log('RSS Feed API called');
     
     const { searchParams } = new URL(request.url);
-    
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 100); // Cap at 100
-    const search = searchParams.get('search') || '';
-    const location = searchParams.get('location') || '';
-    const remote = searchParams.get('remote') ? searchParams.get('remote') === 'true' : undefined;
-    const source = searchParams.get('source') || '';
-
-    console.log('Filters:', { page, limit, search, location, remote, source });
-
-    const filters = {
-      search: search || undefined,
-      location: location || undefined,
-      remote,
-      source: source || undefined
-    };
-
-    console.log('Getting jobService instance...');
-    const jobService = await getJobService();
-    console.log('Calling jobService.getJobs...');
-    const result = await jobService.getJobs(page, limit, filters);
-    console.log('JobService result:', { jobsCount: result.jobs?.length, total: result.total });
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 100);
     
-    // Log first job structure for debugging
-    if (result.jobs && result.jobs.length > 0) {
-      console.log('First job structure:', JSON.stringify(result.jobs[0], null, 2));
+    // Get supabase admin client
+    const { supabaseAdmin } = await import('@/lib/supabase');
+    
+    // Fetch jobs directly with all needed fields
+    const { data: jobs, error, count } = await supabaseAdmin
+      .from('jobs')
+      .select('*', { count: 'exact' })
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
     }
 
-    const baseUrl = request.nextUrl.origin;
+    console.log('Jobs fetched:', jobs?.length || 0);
+    
+    const baseUrl = 'https://www.jobmeter.app';
 
     // Generate RSS XML
-    const rssItems = result.jobs.map(job => {
-      const title = `${escapeXML(job.title || '')} at ${escapeXML(job.company || '')}`;
-      const link = escapeXML(job.source_url || `${baseUrl}/jobs/${job.id}`);
+    const rssItems = jobs?.map(job => {
+      const title = escapeXML(job.title || 'Untitled Job');
+      const slug = job.slug || job.id;
+      const link = escapeXML(`${baseUrl}/jobs/${slug}`);
+      const company = extractText(job.company);
+      const location = extractText(job.location);
+      const category = job.category || 'jobs';
       
-      // Build description with job details safely
-      let fullDescription = `<![CDATA[<p><strong>${escapeXML(job.title || '')}</strong> at ${escapeXML(job.company || '')}</p>`;
-      if (job.location) fullDescription += `<p><strong>Location:</strong> ${escapeXML(job.location)}</p>`;
-      if (job.job_type) fullDescription += `<p><strong>Type:</strong> ${escapeXML(job.job_type)}</p>`;
-      if (job.remote) fullDescription += `<p><strong>Remote:</strong> Yes</p>`;
-      if (job.salary_min || job.salary_max) {
-        const salary = job.salary_min && job.salary_max 
-          ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-          : job.salary_min 
-          ? `$${job.salary_min.toLocaleString()}+`
-          : `$${job.salary_max?.toLocaleString()}`;
-        fullDescription += `<p><strong>Salary:</strong> ${escapeXML(salary)}</p>`;
+      // Build comprehensive description with CDATA
+      let description = '<![CDATA[';
+      description += `<p><strong>${escapeXML(job.title || '')}</strong></p>`;
+      description += `<p><strong>Company:</strong> ${escapeXML(company)}</p>`;
+      
+      if (location) {
+        description += `<p><strong>Location:</strong> ${escapeXML(location)}</p>`;
       }
+      
+      if (job.employment_type) {
+        description += `<p><strong>Type:</strong> ${escapeXML(job.employment_type)}</p>`;
+      }
+      
+      if (job.experience_level) {
+        description += `<p><strong>Experience Level:</strong> ${escapeXML(job.experience_level)}</p>`;
+      }
+      
+      if (job.sector) {
+        description += `<p><strong>Sector:</strong> ${escapeXML(String(job.sector))}</p>`;
+      }
+      
+      const salary = formatSalary(job.salary_range);
+      if (salary) {
+        description += `<p><strong>Salary:</strong> ${escapeXML(salary)}</p>`;
+      }
+      
+      if (job.skills_required && Array.isArray(job.skills_required) && job.skills_required.length > 0) {
+        description += `<p><strong>Skills Required:</strong> ${escapeXML(job.skills_required.join(', '))}</p>`;
+      }
+      
+      if (job.responsibilities && Array.isArray(job.responsibilities) && job.responsibilities.length > 0) {
+        description += `<p><strong>Responsibilities:</strong></p><ul>`;
+        job.responsibilities.forEach((resp: any) => {
+          description += `<li>${escapeXML(String(resp))}</li>`;
+        });
+        description += '</ul>';
+      }
+      
+      if (job.qualifications && Array.isArray(job.qualifications) && job.qualifications.length > 0) {
+        description += `<p><strong>Qualifications:</strong></p><ul>`;
+        job.qualifications.forEach((qual: any) => {
+          description += `<li>${escapeXML(String(qual))}</li>`;
+        });
+        description += '</ul>';
+      }
+      
       if (job.description) {
         const cleanDescription = String(job.description).replace(/<[^>]*>/g, '');
-        fullDescription += `<p><strong>Description:</strong></p><div>${escapeXML(cleanDescription)}</div>`;
+        description += `<p><strong>Description:</strong></p><div>${escapeXML(cleanDescription)}</div>`;
       }
-      if (job.skills && Array.isArray(job.skills) && job.skills.length > 0) {
-        fullDescription += `<p><strong>Skills:</strong> ${escapeXML(job.skills.join(', '))}</p>`;
+      
+      if (job.benefits && Array.isArray(job.benefits) && job.benefits.length > 0) {
+        description += `<p><strong>Benefits:</strong> ${escapeXML(job.benefits.join(', '))}</p>`;
       }
-      fullDescription += ']]>';
-
-      const categories = [];
-      if (job.location) categories.push(`<category>${escapeXML(job.location)}</category>`);
-      if (job.job_type) categories.push(`<category>${escapeXML(job.job_type)}</category>`);
-      if (job.remote) categories.push(`<category>Remote</category>`);
-      if (job.skills && Array.isArray(job.skills)) {
-        job.skills.forEach(skill => {
-          if (skill) categories.push(`<category>${escapeXML(skill)}</category>`);
-        });
+      
+      if (job.deadline) {
+        description += `<p><strong>Application Deadline:</strong> ${escapeXML(job.deadline)}</p>`;
       }
+      
+      description += ']]>';
 
       return `
   <item>
     <title>${title}</title>
     <link>${link}</link>
-    <description>${fullDescription}</description>
-    <pubDate>${formatRSSDate(job.posted_date)}</pubDate>
-    <guid>${escapeXML(job.id)}</guid>
-    <author>${escapeXML(job.company || '')}</author>
-    ${categories.join('\n    ')}
+    <description>${description}</description>
+    <pubDate>${formatRSSDate(job.created_at)}</pubDate>
+    <guid>${escapeXML(slug)}</guid>
+    <author>JobMeter Team</author>
+    <category>${escapeXML(category)}</category>
+    ${job.employment_type ? `<category>${escapeXML(job.employment_type)}</category>` : ''}
+    ${location ? `<category>${escapeXML(location)}</category>` : ''}
+    ${job.experience_level ? `<category>${escapeXML(job.experience_level)}</category>` : ''}
+    ${job.sector ? `<category>${escapeXML(String(job.sector))}</category>` : ''}
+    ${job.skills_required ? job.skills_required.map(skill => `<category>${escapeXML(String(skill))}</category>`).join('') : ''}
   </item>`;
-    }).join('\n');
+    }).join('\n') || '';
 
+    const totalPages = Math.ceil((count || 0) / limit);
+    const hasNextPage = page < totalPages;
+    
     const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>JobPilot Jobs Feed</title>
-    <link>${escapeXML(baseUrl)}</link>
-    <description>Latest job listings from JobPilot</description>
+    <title>JobMeter Jobs Feed</title>
+    <link>https://www.jobmeter.app</link>
+    <description>Latest job listings from JobMeter - Find your dream job in Nigeria and beyond</description>
     <language>en-us</language>
-    <atom:link href="${escapeXML(`${baseUrl}/api/jobs/feed`)}" rel="self" type="application/rss+xml" />
+    <atom:link href="https://www.jobmeter.app/api/jobs/feed" rel="self" type="application/rss+xml" />
     <lastBuildDate>${formatRSSDate()}</lastBuildDate>
-    <generator>JobPilot RSS Feed Generator</generator>
+    <generator>JobMeter RSS Feed Generator</generator>
     <docs>https://www.rssboard.org/rss-specification</docs>
     <ttl>60</ttl>
     ${rssItems}
@@ -157,7 +214,7 @@ export async function GET(request: NextRequest) {
 <rss version="2.0">
   <channel>
     <title>Error</title>
-    <description>Failed to generate RSS feed</description>
+    <description>Failed to generate JobMeter RSS feed</description>
     <item>
       <title>Feed Generation Error</title>
       <description>Error: ${escapeXML(errorMessage)}</description>

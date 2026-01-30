@@ -30,6 +30,10 @@ export async function GET() {
     <loc>${siteUrl}/sitemap-content.xml</loc>
     <lastmod>${currentDate}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>${siteUrl}/sitemap-locations.xml</loc>
+    <lastmod>${currentDate}</lastmod>
+  </sitemap>
 </sitemapindex>`;
 
     return new Response(sitemapIndex, {
