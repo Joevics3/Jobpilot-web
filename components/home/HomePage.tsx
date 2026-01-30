@@ -327,7 +327,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
   return (
     <>
       <Head>
-        <title>JobMeter - Find Your Dream Job | AI-Powered Job Matching Platform</title>
+        <title>JobMeter - Find Your Dream Job | Smart Job Matching Platform</title>
         <meta
           name="description"
           content="JobMeter connects job seekers with top employers across industries. Browse thousands of job listings, get personalized match scores, and find your perfect career opportunity."
@@ -395,28 +395,13 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      Discover Opportunities That Match Your Skills
+                     Browse thousands of jobs Daily
                     </h2>
                     <p className="text-gray-600">
-                      Browse thousands of jobs, get AI-powered match scores, and apply with one click.
+                      Get matched with your ideal jobs, get smart match scores, and apply with one click.
                     </p>
                   </div>
-                </div>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>Personalized job recommendations based on your profile</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>AI match scores showing compatibility with each role</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>Application tracking and career resources</span>
-                  </div>
-                </div>
+                </div
 
                 <button
                   onClick={() => handleCTAClick('seeker')}
@@ -444,20 +429,6 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>Access thousands of qualified job seekers</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>AI-powered candidate matching and screening</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                    <span>Easy job posting and applicant management</span>
-                  </div>
-                </div>
 
                 <button
                   onClick={() => handleCTAClick('recruiter')}
