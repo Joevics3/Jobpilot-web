@@ -95,6 +95,14 @@ export default function NotificationManager() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // First, delete any old tokens for this user to prevent duplicates
+      if (user?.id) {
+        await supabase
+          .from('notification_tokens')
+          .delete()
+          .eq('user_id', user.id);
+      }
+
       const { error } = await supabase
         .from('notification_tokens')
         .upsert(

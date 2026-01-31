@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const { data: tokens, error: tokensError } = await supabase
       .from('notification_tokens')
-      .select('token');
+      .select('token, updated_at, last_used_at, user_id');
 
     if (tokensError) {
       return NextResponse.json({ error: 'Failed to fetch tokens', details: tokensError }, { status: 500 });
@@ -45,6 +45,12 @@ export async function GET(request: NextRequest) {
         notificationsSent: 0 
       });
     }
+
+    // Log token details for debugging
+    console.log(`📋 Found ${tokens.length} tokens:`);
+    tokens.forEach((token, index) => {
+      console.log(`  ${index + 1}. Token: ${token.token.substring(0, 20)}... User: ${token.user_id} Updated: ${token.updated_at}`);
+    });
 
     // Send ONE summary notification
     const title = `${jobs.length} New Jobs Posted Today! 🎉`;
@@ -68,6 +74,16 @@ export async function GET(request: NextRequest) {
         successCount++;
       } else {
         failCount++;
+        
+        // If token is invalid (not registered), remove it from database
+        if (result.error && (result.error.toString().includes('not-registered') || 
+                           result.error.toString().includes('registration-token-not-registered'))) {
+          console.log(`🗑️ Removing invalid token: ${token.substring(0, 20)}...`);
+          await supabase
+            .from('notification_tokens')
+            .delete()
+            .eq('token', token);
+        }
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }

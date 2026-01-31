@@ -27,7 +27,16 @@ messaging.onBackgroundMessage((payload) => {
     requireInteraction: false,
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  console.log('🔔 Attempting to show notification:', notificationTitle);
+  
+  // Check if notification permission is granted
+  if (Notification.permission === 'granted') {
+    self.registration.showNotification(notificationTitle, notificationOptions)
+      .then(() => console.log('✅ Notification displayed successfully'))
+      .catch(err => console.error('❌ Failed to display notification:', err));
+  } else {
+    console.error('❌ Notification permission not granted:', Notification.permission);
+  }
 });
 
 self.addEventListener('notificationclick', (event) => {

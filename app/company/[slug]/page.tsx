@@ -282,9 +282,10 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                 {/* Description */}
                 <div className="prose max-w-none">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">About {company.name}</h2>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {company.description}
-                  </p>
+                  <div 
+                    className="text-gray-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: company.description }}
+                  />
                 </div>
               </div>
 
