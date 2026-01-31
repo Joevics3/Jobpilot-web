@@ -401,7 +401,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                       Get matched with your ideal jobs, get smart match scores, and apply with one click.
                     </p>
                   </div>
-                </div
+                </div>
 
                 <button
                   onClick={() => handleCTAClick('seeker')}
