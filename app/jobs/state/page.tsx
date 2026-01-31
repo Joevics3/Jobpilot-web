@@ -1,5 +1,3 @@
-// File Location: /app/jobs/state/page.tsx
-
 import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -37,7 +35,7 @@ interface StateJobCount {
 
 async function getJobCountsByState(): Promise<StateJobCount[]> {
   try {
-    // Single fetch: Get only id and location for active jobs
+    // Fetch ALL active jobs at once
     const { data: allJobs, error } = await supabase
       .from('jobs')
       .select('id, location')
@@ -48,26 +46,27 @@ async function getJobCountsByState(): Promise<StateJobCount[]> {
       return NIGERIAN_STATES.map(state => ({ state, count: 0 }));
     }
 
-    // Simple count for each state
+    // Count jobs for each state in JavaScript
     const counts = NIGERIAN_STATES.map((state) => {
-      const stateLower = state.toLowerCase();
       const count = (allJobs || []).filter((job) => {
-        if (!job.location) return false;
-        
-        // String location
+        // Handle string location format
         if (typeof job.location === 'string') {
-          return job.location.toLowerCase().includes(stateLower);
+          return job.location.toLowerCase().includes(state.toLowerCase());
         }
         
-        // Object location with state property
-        if (typeof job.location === 'object' && job.location.state) {
-          return job.location.state.toLowerCase() === stateLower;
+        // Handle object location format
+        if (job.location && typeof job.location === 'object') {
+          const locState = job.location.state || '';
+          return locState.toLowerCase() === state.toLowerCase();
         }
         
         return false;
       }).length;
 
-      return { state, count };
+      return {
+        state,
+        count,
+      };
     });
 
     // Sort by count descending
