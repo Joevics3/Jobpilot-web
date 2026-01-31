@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
     ${location ? `<category>${escapeXML(location)}</category>` : ''}
     ${job.experience_level ? `<category>${escapeXML(job.experience_level)}</category>` : ''}
     ${job.sector ? `<category>${escapeXML(String(job.sector))}</category>` : ''}
-    ${job.skills_required ? job.skills_required.map(skill => `<category>${escapeXML(String(skill))}</category>`).join('') : ''}
+    ${job.skills_required ? job.skills_required.map((skill: any) => `<category>${escapeXML(String(skill))}</category>`).join('') : ''}
   </item>`;
     }).join('\n') || '';
 

@@ -948,7 +948,20 @@ const getExperienceLevelWithYears = (level: string) => {
         {/* Bottom Action Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-4 border-t bg-white border-gray-200">
           <div className="flex items-center gap-2">
-            {/* Auto Apply Button - Only show if job has email application method */}
+            <button
+              onClick={handleApply}
+              className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
+                applied ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''
+              }`}
+              style={{
+                backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
+              }}
+              disabled={applied}
+            >
+              {applied ? 'Applied' : 'Apply Now'}
+            </button>
+
+            {/* Pro Apply Button - Only show if job has email application method */}
             {(job.application?.email || job.application_email) && (
             <button
                 onClick={() => setCvServiceModalOpen(true)}
@@ -962,22 +975,9 @@ const getExperienceLevelWithYears = (level: string) => {
                   backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
                 }}
             >
-                {applied ? 'Applied' : 'Auto Apply'}
+                {applied ? 'Applied' : 'Pro Apply'}
               </button>
             )}
-
-            <button
-              onClick={handleApply}
-              className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
-                applied ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''
-              }`}
-              style={{
-                backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
-              }}
-              disabled={applied}
-            >
-              {applied ? 'Applied' : 'Apply Now'}
-            </button>
 
             <button
               onClick={() => {
