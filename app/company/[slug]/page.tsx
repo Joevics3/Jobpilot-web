@@ -284,7 +284,7 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">About {company.name}</h2>
                   <div 
                     className="text-gray-700 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: company.description }}
+                    dangerouslySetInnerHTML={{ __html: company.description.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'") }}
                   />
                 </div>
               </div>
