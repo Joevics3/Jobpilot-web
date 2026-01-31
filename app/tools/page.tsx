@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { MessageCircle, FileCheck, GraduationCap, BookOpen, ArrowRight, Building2, Newspaper } from 'lucide-react';
+import { BookOpen, ArrowRight, Building2, Newspaper, MapPin } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
-import InterviewPrepModal from '@/components/tools/InterviewPrepModal';
-import CareerCoachModal from '@/components/tools/CareerCoachModal';
+
 import BannerAd from '@/components/ads/BannerAd';
 
 interface Tool {
@@ -14,13 +13,11 @@ interface Tool {
   description: string;
   icon: React.ComponentType<any>;
   color: string;
-  modal?: 'interview' | 'career';
   route?: string;
 }
 
 export default function ToolsPage() {
   const router = useRouter();
-  const [activeModal, setActiveModal] = useState<'interview' | 'ats' | 'career' | null>(null);
 
   const tools: Tool[] = [
     {
@@ -33,30 +30,14 @@ export default function ToolsPage() {
     },
     {
       id: '2',
-      title: 'ATS CV Review',
-      description: 'Optimize your CV for ATS systems and job matching',
-      icon: FileCheck,
+      title: 'Location',
+      description: 'Browse jobs by state and location',
+      icon: MapPin,
       color: theme.colors.accent.green,
-      route: '/tools/ats-review',
+      route: '/jobs/state',
     },
     {
       id: '3',
-      title: 'Career Coach',
-      description: 'Get personalized career guidance and skill recommendations',
-      icon: GraduationCap,
-      color: theme.colors.accent.blue,
-      modal: 'career',
-    },
-    {
-      id: '4',
-      title: 'Interview Prep',
-      description: 'Practice with personalized questions based on job descriptions',
-      icon: MessageCircle,
-      color: theme.colors.accent.blue,
-      route: '/tools/interview',
-    },
-    {
-      id: '5',
       title: 'Blog & Articles',
       description: 'Read expert insights, salary guides, and career tips for job seekers',
       icon: Newspaper,
@@ -64,25 +45,27 @@ export default function ToolsPage() {
       route: '/blog',
     },
     {
-      id: '6',
+      id: '4',
       title: 'Company Directory',
       description: 'Explore top companies, their culture, benefits, and open positions',
       icon: Building2,
       color: '#EA580C',
       route: '/company',
     },
+    {
+      id: '5',
+      title: 'Career Tools',
+      description: 'Advanced tools for interview prep, CV review, and career coaching',
+      icon: BookOpen,
+      color: theme.colors.accent.blue,
+      route: '/career-tools',
+    },
   ];
 
   const handleToolClick = (tool: Tool) => {
     if (tool.route) {
       router.push(tool.route);
-    } else if (tool.modal) {
-      setActiveModal(tool.modal);
     }
-  };
-
-  const handleCloseModal = () => {
-    setActiveModal(null);
   };
 
   return (
@@ -160,14 +143,6 @@ export default function ToolsPage() {
           </div>
         </div>
       </div>
-
-      {/* Modals */}
-      {activeModal === 'interview' && (
-        <InterviewPrepModal isOpen={true} onClose={handleCloseModal} />
-      )}
-      {activeModal === 'career' && (
-        <CareerCoachModal isOpen={true} onClose={handleCloseModal} />
-      )}
     </>
   );
 }

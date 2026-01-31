@@ -1,13 +1,30 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Cookie as CookieIcon } from 'lucide-react';
 
 const CookieModal = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Check if user has already accepted cookies
+    const checkCookieConsent = () => {
+      const hasAccepted = localStorage.getItem('cookieAccepted');
+      if (!hasAccepted) {
+        setIsVisible(true);
+      }
+    };
+
+    // Wait 5 seconds before checking cookie consent
+    const timer = setTimeout(checkCookieConsent, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleClose = () => {
     setIsVisible(false);
+    // Store acceptance in localStorage
+    localStorage.setItem('cookieAccepted', 'true');
   };
 
   if (!isVisible) return null;

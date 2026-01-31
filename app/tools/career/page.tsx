@@ -31,12 +31,12 @@ export default function CareerPage() {
         setAnalysis(result);
       } else {
         console.error('No career analysis found');
-        router.push('/tools');
+        router.push('/career-tools');
         return;
       }
     } catch (error) {
       console.error('Error loading career analysis:', error);
-      router.push('/tools');
+      router.push('/career-tools');
       return;
     }
     setLoading(false);
@@ -91,7 +91,7 @@ export default function CareerPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Analysis Not Found</h2>
           <p className="text-gray-600 mb-4">Please complete your career analysis first.</p>
           <Link
-            href="/tools?modal=career"
+            href="/career-tools"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             Start Career Analysis
@@ -109,7 +109,7 @@ export default function CareerPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
-                href="/tools"
+                href="/career-tools"
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft size={20} className="text-gray-600" />

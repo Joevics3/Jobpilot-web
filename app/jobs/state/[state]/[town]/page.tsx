@@ -1,615 +1,263 @@
-"use client";
+// File Location: /app/jobs/state/[state]/[town]/page.tsx
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
-import { theme } from '@/lib/theme';
-import { ArrowLeft, MapPin, Briefcase } from 'lucide-react';
-import JobCard from '@/components/jobs/JobCard';
-import { JobUI } from '@/components/jobs/JobCard';
-import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
-import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
-import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
-import { matchCacheService } from '@/lib/matching/matchCache';
+import Link from 'next/link';
+import { MapPin, Building2, Clock, DollarSign } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
-const NIGERIAN_STATES = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
-  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 
-  'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 
-  'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 
-  'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'Abuja'
-];
-
-const STORAGE_KEYS = {
-  SAVED_JOBS: 'saved_jobs',
-  APPLIED_JOBS: 'applied_jobs',
-};
-
-export default function JobsByTownPage() {
-  const params = useParams();
-  const state = params?.state as string;
-  const town = params?.town as string;
-  
-  const formattedState = state ? state.charAt(0).toUpperCase() + state.slice(1) : '';
-  const formattedTown = town ? town.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '';
-  
-  const [user, setUser] = useState<any>(null);
-  const [jobs, setJobs] = useState<JobUI[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
-  const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
-  const [matchModalOpen, setMatchModalOpen] = useState(false);
-  const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
-  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
-  const [totalJobs, setTotalJobs] = useState(0);
-  const [otherStateJobs, setOtherStateJobs] = useState<JobUI[]>([]);
-  const [nationalJobs, setNationalJobs] = useState<JobUI[]>([]);
-
-  useEffect(() => {
-    checkAuth();
-    loadSavedJobs();
-    loadAppliedJobs();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchUserOnboardingData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (formattedState && NIGERIAN_STATES.includes(formattedState) && formattedTown) {
-      fetchJobsByTown();
-    }
-  }, [formattedState, formattedTown, userOnboardingData, user]);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-    }
+interface TownPageProps {
+  params: {
+    state: string;
+    town: string;
   };
+}
 
-  const fetchUserOnboardingData = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('onboarding_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching onboarding data:', error);
-        return;
-      }
-
-      if (data) {
-        setUserOnboardingData({
-          target_roles: data.target_roles || [],
-          cv_skills: data.cv_skills || [],
-          preferred_locations: data.preferred_locations || [],
-          experience_level: data.experience_level || null,
-          salary_min: data.salary_min || null,
-          salary_max: data.salary_max || null,
-          job_type: data.job_type || null,
-          sector: data.sector || null,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching onboarding data:', error);
-    }
+export async function generateMetadata({ params }: TownPageProps): Promise<Metadata> {
+  const townName = params.town.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const stateName = params.state.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  
+  return {
+    title: `Jobs in ${townName}, ${stateName} | JobMeter`,
+    description: `Find the latest job opportunities in ${townName}, ${stateName}. Browse available positions and apply today.`,
   };
+}
 
-  const fetchJobsByTown = async () => {
-    try {
-      setLoading(true);
-      
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      // Fetch ALL active jobs from last 30 days
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('status', 'active')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: false });
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: any;
+  salary_min?: number;
+  salary_max?: number;
+  job_type: string;
+  created_at: string;
+}
 
-      if (error) throw error;
+async function getTownJobs(state: string, town: string): Promise<Job[]> {
+  try {
+    // Single fetch: Latest jobs for filtering
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('id, title, company, location, salary_min, salary_max, job_type, created_at')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(200); // Fetch more for filtering
 
-      // First filter by state
-      const stateFilteredJobs = (data || []).filter((job) => {
-        if (typeof job.location === 'string') {
-          return job.location.toLowerCase().includes(formattedState.toLowerCase());
-        }
-        
-        if (job.location && typeof job.location === 'object') {
-          const locState = job.location.state || '';
-          return locState.toLowerCase() === formattedState.toLowerCase();
-        }
-        
-        return false;
-      });
-
-      // Then filter by town/city
-      const townFilteredJobs = stateFilteredJobs.filter((job) => {
-        if (typeof job.location === 'string') {
-          return job.location.toLowerCase().includes(formattedTown.toLowerCase());
-        }
-        
-        if (job.location && typeof job.location === 'object') {
-          const locCity = job.location.city || '';
-          return locCity.toLowerCase() === formattedTown.toLowerCase();
-        }
-        
-        return false;
-      });
-
-      // Set total count for this town
-      setTotalJobs(townFilteredJobs.length);
-
-      // Use EXACT SAME matching logic as JobList.tsx
-      const processedJobs = await processJobsWithMatching(townFilteredJobs);
-      processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-      setJobs(processedJobs);
-
-      // Fetch other state jobs and national jobs
-      await fetchAdditionalJobs(stateFilteredJobs);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching jobs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAdditionalJobs = async (stateJobs: any[]) => {
-    try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      // Fetch other jobs from same state (excluding current town)
-      const otherTownJobs = stateJobs.filter((job) => {
-        if (typeof job.location === 'string') {
-          return !job.location.toLowerCase().includes(formattedTown.toLowerCase());
-        }
-        if (job.location && typeof job.location === 'object') {
-          const locCity = job.location.city || '';
-          return locCity.toLowerCase() !== formattedTown.toLowerCase();
-        }
-        return true;
-      }).slice(0, 30);
-
-      const processedOtherStateJobs = await processJobsWithMatching(otherTownJobs);
-      processedOtherStateJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-      setOtherStateJobs(processedOtherStateJobs);
-
-      // Fetch national jobs (excluding current state)
-      const { data: nationalJobsData, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('status', 'active')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (error) throw error;
-
-      // Filter out jobs from current state
-      const filteredNationalJobs = (nationalJobsData || [])
-        .filter(job => {
-          if (typeof job.location === 'string') {
-            return !job.location.toLowerCase().includes(formattedState.toLowerCase());
-          }
-          if (job.location && typeof job.location === 'object') {
-            const locState = job.location.state || '';
-            return locState.toLowerCase() !== formattedState.toLowerCase();
-          }
-          return true;
-        })
-        .slice(0, 30);
-
-      const processedNationalJobs = await processJobsWithMatching(filteredNationalJobs);
-      processedNationalJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-      setNationalJobs(processedNationalJobs);
-    } catch (error) {
-      console.error('Error fetching additional jobs:', error);
-    }
-  };
-
-  // ========================================
-  // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
-  // ========================================
-  const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
-    if (!userOnboardingData || !user) {
-      return jobRows.map(job => transformJobToUI(job, 0, null));
+      return [];
     }
 
-    const matchCache = matchCacheService.loadMatchCache(user.id);
-    let cacheNeedsUpdate = false;
-    const updatedCache = { ...matchCache };
-
-    const batchSize = 10;
-    const processedJobs: JobUI[] = [];
-
-    for (let i = 0; i < jobRows.length; i += batchSize) {
-      const batch = jobRows.slice(i, i + batchSize);
-      
-      const batchResults = await Promise.all(
-        batch.map(async (job: any) => {
-          try {
-            let matchResult;
-            const cachedMatch = updatedCache[job.id];
-
-            if (cachedMatch) {
-              matchResult = {
-                score: cachedMatch.score,
-                breakdown: cachedMatch.breakdown,
-                computedAt: cachedMatch.cachedAt,
-              };
-            } else {
-              const jobRow: JobRow = {
-                role: job.role || job.title,
-                related_roles: job.related_roles,
-                ai_enhanced_roles: job.ai_enhanced_roles,
-                skills_required: job.skills_required,
-                ai_enhanced_skills: job.ai_enhanced_skills,
-                location: job.location,
-                experience_level: job.experience_level,
-                salary_range: job.salary_range,
-                employment_type: job.employment_type,
-                sector: job.sector,
-              };
-
-              matchResult = scoreJob(jobRow, userOnboardingData);
-
-              updatedCache[job.id] = {
-                score: matchResult.score,
-                breakdown: matchResult.breakdown,
-                cachedAt: matchResult.computedAt,
-              };
-              cacheNeedsUpdate = true;
-            }
-
-            const rsCapped = Math.min(
-              80,
-              matchResult.breakdown.rolesScore +
-              matchResult.breakdown.skillsScore +
-              matchResult.breakdown.sectorScore
-            );
-            const calculatedTotal = Math.round(
-              rsCapped +
-              matchResult.breakdown.locationScore +
-              matchResult.breakdown.experienceScore +
-              matchResult.breakdown.salaryScore +
-              matchResult.breakdown.typeScore
-            );
-
-            return transformJobToUI(job, calculatedTotal, matchResult.breakdown);
-          } catch (error) {
-            console.error(`Error processing match for job ${job.id}:`, error);
-            return transformJobToUI(job, 0, null);
-          }
-        })
-      );
-
-      processedJobs.push(...batchResults);
-
-      if (i + batchSize < jobRows.length) {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      }
-    }
-
-    if (cacheNeedsUpdate) {
-      matchCacheService.saveMatchCache(user.id, updatedCache);
-    }
-
-    return processedJobs;
-  }, [user, userOnboardingData]);
-
-  // EXACT SAME transformJobToUI from JobList.tsx
-  const transformJobToUI = (job: any, matchScore: number, breakdown: any): JobUI => {
-    const finalMatchScore = user ? matchScore : 0;
-    const finalBreakdown = user ? breakdown : null;
+    // Filter for town and state
+    const stateLower = state.toLowerCase().replace(/-/g, ' ');
+    const townLower = town.toLowerCase().replace(/-/g, ' ');
     
-    let locationStr = 'Location not specified';
-    if (typeof job.location === 'string') {
-      locationStr = job.location;
-    } else if (job.location && typeof job.location === 'object') {
-      const loc = job.location;
-      if (loc.remote) {
-        locationStr = 'Remote';
-      } else {
-        const parts = [loc.city, loc.state, loc.country].filter(Boolean);
-        locationStr = parts.length > 0 ? parts.join(', ') : 'Location not specified';
-      }
-    }
-
-    let companyStr = 'Unknown Company';
-    if (typeof job.company === 'string') {
-      companyStr = job.company;
-    } else if (job.company && typeof job.company === 'object') {
-      companyStr = job.company.name || 'Unknown Company';
-    }
-
-    let salaryStr = '';
-    if (typeof job.salary === 'string') {
-      salaryStr = job.salary;
-    } else if (job.salary_range && typeof job.salary_range === 'object') {
-      const sal = job.salary_range;
-      if (sal.min !== null && sal.currency) {
-        salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
-      }
-    }
-
-    const getRelativeTime = (dateString: string | null) => {
-      if (!dateString) return null;
+    const filtered = (data || []).filter((job) => {
+      if (!job.location) return false;
       
-      try {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInMs = now.getTime() - date.getTime();
-        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      // String location - must contain both town and state
+      if (typeof job.location === 'string') {
+        const locLower = job.location.toLowerCase();
+        return locLower.includes(townLower) && locLower.includes(stateLower);
+      }
+      
+      // Object location
+      if (typeof job.location === 'object') {
+        const jobState = (job.location.state || '').toLowerCase();
+        const jobCity = (job.location.city || '').toLowerCase();
         
-        if (diffInDays === 0) return 'Today';
-        if (diffInDays === 1) return '1 day ago';
-        if (diffInDays < 7) return `${diffInDays} days ago`;
-        if (diffInDays < 30) {
-          const weeks = Math.floor(diffInDays / 7);
-          return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-        }
-        if (diffInDays < 365) {
-          const months = Math.floor(diffInDays / 30);
-          return months === 1 ? '1 month ago' : `${months} months ago`;
-        }
-        const years = Math.floor(diffInDays / 365);
-        return years === 1 ? '1 year ago' : `${years} years ago`;
-      } catch {
-        return null;
+        const stateMatch = jobState === stateLower || jobState.replace(/\s+/g, '-') === state.toLowerCase();
+        const townMatch = jobCity === townLower || jobCity.replace(/\s+/g, '-') === town.toLowerCase();
+        
+        return stateMatch && townMatch;
       }
-    };
-
-    return {
-      id: job.id,
-      slug: job.slug || job.id,
-      title: job.title || 'Untitled Job',
-      company: companyStr,
-      location: locationStr,
-      salary: salaryStr,
-      match: finalMatchScore,
-      calculatedTotal: finalMatchScore,
-      type: job.type || job.employment_type || '',
-      breakdown: finalBreakdown,
-
-      postedDate: getRelativeTime((job.posted_date ?? job.created_at) ?? null) ?? undefined,
-    };
-  };
-
-  const loadSavedJobs = () => {
-    if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-    if (saved) {
-      try {
-        setSavedJobs(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error loading saved jobs:', e);
-      }
-    }
-  };
-
-  const loadAppliedJobs = () => {
-    if (typeof window === 'undefined') return;
-    const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
-    if (applied) {
-      try {
-        setAppliedJobs(JSON.parse(applied));
-      } catch (e) {
-        console.error('Error loading applied jobs:', e);
-      }
-    }
-  };
-
-  const handleSave = (jobId: string) => {
-    const newSaved = savedJobs.includes(jobId)
-      ? savedJobs.filter(id => id !== jobId)
-      : [...savedJobs, jobId];
-
-    setSavedJobs(newSaved);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
-    }
-  };
-
-  const handleApply = (jobId: string) => {
-    const newApplied = appliedJobs.includes(jobId)
-      ? appliedJobs.filter(id => id !== jobId)
-      : [...appliedJobs, jobId];
-
-    setAppliedJobs(newApplied);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
-    }
-  };
-
-  const handleShowBreakdown = (job: JobUI) => {
-    const breakdown = job.breakdown || {
-      rolesScore: 0,
-      skillsScore: 0,
-      sectorScore: 0,
-      locationScore: 0,
-      experienceScore: 0,
-      salaryScore: 0,
-      typeScore: 0,
-    };
-
-    setMatchModalData({
-      breakdown,
-      totalScore: job.calculatedTotal || job.match || 0,
-      jobTitle: job.title,
-      companyName: job.company,
+      
+      return false;
     });
-    setMatchModalOpen(true);
-  };
 
-  if (!formattedState || !NIGERIAN_STATES.includes(formattedState)) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">State Not Found</h1>
-          <Link href="/jobs" className="text-blue-600 hover:underline">
-            Browse All Jobs
-          </Link>
-        </div>
-      </div>
-    );
+    // Return first 50
+    return filtered.slice(0, 50);
+  } catch (error) {
+    console.error('Error in getTownJobs:', error);
+    return [];
   }
+}
 
-  if (!formattedTown) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Town Not Found</h1>
-          <Link href={`/jobs/state/${state.toLowerCase()}`} className="text-blue-600 hover:underline">
-            Back to {formattedState} Jobs
-          </Link>
-        </div>
-      </div>
-    );
+function formatSalary(min?: number, max?: number): string {
+  if (!min && !max) return 'Not specified';
+  if (min && max) return `₦${min.toLocaleString()} - ₦${max.toLocaleString()}`;
+  if (min) return `From ₦${min.toLocaleString()}`;
+  return `Up to ₦${max.toLocaleString()}`;
+}
+
+function formatJobType(type: string): string {
+  return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+function getLocationString(location: any): string {
+  if (typeof location === 'string') return location;
+  if (typeof location === 'object') {
+    if (location.city && location.state) return `${location.city}, ${location.state}`;
+    if (location.state) return location.state;
   }
+  return 'Location not specified';
+}
+
+function getRelativeTime(date: string): string {
+  const now = new Date();
+  const posted = new Date(date);
+  const diffMs = now.getTime() - posted.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+export default async function TownPage({ params }: TownPageProps) {
+  const townName = params.town.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const stateName = params.state.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  
+  // Fetch jobs only when this page loads (no pre-fetching)
+  const jobs = await getTownJobs(params.state, params.town);
 
   return (
-    <>
-      <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
-        {/* Header */}
-        <div className="text-white py-8 px-6" style={{ backgroundColor: '#2563EB' }}>
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin size={32} />
-              <h1 className="text-4xl font-bold">Jobs in {formattedTown}, {formattedState}</h1>
-            </div>
-            <p className="text-lg text-white">
-              {totalJobs} job{totalJobs !== 1 ? 's' : ''} available in {formattedTown}, {formattedState}
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="text-white" style={{ backgroundColor: '#2563EB' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex items-center gap-3 mb-4">
+            <MapPin size={32} />
+            <h1 className="text-4xl font-bold">Jobs in {townName}</h1>
           </div>
+          <p className="text-lg text-white max-w-3xl">
+            {jobs.length > 0 
+              ? `${jobs.length} job${jobs.length !== 1 ? 's' : ''} available in ${townName}, ${stateName}`
+              : `No jobs currently available in ${townName}, ${stateName}`
+            }
+          </p>
         </div>
+      </div>
 
-        {/* Breadcrumb */}
-        <div className="px-6 py-4">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-blue-600">Home</Link>
             <span>/</span>
             <Link href="/jobs" className="hover:text-blue-600">Jobs</Link>
             <span>/</span>
-            <Link href="/jobs/state/" className="hover:text-blue-600">States</Link>
+            <Link href="/jobs/state" className="hover:text-blue-600">States</Link>
             <span>/</span>
-            <Link href={`/jobs/state/${state.toLowerCase()}`} className="hover:text-blue-600">{formattedState}</Link>
+            <Link href={`/jobs/state/${params.state}`} className="hover:text-blue-600">{stateName}</Link>
             <span>/</span>
-            <span className="text-gray-900 font-medium">{formattedTown}</span>
+            <span className="text-gray-900 font-medium">{townName}</span>
           </nav>
         </div>
+      </div>
 
-        {/* Back Button */}
-        <div className="px-6 pb-4">
-          <Link
-            href={`/jobs/state/${state.toLowerCase()}`}
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
-          >
-            <ArrowLeft size={20} />
-            Back to {formattedState} Jobs
-          </Link>
-        </div>
-
-        {/* Jobs List */}
-        <div className="px-6 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-              <Briefcase size={48} className="mx-auto text-gray-400 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                No jobs found in {formattedTown}, {formattedState}
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Check back soon or explore jobs in other locations.
-              </p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {jobs.length > 0 ? (
+          <div className="space-y-4">
+            {jobs.map((job) => (
               <Link
-                href={`/jobs/state/${state.toLowerCase()}`}
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                className="block bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all"
+              >
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600">
+                      {job.title}
+                    </h3>
+                    
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-1">
+                        <Building2 size={16} />
+                        <span>{job.company}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin size={16} />
+                        <span>{getLocationString(job.location)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock size={16} />
+                        <span>{getRelativeTime(job.created_at)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        {formatJobType(job.job_type)}
+                      </span>
+                      <div className="flex items-center gap-1 text-sm text-gray-700">
+                        <DollarSign size={16} />
+                        <span>{formatSalary(job.salary_min, job.salary_max)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex md:flex-col items-center md:items-end gap-2">
+                    <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap">
+                      View Details
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <MapPin size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No Jobs Found</h3>
+            <p className="text-gray-600 mb-6">
+              There are currently no active job listings in {townName}, {stateName}.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href={`/jobs/state/${params.state}`}
                 className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                Browse {formattedState} Jobs
+                View Jobs in {stateName}
+              </Link>
+              <Link
+                href="/jobs"
+                className="inline-block px-6 py-3 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Browse All Jobs
               </Link>
             </div>
-          ) : (
-            jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                savedJobs={savedJobs}
-                appliedJobs={appliedJobs}
-                onSave={handleSave}
-                onApply={handleApply}
-                onShowBreakdown={handleShowBreakdown}
-              />
-            ))
-           )}
+          </div>
+        )}
 
-          {/* Other Jobs in State */}
-          {!loading && otherStateJobs.length > 0 && (
-            <div className="px-6 py-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Other Jobs in {formattedState}</h2>
-                <p className="text-gray-600 mb-4">More opportunities in nearby towns and cities</p>
-                <div className="space-y-4">
-                  {otherStateJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      savedJobs={savedJobs}
-                      appliedJobs={appliedJobs}
-                      onSave={handleSave}
-                      onApply={handleApply}
-                      onShowBreakdown={handleShowBreakdown}
-                    />
-                  ))}
-                </div>
-              </div>
+        {/* Navigate Back */}
+        {jobs.length > 0 && (
+          <div className="mt-12 bg-blue-600 rounded-lg p-8 text-white text-center">
+            <h2 className="text-2xl font-bold mb-4">Looking for More Opportunities?</h2>
+            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+              Explore more jobs in {stateName} or browse all available positions.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href={`/jobs/state/${params.state}`}
+                className="inline-block px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
+                View All Jobs in {stateName}
+              </Link>
+              <Link
+                href="/jobs/state"
+                className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors font-medium"
+              >
+                Browse All States
+              </Link>
             </div>
-          )}
-
-          {/* Trending National Jobs */}
-          {!loading && nationalJobs.length > 0 && (
-            <div className="px-6 py-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Trending National Jobs</h2>
-                <p className="text-gray-600 mb-4">Popular job opportunities from across Nigeria</p>
-                <div className="space-y-4">
-                  {nationalJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      savedJobs={savedJobs}
-                      appliedJobs={appliedJobs}
-                      onSave={handleSave}
-                      onApply={handleApply}
-                      onShowBreakdown={handleShowBreakdown}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-         </div>
-       </div>
-
-      <MatchBreakdownModal
-        open={matchModalOpen}
-        onClose={() => setMatchModalOpen(false)}
-        data={matchModalData}
-      />
-    </>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

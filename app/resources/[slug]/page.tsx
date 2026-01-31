@@ -65,14 +65,22 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   const keywords = page.seo_keywords?.join(', ') || 'jobs, careers, employment';
   const url = `https://jobmeter.app/resources/${page.slug}`;
+  
+  // Add "(Hiring near me)" to meta title for location-specific pages (states and towns)
+  // Only add if total character count stays within reasonable SEO limits (~60-70 chars)
+  const shouldAddNearMe = !!page.location && 
+    (page.meta_title.length + " (Hiring near me)".length) <= 70;
+  const title = shouldAddNearMe 
+    ? `${page.meta_title} (Hiring near me)` 
+    : page.meta_title;
 
   return {
-    title: page.meta_title,
+    title: title,
     description: page.meta_description,
     keywords: keywords.split(',').map(k => k.trim()),
     authors: [{ name: 'JobMeter' }],
     openGraph: {
-      title: page.meta_title,
+      title: title,
       description: page.meta_description,
       url,
       siteName: 'JobMeter',
@@ -81,7 +89,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     },
     twitter: {
       card: 'summary_large_image',
-      title: page.meta_title,
+      title: title,
       description: page.meta_description,
     },
     alternates: {
