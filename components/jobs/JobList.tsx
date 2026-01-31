@@ -966,7 +966,6 @@ export default function JobList() {
               Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
             </p>
           )}
-        </div>
 
         {/* Filters Modal */}
         <JobFilters
@@ -1016,6 +1015,7 @@ export default function JobList() {
           isOpen={filtersOpen}
           onToggle={() => setFiltersOpen(!filtersOpen)}
         />
+        </div>
         )}
 
         {/* ✅ NEW: Matches Tab Header */}

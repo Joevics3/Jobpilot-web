@@ -60,7 +60,7 @@ interface MatchCircleProps {
 }
 
 // OPTIMIZATION: Move static data outside component (created once, not on every render)
-const CATEGORIES = [
+const RESOURCES = [
   { title: 'Accountant Jobs', slug: 'accountant-jobs' },
   { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
   { title: 'Social Media Manager Jobs', slug: 'social-media-manager-jobs' },
@@ -395,7 +395,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                     Browse thousands of jobs Daily
+                     Browse fresh jobs Daily
                     </h2>
                     <p className="text-gray-600">
                       Get matched with your ideal jobs, get smart match scores, and apply with one click.
@@ -581,14 +581,14 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
               {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.slug}
-                  href={`/jobs/category/${cat.slug}`}
+                  href={`/resources/${cat.slug}`}
                   className="text-blue-600 hover:underline text-sm"
                 >
                   {cat.title}
                 </Link>
               ))}
               <Link
-                href="/jobs/category"
+                href="/resources"
                 className="text-blue-600 hover:underline font-semibold mt-2 text-sm"
               >
                 View All Categories →
