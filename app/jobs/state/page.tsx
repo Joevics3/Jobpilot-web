@@ -35,7 +35,7 @@ interface StateJobCount {
 
 async function getJobCountsByState(): Promise<StateJobCount[]> {
   try {
-    // Fetch ALL active jobs at once
+    // ONE fetch: Get only what we need - all active jobs with locations
     const { data: allJobs, error } = await supabase
       .from('jobs')
       .select('id, location')
@@ -46,30 +46,23 @@ async function getJobCountsByState(): Promise<StateJobCount[]> {
       return NIGERIAN_STATES.map(state => ({ state, count: 0 }));
     }
 
-    // Count jobs for each state in JavaScript
+    // Simple JavaScript filtering - count jobs per state
     const counts = NIGERIAN_STATES.map((state) => {
       const count = (allJobs || []).filter((job) => {
-        // Handle string location format
         if (typeof job.location === 'string') {
           return job.location.toLowerCase().includes(state.toLowerCase());
         }
-        
-        // Handle object location format
         if (job.location && typeof job.location === 'object') {
           const locState = job.location.state || '';
           return locState.toLowerCase() === state.toLowerCase();
         }
-        
         return false;
       }).length;
 
-      return {
-        state,
-        count,
-      };
+      return { state, count };
     });
 
-    // Sort by count descending
+    // Sort by count (most jobs first)
     return counts.sort((a, b) => b.count - a.count);
   } catch (error) {
     console.error('Error in getJobCountsByState:', error);

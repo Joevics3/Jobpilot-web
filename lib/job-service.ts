@@ -160,15 +160,24 @@ export class JobService {
         duplicate_hash: this.generateDuplicateHash(jobData.title, jobData.company, jobData.url)
       };
 
-      const { data, error } = await supabaseAdmin
+const { data, error } = await supabaseAdmin
         .from('jobs')
         .insert(job)
-        .select('id')
+        .select('id, slug')
         .single();
 
       if (error) {
         console.error('Error adding job:', error);
         throw error;
+      }
+
+      // Submit to IndexNow if job has slug
+      if (data.slug) {
+        import('@/lib/services/indexnowService').then(({ submitToIndexNow }) => {
+          submitToIndexNow(data.slug).catch(error => {
+            console.error('IndexNow submission failed:', error);
+          });
+        });
       }
 
       return data.id;
