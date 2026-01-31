@@ -256,7 +256,20 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               {/* Article Content */}
               <div
                 className="prose prose-lg max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-ul:my-6 prose-ol:my-6 prose-li:my-2"
-                dangerouslySetInnerHTML={{ __html: post.content }}
+                dangerouslySetInnerHTML={{ 
+                  __html: (() => {
+                    let html = post.content;
+                    // Convert Markdown to HTML
+                    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+                    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+                    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+                    html = html.replace(/(\*\*)(.*?)\1/g, '<strong>$2</strong>');
+                    html = html.replace(/(\*)(.*?)\1/g, '<em>$2</em>');
+                    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+                    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+                    return html;
+                  })()
+                }}
               />
 
               {/* FAQs Section */}

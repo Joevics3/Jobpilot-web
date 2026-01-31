@@ -4,6 +4,17 @@ import { sendNotification } from '@/lib/firebase-admin';
 
 export async function GET(request: NextRequest) {
   try {
+    // Protect with secret key - only allow authorized cron jobs
+    const secretKey = request.nextUrl.searchParams.get('key');
+    const cronSecret = process.env.CRON_SECRET_KEY;
+
+    if (secretKey !== cronSecret) {
+      console.log('🚫 Unauthorized notification attempt blocked');
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        message: 'Missing or invalid secret key' 
+      }, { status: 401 });
+    }
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
