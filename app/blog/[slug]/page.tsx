@@ -256,7 +256,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               {/* Article Content */}
               <div
                 className="prose prose-lg max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-ul:my-6 prose-ol:my-6 prose-li:my-2"
-                dangerouslySetInnerHTML={{ __html: post.content.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'") }}
+                dangerouslySetInnerHTML={{ __html: post.content }}
               />
 
               {/* FAQs Section */}
