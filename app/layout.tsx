@@ -108,18 +108,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://qyuzuooxenyjqnjplrya.supabase.co" />
         
-        {/* Ezoic Privacy Scripts - Must be loaded first */}
-        <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js" />
-        <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js" />
-        
-        {/* Ezoic Header Script */}
-        <script async src="//www.ezojs.com/ezoic/sa.min.js" />
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            window.ezstandalone = window.ezstandalone || {};
-            ezstandalone.cmd = ezstandalone.cmd || [];
-          `
-        }} />
+
         
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-315B0S5RGE"></script>
         <script dangerouslySetInnerHTML={{

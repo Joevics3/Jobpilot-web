@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import BottomNavigation from '@/components/navigation/BottomNavigation';
 import Footer from '@/components/navigation/Footer';
-import CookieConsentBanner from '@/components/CookieConsentBanner';
+import CookieModal from '@/components/CookieModal';
 import { theme } from '@/lib/theme';
 export default function RootLayoutClient({
   children,
@@ -46,11 +46,8 @@ export default function RootLayoutClient({
       {/* Footer - shown on pages without bottom nav */}
       {showFooter && <Footer />}
       
-      {/* Cookie Consent Banner */}
-      <CookieConsentBanner 
-        onAccept={() => {}}
-        onReject={() => {}}
-      />
+      {/* Cookie Modal */}
+      <CookieModal />
     </div>
   );
 }

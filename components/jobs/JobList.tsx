@@ -34,10 +34,18 @@ export default function JobList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  
+  // ✅ NEW: Tab state
+  const [activeTab, setActiveTab] = useState<'latest' | 'matches'>('latest');
+  const [latestJobs, setLatestJobs] = useState<JobUI[]>([]);
+  const [latestJobsLoading, setLatestJobsLoading] = useState(true);
+  const [latestJobsPage, setLatestJobsPage] = useState(1);
+  const [latestJobsHasMore, setLatestJobsHasMore] = useState(true);
+  
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState<string | null>(null);
-  const [jobs, setJobs] = useState<JobUI[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<JobUI[]>([]); // ✅ Now used only for matches tab
+  const [loading, setLoading] = useState(false); // ✅ Changed default to false
   const [authChecked, setAuthChecked] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
@@ -60,14 +68,16 @@ export default function JobList() {
     remote: false,
   });
 
-  // ✅ OPTIMIZATION: Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-
   useEffect(() => {
     checkAuth();
     loadSavedJobs();
     loadAppliedJobs();
+    
+    // ✅ NEW: Restore active tab from localStorage
+    const savedTab = localStorage.getItem('active_jobs_tab');
+    if (savedTab === 'matches') {
+      setActiveTab('matches');
+    }
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -136,9 +146,24 @@ export default function JobList() {
     }
   }, [user]);
 
-  // ✅ OPTIMIZATION: Improved caching logic - only fetch if cache is invalid or missing
+  // ✅ NEW: Fetch latest jobs on mount (Latest tab is default)
   useEffect(() => {
-    if (!authChecked) {
+    if (!authChecked) return;
+    
+    // Only fetch if on latest tab and no data loaded yet
+    if (activeTab === 'latest' && latestJobs.length === 0) {
+      fetchLatestJobs(1);
+    }
+  }, [authChecked, activeTab]);
+
+  // ✅ MODIFIED: Only fetch matches when user switches to Matches tab
+  useEffect(() => {
+    if (!authChecked || activeTab !== 'matches') {
+      return;
+    }
+
+    // Check if matches are already loaded
+    if (jobs.length > 0) {
       return;
     }
 
@@ -185,7 +210,7 @@ export default function JobList() {
       fetchJobs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authChecked, user, userOnboardingData]);
+  }, [authChecked, activeTab, user, userOnboardingData]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -408,6 +433,71 @@ export default function JobList() {
     };
   };
 
+  // ✅ NEW: Fetch latest jobs without matching (for Latest Jobs tab)
+  const fetchLatestJobs = async (page: number = 1) => {
+    try {
+      setLatestJobsLoading(true);
+      
+      const CACHE_KEY = `latest_jobs_page_${page}`;
+      const CACHE_TIMESTAMP_KEY = `latest_jobs_timestamp_${page}`;
+      
+      // Check cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cacheTimestamp) {
+        const timestamp = parseInt(cacheTimestamp, 10);
+        const isCacheValid = Date.now() - timestamp < CACHE_DURATION;
+        
+        if (isCacheValid) {
+          const parsedJobs = JSON.parse(cachedData);
+          if (page === 1) {
+            setLatestJobs(parsedJobs);
+          } else {
+            setLatestJobs(prev => [...prev, ...parsedJobs]);
+          }
+          setLatestJobsHasMore(parsedJobs.length === JOBS_PER_PAGE);
+          setLatestJobsLoading(false);
+          return;
+        }
+      }
+      
+      // Fetch from database
+      const start = (page - 1) * JOBS_PER_PAGE;
+      const end = start + JOBS_PER_PAGE - 1;
+      
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'active')
+        .order('posted_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(start, end);
+
+      if (error) throw error;
+
+      // Transform to UI format without matching calculation
+      const uiJobs = (data || []).map((job: any) => transformJobToUI(job, 0, null));
+      
+      // Cache the results
+      localStorage.setItem(CACHE_KEY, JSON.stringify(uiJobs));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      // Update state
+      if (page === 1) {
+        setLatestJobs(uiJobs);
+      } else {
+        setLatestJobs(prev => [...prev, ...uiJobs]);
+      }
+      
+      setLatestJobsHasMore(uiJobs.length === JOBS_PER_PAGE);
+    } catch (error) {
+      console.error('Error fetching latest jobs:', error);
+    } finally {
+      setLatestJobsLoading(false);
+    }
+  };
+
   // ✅ OPTIMIZATION: Fetch only 100 latest jobs per page
   const fetchJobs = async () => {
     try {
@@ -441,7 +531,6 @@ export default function JobList() {
       }
 
       setJobs(processedJobs);
-      setHasMore(data?.length === JOBS_PER_PAGE);
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
@@ -562,11 +651,13 @@ export default function JobList() {
     setMatchModalOpen(true);
   };
 
-  // ✅ OPTIMIZATION: Use useMemo to prevent filtering/sorting during loading
+  // ✅ MODIFIED: Filter only applies to Latest Jobs tab
   const filteredJobs = useMemo(() => {
-    if (loading) return []; // ✅ Don't filter while loading
+    // Only filter for Latest tab
+    if (activeTab !== 'latest') return [];
+    if (latestJobsLoading && latestJobs.length === 0) return [];
     
-    return jobs.filter(job => {
+    return latestJobs.filter(job => {
       // Skip applied jobs
       if (appliedJobs.includes(job.id)) return false;
       
@@ -625,17 +716,17 @@ export default function JobList() {
       
       return true;
     });
-  }, [jobs, filters, appliedJobs, loading]);
+  }, [latestJobs, filters, appliedJobs, latestJobsLoading, activeTab]);
 
-  // ✅ OPTIMIZATION: Use useMemo to prevent sorting during loading
+  // ✅ MODIFIED: Sort only applies to Latest Jobs tab
   const sortedJobs = useMemo(() => {
-    if (loading) return []; // ✅ Don't sort while loading
+    if (activeTab !== 'latest') return [];
+    if (latestJobsLoading && filteredJobs.length === 0) return [];
     
     return [...filteredJobs].sort((a, b) => {
-      if (sortBy === 'match') {
-        return (b.calculatedTotal || b.match || 0) - (a.calculatedTotal || a.match || 0);
-      } else if (sortBy === 'latest') {
-        return new Date(b.postedDate || '').getTime() - new Date(a.postedDate || '').getTime();
+      if (sortBy === 'latest') {
+        // Already sorted by latest from DB, but respect user choice
+        return 0;
       } else if (sortBy === 'salary') {
         const getSalaryNumber = (salary: string) => {
           if (!salary) return 0;
@@ -646,7 +737,46 @@ export default function JobList() {
       }
       return 0;
     });
-  }, [filteredJobs, sortBy, loading]);
+  }, [filteredJobs, sortBy, latestJobsLoading, activeTab]);
+
+  // ✅ NEW: Get jobs for Matches tab (already sorted by match score)
+  const matchedJobs = useMemo(() => {
+    if (activeTab !== 'matches') return [];
+    return jobs.filter(job => !appliedJobs.includes(job.id));
+  }, [jobs, appliedJobs, activeTab]);
+
+  // ✅ NEW: Handle infinite scroll for Latest tab
+  useEffect(() => {
+    if (activeTab !== 'latest') return;
+    if (!latestJobsHasMore || latestJobsLoading) return;
+
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+      
+      // Load more when user is 200px from bottom
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        setLatestJobsPage(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab, latestJobsHasMore, latestJobsLoading]);
+
+  // ✅ NEW: Fetch next page when page number changes
+  useEffect(() => {
+    if (latestJobsPage > 1) {
+      fetchLatestJobs(latestJobsPage);
+    }
+  }, [latestJobsPage]);
+
+  // ✅ NEW: Handle tab change
+  const handleTabChange = (tab: 'latest' | 'matches') => {
+    setActiveTab(tab);
+    localStorage.setItem('active_jobs_tab', tab);
+  };
 
   return (
     <>
@@ -698,8 +828,35 @@ export default function JobList() {
           <BannerAd />
         </div>
 
-        {/* Search Bar and Filters */}
-        <div className="px-6 py-4 space-y-4">
+        {/* ✅ NEW: Tabs Section */}
+        <div className="px-6 pt-6 pb-2">
+          <div className="flex gap-1 border-b" style={{ borderColor: theme.colors.border.DEFAULT }}>
+            <button
+              onClick={() => handleTabChange('latest')}
+              className="px-6 py-3 font-medium transition-all relative"
+              style={{
+                color: activeTab === 'latest' ? theme.colors.primary.DEFAULT : theme.colors.text.secondary,
+                borderBottom: activeTab === 'latest' ? `2px solid ${theme.colors.primary.DEFAULT}` : '2px solid transparent',
+              }}
+            >
+              Latest Jobs
+            </button>
+            <button
+              onClick={() => handleTabChange('matches')}
+              className="px-6 py-3 font-medium transition-all relative"
+              style={{
+                color: activeTab === 'matches' ? theme.colors.primary.DEFAULT : theme.colors.text.secondary,
+                borderBottom: activeTab === 'matches' ? `2px solid ${theme.colors.primary.DEFAULT}` : '2px solid transparent',
+              }}
+            >
+              Matches
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar and Filters - Only show for Latest tab */}
+        {activeTab === 'latest' && (
+          <div className="px-6 py-4 space-y-4">
           <div className="relative">
             <Search 
               size={20} 
@@ -776,15 +933,11 @@ export default function JobList() {
               <select
                 value={sortBy}
                 onChange={(e) => {
-                  const newSortBy = e.target.value as 'match' | 'latest' | 'salary';
+                  const newSortBy = e.target.value as 'latest' | 'salary';
                   setSortBy(newSortBy);
                   
                   const params = new URLSearchParams(searchParams.toString());
-                  if (newSortBy !== 'match') {
-                    params.set('sort', newSortBy);
-                  } else {
-                    params.delete('sort');
-                  }
+                  params.set('sort', newSortBy);
                   
                   const queryString = params.toString();
                   const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
@@ -796,7 +949,6 @@ export default function JobList() {
                   color: theme.colors.text.primary 
                 }}
               >
-                <option value="match">Sort by Match</option>
                 <option value="latest">Sort by Latest</option>
                 <option value="salary">Sort by Salary</option>
               </select>
@@ -804,7 +956,7 @@ export default function JobList() {
             </div>
           </div>
           
-          {!loading && (filters.search || 
+          {!latestJobsLoading && (filters.search || 
             (filters.location && filters.location.length > 0) ||
             (filters.sector && filters.sector.length > 0) ||
             (filters.employmentType && filters.employmentType.length > 0) ||
@@ -853,7 +1005,7 @@ export default function JobList() {
               params.set('remote', 'true');
             }
             
-            if (sortBy !== 'match') {
+            if (sortBy !== 'latest') {
               params.set('sort', sortBy);
             }
             
@@ -864,50 +1016,129 @@ export default function JobList() {
           isOpen={filtersOpen}
           onToggle={() => setFiltersOpen(!filtersOpen)}
         />
+        )}
 
+        {/* ✅ NEW: Matches Tab Header */}
+        {activeTab === 'matches' && (
+          <div className="px-6 py-4">
+            <p className="text-sm" style={{ color: theme.colors.text.secondary }}>
+              {loading ? 'Calculating match scores...' : `${matchedJobs.length} job${matchedJobs.length !== 1 ? 's' : ''} matched`}
+            </p>
+          </div>
+        )}
+
+        {/* ✅ NEW: Job List - Conditional rendering based on active tab */}
         <div className="px-6 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Checking for matches..</p>
-            </div>
-          ) : sortedJobs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <p
-                className="text-base font-medium mb-2"
-                style={{ color: theme.colors.text.primary }}
-              >
-                {searchQuery ? 'No jobs found matching your search' : 'No jobs found'}
-              </p>
-              <p
-                className="text-sm text-center"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                {searchQuery ? 'Try adjusting your search terms' : 'Check back later for new opportunities'}
-              </p>
-            </div>
-          ) : (
-            sortedJobs.map((job, index) => {
-              const shouldShowAd = (index + 1) % 10 === 0;
-              
-              return (
-                <React.Fragment key={job.id}>
-                  <JobCard
-                    job={job}
-                    savedJobs={savedJobs}
-                    appliedJobs={appliedJobs}
-                    onSave={handleSave}
-                    onApply={handleApply}
-                    onShowBreakdown={handleShowBreakdown}
-                  />
-                  {shouldShowAd && (
-                    <AdsterraNative 
-                      key={`native-ad-${index}`}
-                      slotId={`job-feed-native-${index}`}
-                    />
+          {/* Latest Jobs Tab */}
+          {activeTab === 'latest' && (
+            <>
+              {latestJobsLoading && latestJobs.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <p style={{ color: theme.colors.text.secondary }}>Loading latest jobs...</p>
+                </div>
+              ) : sortedJobs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p
+                    className="text-base font-medium mb-2"
+                    style={{ color: theme.colors.text.primary }}
+                  >
+                    {filters.search ? 'No jobs found matching your search' : 'No jobs found'}
+                  </p>
+                  <p
+                    className="text-sm text-center"
+                    style={{ color: theme.colors.text.secondary }}
+                  >
+                    {filters.search ? 'Try adjusting your search terms' : 'Check back later for new opportunities'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {sortedJobs.map((job, index) => {
+                    const shouldShowAd = (index + 1) % 10 === 0;
+                    
+                    return (
+                      <React.Fragment key={job.id}>
+                        <JobCard
+                          job={job}
+                          savedJobs={savedJobs}
+                          appliedJobs={appliedJobs}
+                          onSave={handleSave}
+                          onApply={handleApply}
+                          onShowBreakdown={handleShowBreakdown}
+                          showMatch={false}
+                        />
+                        {shouldShowAd && (
+                          <AdsterraNative 
+                            key={`native-ad-${index}`}
+                            slotId={`job-feed-native-${index}`}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                  {latestJobsLoading && (
+                    <div className="flex items-center justify-center py-6">
+                      <p style={{ color: theme.colors.text.secondary }}>Loading more jobs...</p>
+                    </div>
                   )}
-                </React.Fragment>
-              );
-            })
+                  {!latestJobsHasMore && latestJobs.length > 0 && (
+                    <div className="flex items-center justify-center py-6">
+                      <p style={{ color: theme.colors.text.secondary }}>No more jobs to load</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {/* Matches Tab */}
+          {activeTab === 'matches' && (
+            <>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Checking for matches...</p>
+                </div>
+              ) : matchedJobs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p
+                    className="text-base font-medium mb-2"
+                    style={{ color: theme.colors.text.primary }}
+                  >
+                    No job matches found
+                  </p>
+                  <p
+                    className="text-sm text-center"
+                    style={{ color: theme.colors.text.secondary }}
+                  >
+                    {user ? 'Check back later for new opportunities that match your profile' : 'Sign up to see personalized job matches'}
+                  </p>
+                </div>
+              ) : (
+                matchedJobs.map((job, index) => {
+                  const shouldShowAd = (index + 1) % 10 === 0;
+                  
+                  return (
+                    <React.Fragment key={job.id}>
+                      <JobCard
+                        job={job}
+                        savedJobs={savedJobs}
+                        appliedJobs={appliedJobs}
+                        onSave={handleSave}
+                        onApply={handleApply}
+                        onShowBreakdown={handleShowBreakdown}
+                        showMatch={true}
+                      />
+                      {shouldShowAd && (
+                        <AdsterraNative 
+                          key={`native-ad-${index}`}
+                          slotId={`job-feed-native-${index}`}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </>
           )}
         </div>
       </div>

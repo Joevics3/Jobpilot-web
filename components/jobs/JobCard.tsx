@@ -30,6 +30,7 @@ interface JobCardProps {
   onSave: (jobId: string) => void;
   onApply: (jobId: string) => void;
   onShowBreakdown: (job: JobUI) => void;
+  showMatch?: boolean; // ✅ NEW: Control match score visibility
 }
 
 export default function JobCard({
@@ -39,6 +40,7 @@ export default function JobCard({
   onSave,
   onApply,
   onShowBreakdown,
+  showMatch = true, // ✅ Default to true for backward compatibility
 }: JobCardProps) {
   const matchScore = job.calculatedTotal || job.match || 0;
   
@@ -133,32 +135,34 @@ export default function JobCard({
 
           {/* Right: Match Score & Actions */}
           <div className="flex flex-col items-center gap-3">
-            {/* Match Score Circle */}
-            <button
-              onClick={handleMatchClick}
-              className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-            >
-              <div
-                className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
-                style={{
-                  borderColor: matchColor,
-                  backgroundColor: theme.colors.background.muted,
-                }}
+            {/* Match Score Circle - Only show if showMatch is true */}
+            {showMatch && (
+              <button
+                onClick={handleMatchClick}
+                className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
               >
-                <span
-                  className="text-sm font-bold"
-                  style={{ color: matchColor }}
+                <div
+                  className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
+                  style={{
+                    borderColor: matchColor,
+                    backgroundColor: theme.colors.background.muted,
+                  }}
                 >
-                  {matchScore}%
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: matchColor }}
+                  >
+                    {matchScore}%
+                  </span>
+                </div>
+                <span
+                  className="text-[10px] font-medium mt-1"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  Match
                 </span>
-              </div>
-              <span
-                className="text-[10px] font-medium mt-1"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                Match
-              </span>
-            </button>
+              </button>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2">

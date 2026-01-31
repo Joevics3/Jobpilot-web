@@ -337,7 +337,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
         
         {/* OPTIMIZATION: Preconnect to critical domains */}
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://www.ezojs.com" />
+
       </Head>
 
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>

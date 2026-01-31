@@ -157,7 +157,7 @@ export default function PrivacyPolicyPage() {
                 These providers are contractually bound to protect your information.
               </p>
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Key Partners:</span> Ezoic Inc. (advertising services), Supabase (database hosting), 
+                <span className="font-semibold">Key Partners:</span> Supabase (database hosting), 
                 Google Analytics (website analytics), and other communication/service providers.
               </p>
             </div>
@@ -236,80 +236,7 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
 
-        {/* Ezoic Services */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Globe size={24} style={{ color: theme.colors.primary.DEFAULT }} />
-            <h2 className="text-xl font-bold text-gray-900">Ezoic Advertising Services</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="p-4 bg-white rounded-xl border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">Third-Party Advertising Management</h3>
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">
-                This website uses the services of Ezoic Inc. ("Ezoic"), including to manage third-party interest-based advertising. 
-                Ezoic may employ a variety of technologies on this website, including tools to serve content, display advertisements 
-                and enable advertising to visitors of this website, which may utilize first and third-party cookies.
-              </p>
-              <div id="ezoic-privacy-policy-embed"></div>
-            </div>
 
-            <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-              <h3 className="font-semibold text-orange-800 mb-2">Cookie Information</h3>
-              <p className="text-sm text-orange-700 leading-relaxed mb-3">
-                A cookie is a small text file sent to your device by a web server that enables the website to remember information 
-                about your browsing activity. First-party cookies are created by the site you're visiting, while third-party cookies 
-                are set by domains other than the one you're visiting.
-              </p>
-              <p className="text-sm text-orange-700 leading-relaxed mb-3">
-                Ezoic and our partners may place third-party cookies, tags, beacons, pixels, and similar technologies to monitor 
-                interactions with advertisements and optimize ad targeting. Please note that disabling cookies may limit access to 
-                certain content and features on the website, and rejecting cookies does not eliminate advertisements but will 
-                result in non-personalized advertising.
-              </p>
-            </div>
-
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <h3 className="font-semibold text-blue-800 mb-2">Data Collected for Personalized Advertising</h3>
-              <p className="text-sm text-blue-700 leading-relaxed mb-3">
-                The following information may be collected, used, and stored in a cookie when serving personalized ads:
-              </p>
-              <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside mb-3">
-                <li>IP address</li>
-                <li>Operating system type and version</li>
-                <li>Device type</li>
-                <li>Language preferences</li>
-                <li>Web browser type</li>
-                <li>Email (in a hashed or encrypted form)</li>
-              </ul>
-              <p className="text-sm text-blue-700 leading-relaxed">
-                Ezoic and its partners may use this data in combination with information that has been independently collected 
-                to deliver targeted advertisements across various platforms and websites. Ezoic's partners may also gather 
-                additional data, such as unique IDs, advertising IDs, geolocation data, usage data, device information, traffic 
-                data, referral sources, and interactions between users and websites or advertisements, to create audience segments 
-                for targeted advertising across different devices, browsers, and apps.
-              </p>
-            </div>
-
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-              <h3 className="font-semibold text-green-800 mb-2">Ezoic Privacy & Partner Information</h3>
-              <ul className="text-sm text-green-700 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-green-600">•</span>
-                  <span>You can view Ezoic's privacy policy <a href="https://www.ezoic.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-800">here</a></span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-green-600">•</span>
-                  <span>For additional information about Ezoic's advertising and other partners, you can view Ezoic's advertising partners <a href="https://www.ezoic.com/advertising-partners/" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-800">here</a></span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-green-600">•</span>
-                  <span>You can find more information about interest-based advertising and how to manage them <a href="https://www.ezoic.com/interest-based-ads/" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-800">here</a></span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
 
         {/* Cookies Policy */}
         <div className="mb-8">
@@ -317,8 +244,7 @@ export default function PrivacyPolicyPage() {
           <p className="text-sm text-gray-700 leading-relaxed mb-4">
             We use cookies and similar technologies to enhance your experience, analyze traffic, and personalize content. 
             This includes both first-party cookies for essential platform functionality and third-party cookies through 
-            our advertising partners like Ezoic for personalized advertising. You can control cookie settings through your 
-            browser preferences.
+            our analytics and service providers. You can control cookie settings through your browser preferences.
           </p>
           
           <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
