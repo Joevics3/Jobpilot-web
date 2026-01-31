@@ -313,6 +313,15 @@ serve(async (req) => {
 
     // Check if this is a matching request (has job_id) or daily notification
     console.log(`📥 Request method: ${req.method}, URL: ${req.url}`);
+    
+    // Validate request origin to prevent unauthorized triggers
+    const origin = req.headers.get('origin') || '';
+    const userAgent = req.headers.get('user-agent') || '';
+    const authHeader = req.headers.get('authorization') || '';
+    
+    // Log request metadata for debugging
+    console.log(`🔍 Request metadata: origin="${origin}", user-agent="${userAgent.substring(0, 50)}...", auth="${authHeader.substring(0, 20)}..."`);
+    
     let requestData: { job_id?: string } = {};
     try {
       requestData = await req.json();
@@ -325,8 +334,48 @@ serve(async (req) => {
     const { job_id } = requestData || {};
     console.log(`🔑 Extracted job_id: ${job_id || 'NONE - will run daily notifications'}`);
 
-    // If job_id provided, do matching for that job
+    // Check if we're in development environment
+    const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development' || 
+                          Deno.env.get('NODE_ENV') === 'development' ||
+                          Deno.env.get('SUPABASE_ENVIRONMENT') === 'development' ||
+                          !Deno.env.get('ENVIRONMENT'); // Default to development if not set
+
+    // Log environment detection for debugging
+    console.log(`🔧 Environment check: ENVIRONMENT="${Deno.env.get('ENVIRONMENT')}", NODE_ENV="${Deno.env.get('NODE_ENV')}", isDevelopment=${isDevelopment}`);
+
+    // If job_id provided, do matching for that job (but skip in development)
     if (job_id) {
+      if (isDevelopment) {
+        console.log(`🚫 Development environment detected - skipping real-time job matching for job ${job_id}`);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            skipped: true, 
+            message: 'Development mode - real-time matching disabled',
+            job_id 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+
+      // Additional security check: verify the request is from an authorized source
+      const isAuthorizedSource = 
+        userAgent.includes('Supabase') || 
+        userAgent.includes('supabase') ||
+        origin.includes(Deno.env.get('SUPABASE_URL') || '') ||
+        (authHeader.startsWith('Bearer ') && authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''));
+
+      if (!isAuthorizedSource) {
+        console.log(`🚫 Unauthorized request source detected - skipping real-time job matching for job ${job_id}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Unauthorized - real-time matching requires proper authorization',
+            job_id 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
       console.log(`🔍 Matching job ${job_id} to all users...`);
 
       // Get the job (including application field for email checking)

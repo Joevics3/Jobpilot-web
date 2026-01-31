@@ -19,7 +19,12 @@ export async function GET(request: NextRequest) {
       .select('token');
 
     if (!tokens || tokens.length === 0) {
-      return NextResponse.json({ error: 'No tokens found' }, { status: 404 });
+      console.log('ℹ️ No tokens found in notification_tokens table');
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No notification tokens available',
+        notificationsSent: 0 
+      });
     }
 
     let successCount = 0;
