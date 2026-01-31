@@ -88,7 +88,8 @@ function formatSalary(min?: number, max?: number): string {
   if (!min && !max) return 'Not specified';
   if (min && max) return `₦${min.toLocaleString()} - ₦${max.toLocaleString()}`;
   if (min) return `From ₦${min.toLocaleString()}`;
-  return `Up to ₦${max.toLocaleString()}`;
+  if (max) return `Up to ₦${max.toLocaleString()}`;
+  return 'Not specified';
 }
 
 function formatJobType(type: string): string {
