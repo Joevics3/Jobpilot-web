@@ -729,7 +729,7 @@ const getExperienceLevelWithYears = (level: string) => {
               </h2>
               <div
                 className="text-sm leading-relaxed text-gray-600"
-                dangerouslySetInnerHTML={{ __html: job.about_company }}
+                dangerouslySetInnerHTML={{ __html: typeof job.about_company === 'string' ? job.about_company : '' }}
               />
             </section>
           )}
