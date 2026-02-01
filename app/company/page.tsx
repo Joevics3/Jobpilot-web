@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Building2, MapPin, Briefcase, Users, ArrowRight, CheckCircle } from 'lucide-react';
+import { Building2, MapPin, Briefcase, Users, ArrowRight, CheckCircle, ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Top Companies Hiring in Nigeria | Company Directory | JobMeter',
@@ -110,6 +110,12 @@ export default async function CompanyDirectoryPage() {
         {/* Header */}
         <div className="text-white" style={{ backgroundColor: '#2563EB' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="mb-4">
+              <Link href="/jobs" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                <ArrowLeft size={20} />
+                Back to Jobs
+              </Link>
+            </div>
             <div className="flex items-center gap-3 mb-4">
               <Building2 size={32} />
               <h1 className="text-4xl font-bold">Company Directory</h1>

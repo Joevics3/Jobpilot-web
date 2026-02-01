@@ -351,7 +351,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           <div className="max-w-4xl mx-auto relative z-10">
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Find Your Dream Job with AI-Powered Matching
+                Find Your Dream Job with Smart Matching
               </h1>
               <p className="text-lg md:text-xl text-blue-50 max-w-2xl mx-auto">
                 Connect with top employers across industries. Get personalized job recommendations that match your skills and career goals.
@@ -398,7 +398,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                      Browse Fresh Jobs Daily
                     </h2>
                     <p className="text-gray-600">
-                      Get matched with your ideal jobs, get smart match scores, and apply with one click.
+                      Get matched with your ideal jobs and apply effortlessly.
                     </p>
                   </div>
                 </div>

@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, User, Briefcase, MapPin, DollarSign } from 'lucide-react';
+import { CheckCircle, User, Briefcase, MapPin, DollarSign, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { theme } from '@/lib/theme';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -71,6 +72,9 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
+              <Link href="/jobs" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+              </Link>
               <div className="p-2 rounded-lg" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
                 <Briefcase className="h-6 w-6 text-white" />
               </div>

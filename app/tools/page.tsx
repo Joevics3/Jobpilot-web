@@ -79,6 +79,9 @@ export default function ToolsPage() {
           }}
         >
           <div className="flex flex-col gap-2">
+            <Link href="/jobs" className="text-sm text-white/80 hover:text-white transition-colors self-start">
+              ← Back to Jobs
+            </Link>
             <h1
               className="text-2xl font-bold"
               style={{ color: theme.colors.text.light }}

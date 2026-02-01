@@ -195,6 +195,9 @@ export default function SettingsPage() {
           backgroundColor: theme.colors.primary.DEFAULT,
         }}
       >
+        <Link href="/jobs" className="text-sm text-white/80 hover:text-white transition-colors self-start">
+          ← Back to Jobs
+        </Link>
         <h1 className="text-xl font-bold mb-2 text-white">Settings</h1>
         <p className="text-sm text-white/80">Manage your account and preferences</p>
       </div>

@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Plus, FileText, Trash2 } from 'lucide-react';
+import { Plus, FileText, Trash2, ArrowLeft } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import BannerAd from '@/components/ads/BannerAd';
+import Link from 'next/link';
 
 interface CVDocument {
   id: string;
@@ -108,17 +109,20 @@ export default function CVListPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
       {/* Header */}
-      <div
-        className="pt-12 pb-8 px-6 relative"
-        style={{
-          backgroundColor: theme.colors.primary.DEFAULT,
-        }}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 text-white">CV & Cover Letters</h1>
-            <p className="text-white/80">Manage your professional documents</p>
-          </div>
+       <div
+         className="pt-12 pb-8 px-6 relative"
+         style={{
+           backgroundColor: theme.colors.primary.DEFAULT,
+         }}
+       >
+         <div className="flex justify-between items-center">
+           <div>
+             <Link href="/jobs" className="text-sm text-white/80 hover:text-white transition-colors self-start mb-2 inline-block">
+               ← Back to Jobs
+             </Link>
+             <h1 className="text-3xl font-bold mb-2 text-white">CV & Cover Letters</h1>
+             <p className="text-white/80">Manage your professional documents</p>
+           </div>
           <Button
             onClick={() => activeTab === 'cv' ? setCvModalOpen(true) : setCoverLetterModalOpen(true)}
             className="bg-white text-primary hover:bg-gray-100 px-3 py-2 text-sm"
