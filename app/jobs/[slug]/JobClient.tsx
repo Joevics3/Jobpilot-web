@@ -721,6 +721,19 @@ const getExperienceLevelWithYears = (level: string) => {
             </div>
           </div>
 
+          {/* About Company Section */}
+          {job.about_company && job.about_company.trim() && (
+            <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
+                About the Company
+              </h2>
+              <div
+                className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{ __html: job.about_company }}
+              />
+            </section>
+          )}
+
           {/* Description Section */}
           {job.description && (
             <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
