@@ -71,10 +71,12 @@ async function incrementViewCount(slug: string) {
 
 async function getCompanyJobs(companyName: string) {
   try {
+    // Use database-level filtering with case-insensitive matching
     const { data, error } = await supabase
       .from('jobs')
       .select('*')
       .eq('status', 'active')
+      .ilike('company', `%${companyName}%`)
       .order('posted_date', { ascending: false })
       .limit(10);
 
@@ -83,10 +85,10 @@ async function getCompanyJobs(companyName: string) {
       return [];
     }
 
-    // Filter jobs by company name matching
+    // Additional client-side filtering to handle JSON company objects
     return data.filter(job => {
       const jobCompanyName = getCompanyName(job.company);
-      return jobCompanyName.toLowerCase() === companyName.toLowerCase();
+      return jobCompanyName.toLowerCase().includes(companyName.toLowerCase());
     });
   } catch (error) {
     console.error('Error fetching company jobs:', error);

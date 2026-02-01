@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { BookOpen, ArrowRight, Building2, Newspaper, MapPin } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
