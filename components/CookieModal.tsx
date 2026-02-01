@@ -30,42 +30,35 @@ const CookieModal = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
-        {/* Close Button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <X size={20} className="text-gray-500" />
-        </button>
-
-        {/* Cookie Icon */}
-        <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4">
-          <CookieIcon size={32} className="text-blue-600" />
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 text-white z-50 px-4 py-3 shadow-lg">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3 text-sm">
+          <CookieIcon size={20} className="text-blue-400" />
+          <span className="hidden sm:inline">
+            We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies.
+          </span>
+          <span className="sm:hidden">
+            We use cookies to improve your experience.
+          </span>
+          <a href="/privacy-policy" className="text-blue-400 hover:text-blue-300 underline ml-1">
+            Learn more
+          </a>
         </div>
-
-        {/* Content */}
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">Cookie Notice</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            We use cookies to enhance your experience and improve our services. 
-            Your consent helps us provide relevant content and features. 
-            You can manage your preferences anytime. View our 
-            <a href="/privacy-policy" className="text-blue-600 hover:text-blue-800 underline ml-1">
-              Privacy Policy
-            </a>
-            for more details.
-          </p>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleClose}
+            className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors font-medium"
+          >
+            Accept
+          </button>
+          <button
+            onClick={handleClose}
+            className="p-1.5 hover:bg-gray-800 rounded transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
-
-        {/* Action Button */}
-        <button
-          onClick={handleClose}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          Got It
-        </button>
       </div>
     </div>
   );

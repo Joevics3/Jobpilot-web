@@ -395,7 +395,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                     Browse fresh jobs Daily
+                     Browse Fresh Jobs Daily
                     </h2>
                     <p className="text-gray-600">
                       Get matched with your ideal jobs, get smart match scores, and apply with one click.
