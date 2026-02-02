@@ -958,23 +958,21 @@ const getExperienceLevelWithYears = (level: string) => {
               {applied ? 'Applied' : 'Apply Now'}
             </button>
 
-            {/* Pro Apply Button - Only show if job has email application method */}
-            {(job.application?.email || job.application_email) && (
-            <button
-                onClick={() => setCvServiceModalOpen(true)}
-                disabled={applied}
-                className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm transition-colors ${
-                  applied
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : ''
-                }`}
-                style={{
-                  backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
-                }}
-            >
-                {applied ? 'Applied' : 'Pro Apply'}
-              </button>
-            )}
+             {/* Pro Apply Button */}
+             <button
+                 onClick={() => setCvServiceModalOpen(true)}
+                 disabled={applied}
+                 className={`flex-1 px-2 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                   applied
+                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                     : ''
+                 }`}
+                 style={{
+                   backgroundColor: applied ? undefined : theme.colors.primary.DEFAULT,
+                 }}
+             >
+                 {applied ? 'Applied' : 'Pro Apply'}
+               </button>
 
             <button
               onClick={() => {
@@ -1138,56 +1136,58 @@ const getExperienceLevelWithYears = (level: string) => {
             onClick={() => setCvServiceModalOpen(false)}
           >
             <div
-              className="bg-white rounded-2xl w-full max-w-sm overflow-hidden mx-4 shadow-2xl"
+              className="bg-white rounded-2xl w-full max-w-sm sm:max-w-md md:max-w-lg overflow-hidden mx-4 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header - Compact */}
-              <div className="p-5 text-white text-center" style={{ background: `linear-gradient(to bottom right, ${theme.colors.primary.DEFAULT}, ${theme.colors.primary.dark})` }}>
-                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-5 sm:p-6 text-white text-center" style={{ background: `linear-gradient(to bottom right, ${theme.colors.primary.DEFAULT}, ${theme.colors.primary.dark})` }}>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-bold mb-1">Too Busy to Apply?</h2>
-                <p className="text-sm" style={{ color: theme.colors.primary.foreground, opacity: 0.8 }}>Let us handle it for you</p>
+                <h2 className="text-lg sm:text-xl font-bold mb-1">Too Busy or Lazy to Apply?</h2>
+                <p className="text-sm sm:text-base" style={{ color: theme.colors.primary.foreground, opacity: 0.8 }}>Let us handle it for you</p>
               </div>
 
-              {/* Content - Mobile Optimized */}
-              <div className="p-5">
+              {/* Content - Responsive */}
+              <div className="p-5 sm:p-6">
                 {/* How It Works */}
-                <div className="space-y-3 mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900">How It Works:</h3>
-                  {[
-                    { step: "1", text: "Contact us on WhatsApp" },
-                    { step: "2", text: "Create Gmail Account" },
-                    { step: "3", text: "Send us your CV on WhatsApp" },
-                    { step: "4", text: "We handle everything & update you daily" }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
-                        {item.step}
+                <div className="space-y-3 mb-4 sm:mb-5">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900">How It Works:</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { step: "1", text: "Contact us on WhatsApp" },
+                      { step: "2", text: "Create Gmail Account" },
+                      { step: "3", text: "Send us your CV on WhatsApp" },
+                      { step: "4", text: "We handle everything & update you daily" }
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full text-white flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
+                          {item.step}
+                        </div>
+                        <span className="text-sm sm:text-base text-gray-700">{item.text}</span>
                       </div>
-                      <span className="text-sm text-gray-700">{item.text}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
                 {/* Trust Badge */}
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-500 mb-5 py-3 border-y border-gray-100">
+                <div className="flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 mb-5 py-3 border-y border-gray-100">
                   <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     500+ Hired
                   </span>
                   <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     24hr Setup
                   </span>
                   <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     From ₦3,000
@@ -1195,18 +1195,18 @@ const getExperienceLevelWithYears = (level: string) => {
                 </div>
 
                 {/* CTA Buttons */}
-                <div className="space-y-2">
+                <div className="space-y-2 sm:space-y-3">
                   <button
                     onClick={() => {
                       const whatsappNumber = '2347056928186';
                       const message = encodeURIComponent(
-                        "Hi! I'm ready to start Pro Apply. What's the next step for payment?"
+                        "Hi! I'm ready to start Pro Apply. What's the next step?"
                       );
                       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
                       window.open(whatsappUrl, '_blank');
                       setCvServiceModalOpen(false);
                     }}
-                    className="w-full text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                    className="w-full text-white font-semibold py-3 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
                     style={{ backgroundColor: theme.colors.primary.DEFAULT }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.colors.primary.dark)}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.colors.primary.DEFAULT)}
@@ -1222,7 +1222,7 @@ const getExperienceLevelWithYears = (level: string) => {
                       router.push('/pro-apply');
                       setCvServiceModalOpen(false);
                     }}
-                    className="w-full font-semibold py-3 rounded-xl transition-colors text-sm"
+                    className="w-full font-semibold py-3 rounded-xl transition-colors text-sm sm:text-base"
                     style={{ 
                       backgroundColor: `${theme.colors.primary.light}15`,
                       color: theme.colors.primary.DEFAULT
@@ -1235,7 +1235,7 @@ const getExperienceLevelWithYears = (level: string) => {
                   
                   <button
                     onClick={() => setCvServiceModalOpen(false)}
-                    className="w-full text-gray-400 hover:text-gray-600 font-medium py-2 text-xs transition-colors"
+                    className="w-full text-gray-400 hover:text-gray-600 font-medium py-2 text-xs sm:text-sm transition-colors"
                   >
                     Maybe Later
                   </button>
