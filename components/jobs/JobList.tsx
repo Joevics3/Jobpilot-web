@@ -72,11 +72,8 @@ export default function JobList() {
     loadSavedJobs();
     loadAppliedJobs();
     
-    // ✅ NEW: Restore active tab from localStorage
-    const savedTab = localStorage.getItem('active_jobs_tab');
-    if (savedTab === 'matches') {
-      setActiveTab('matches');
-    }
+    // Note: Default tab is 'latest', no restoration from localStorage on initial load
+    // This ensures Latest Jobs loads immediately and Matches only fetches when clicked
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {

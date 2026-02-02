@@ -1134,191 +1134,103 @@ const getExperienceLevelWithYears = (level: string) => {
         {/* CV Distribution Service Modal */}
         {cvServiceModalOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             onClick={() => setCvServiceModalOpen(false)}
           >
             <div
-              className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4"
+              className="bg-white rounded-2xl w-full max-w-sm overflow-hidden mx-4 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className="text-center mb-6 sm:mb-8">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
-                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A6.955 6.955 0 0115 16.5c-1.887 0-3.603-.724-4.89-1.903A6.955 6.955 0 018 13.255V8.745c0-3.859 3.141-7 7-7s7 3.141 7 7v4.51z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12h.01M12 16h.01" />
+              {/* Header - Compact */}
+              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white text-center">
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: theme.colors.text.primary }}>
-                  Land Your Dream Job Faster! 🚀
-                </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  Professional CV Distribution Service for Nigerian Job Seekers
-                </p>
+                <h2 className="text-lg font-bold mb-1">Too Busy to Apply?</h2>
+                <p className="text-blue-100 text-sm">Let us handle it for you</p>
               </div>
 
-              {/* Service Description */}
-              <div className="rounded-xl p-4 sm:p-6 mb-6 sm:mb-8" style={{ backgroundColor: theme.colors.primary.light + '20' }}>
-                <h3 className="font-bold text-base sm:text-lg mb-3" style={{ color: theme.colors.primary.DEFAULT }}>
-                  What We Do For You
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Find matching jobs based on your profile</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Create professional CV & Cover Letter</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Apply to jobs on your behalf</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Set up dedicated email for applications</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-700">Daily updates on application status</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pricing Plans */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {/* Basic Plan */}
-                <div className="border-2 border-gray-200 rounded-xl p-4 sm:p-6 hover:border-blue-300 transition-colors">
-                  <div className="text-center mb-3 sm:mb-4">
-                    <h3 className="font-bold text-base sm:text-lg mb-2">Starter</h3>
-                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦3,000</div>
-                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
-                  </div>
-                  <ul className="space-y-2 mb-4">
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>15 Jobs Monthly</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>1 Job Every 2 Days</span>
-                    </li>
-                  </ul>
+              {/* Content - Mobile Optimized */}
+              <div className="p-5">
+                {/* How It Works */}
+                <div className="space-y-3 mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900">How It Works:</h3>
+                  {[
+                    { step: "1", text: "Make Payment" },
+                    { step: "2", text: "Create Gmail Account" },
+                    { step: "3", text: "Send us your CV on WhatsApp" },
+                    { step: "4", text: "We handle everything & update you daily" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                        {item.step}
+                      </div>
+                      <span className="text-sm text-gray-700">{item.text}</span>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Popular Plan */}
-                <div className="border-2 rounded-xl p-4 sm:p-6 relative" style={{ borderColor: theme.colors.primary.DEFAULT, backgroundColor: theme.colors.primary.light + '20' }}>
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>MOST POPULAR</span>
-                  </div>
-                  <div className="text-center mb-3 sm:mb-4 mt-2">
-                    <h3 className="font-bold text-base sm:text-lg mb-2">Professional</h3>
-                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦5,000</div>
-                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
-                  </div>
-                  <ul className="space-y-2 mb-4">
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>30 Jobs Monthly</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>1 Job Every Day</span>
-                    </li>
-                  </ul>
+                {/* Trust Badge */}
+                <div className="flex items-center justify-center gap-4 text-xs text-gray-500 mb-5 py-3 border-y border-gray-100">
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    500+ Hired
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    24hr Setup
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    From ₦3,000
+                  </span>
                 </div>
 
-                {/* Premium Plan */}
-                <div className="border-2 border-gray-200 rounded-xl p-4 sm:p-6 hover:border-blue-300 transition-colors">
-                  <div className="text-center mb-3 sm:mb-4">
-                    <h3 className="font-bold text-base sm:text-lg mb-2">Executive</h3>
-                    <div className="text-xl sm:text-2xl font-bold" style={{ color: theme.colors.primary.DEFAULT }}>₦10,000</div>
-                    <p className="text-xs sm:text-sm text-gray-600">per month</p>
-                  </div>
-                  <ul className="space-y-2 mb-4">
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>70 Jobs Monthly</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span>2-3 Jobs Daily</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* WhatsApp Contact Section */}
-              <div className="bg-green-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-green-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {/* CTA Buttons */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      const whatsappNumber = '2347056928186';
+                      const message = encodeURIComponent(
+                        "Hi! I'm ready to start Pro Apply. What's the next step for payment?"
+                      );
+                      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+                      window.open(whatsappUrl, '_blank');
+                      setCvServiceModalOpen(false);
+                    }}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                     </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-base sm:text-lg" style={{ color: theme.colors.text.primary }}>
-                      Ready to Get Started?
-                    </h4>
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Chat with us on WhatsApp and we'll set you up within minutes
-                    </p>
-                  </div>
+                    Start on WhatsApp
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      router.push('/pro-apply');
+                      setCvServiceModalOpen(false);
+                    }}
+                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-3 rounded-xl transition-colors text-sm"
+                  >
+                    Learn More
+                  </button>
+                  
+                  <button
+                    onClick={() => setCvServiceModalOpen(false)}
+                    className="w-full text-gray-400 hover:text-gray-600 font-medium py-2 text-xs transition-colors"
+                  >
+                    Maybe Later
+                  </button>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <button
-                  onClick={() => {
-                    const whatsappNumber = '2347056928186';
-                    const message = encodeURIComponent(
-                      "Hi! I'm interested in the Pro Apply package for professional CV distribution services. " +
-                      "I'd like to learn more about how you can help me land my dream job faster. Please assist me with getting started!"
-                    );
-                    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-                    window.open(whatsappUrl, '_blank');
-                    setCvServiceModalOpen(false);
-                  }}
-                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold text-white transition-all text-sm flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: '#25D366',
-                  }}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                  </svg>
-                  Chat on WhatsApp
-                </button>
-                <button
-                  onClick={() => setCvServiceModalOpen(false)}
-                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold border border-gray-300 hover:bg-gray-50 transition-colors text-sm"
-                >
-                  Maybe Later
-                </button>
               </div>
             </div>
           </div>
