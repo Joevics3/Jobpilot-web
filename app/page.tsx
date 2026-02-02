@@ -7,7 +7,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 
 export const metadata: Metadata = {
   title: 'JobMeter — Find Jobs That Match Your Skills & Experiences',
-  description: 'Discover your next career opportunity with JobMeter. Smart job matching connects you with thousands of jobs across industries. Search jobs, get personalized matches, and apply with confidence. Your career journey starts here.',
+  description: 'Discover your next career opportunity with JobMeter. Access thousands of jobs from employers and various sources across industries. Search jobs, get personalized matches, and apply with confidence. Your career journey starts here.',
   keywords: [
     'jobs',
     'careers',

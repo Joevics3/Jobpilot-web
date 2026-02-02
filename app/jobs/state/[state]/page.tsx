@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+// This page uses the EXACT SAME matching logic as your JobList.tsx
+// Just filters jobs by state first, then applies your existing matching
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +11,11 @@ import { theme } from '@/lib/theme';
 import { ArrowLeft, MapPin, Briefcase } from 'lucide-react';
 import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
+import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
+import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
+import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
+import { matchCacheService } from '@/lib/matching/matchCache';
+import { extractTownsFromJobs, TownJobCount } from '@/lib/utils/locationUtils';
 
 const NIGERIAN_STATES = [
   'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 
@@ -22,156 +30,340 @@ const STORAGE_KEYS = {
   APPLIED_JOBS: 'applied_jobs',
 };
 
-// Simple transform without matching
-const transformJobToUI = (job: any): JobUI => {
-  let locationStr = 'Location not specified';
-  if (typeof job.location === 'string') {
-    locationStr = job.location;
-  } else if (job.location && typeof job.location === 'object') {
-    const loc = job.location;
-    if (loc.remote) {
-      locationStr = 'Remote';
-    } else {
-      const parts = [loc.city, loc.state, loc.country].filter(Boolean);
-      locationStr = parts.length > 0 ? parts.join(', ') : 'Location not specified';
-    }
-  }
-
-  let companyStr = 'Unknown Company';
-  if (typeof job.company === 'string') {
-    companyStr = job.company;
-  } else if (job.company && typeof job.company === 'object') {
-    companyStr = job.company.name || 'Unknown Company';
-  }
-
-  let salaryStr = '';
-  if (typeof job.salary === 'string') {
-    salaryStr = job.salary;
-  } else if (job.salary_range && typeof job.salary_range === 'object') {
-    const sal = job.salary_range;
-    if (sal.min !== null && sal.currency) {
-      salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
-    }
-  }
-
-  const getRelativeTime = (dateString: string | null) => {
-    if (!dateString) return null;
-    
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      
-      if (diffInDays === 0) return 'Today';
-      if (diffInDays === 1) return '1 day ago';
-      if (diffInDays < 7) return `${diffInDays} days ago`;
-      if (diffInDays < 30) {
-        const weeks = Math.floor(diffInDays / 7);
-        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-      }
-      if (diffInDays < 365) {
-        const months = Math.floor(diffInDays / 30);
-        return months === 1 ? '1 month ago' : `${months} months ago`;
-      }
-      const years = Math.floor(diffInDays / 365);
-      return years === 1 ? '1 year ago' : `${years} years ago`;
-    } catch {
-      return null;
-    }
-  };
-
-  return {
-    id: job.id,
-    slug: job.slug || job.id,
-    title: job.title || 'Untitled Job',
-    company: companyStr,
-    location: locationStr,
-    salary: salaryStr,
-    match: 0, // No matching
-    calculatedTotal: 0,
-    type: job.type || job.employment_type || '',
-    postedDate: getRelativeTime((job.posted_date ?? job.created_at) ?? null) ?? undefined,
-  };
-};
-
 export default function JobsByStatePage() {
   const params = useParams();
   const state = params?.state as string;
   const formattedState = state ? state.charAt(0).toUpperCase() + state.slice(1) : '';
   
+  const [user, setUser] = useState<any>(null);
   const [jobs, setJobs] = useState<JobUI[]>([]);
-  const [nationalJobs, setNationalJobs] = useState<JobUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
+  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [towns, setTowns] = useState<TownJobCount[]>([]);
+  const [stateOnlyJobs, setStateOnlyJobs] = useState<any[]>([]);
+  const [nationalJobs, setNationalJobs] = useState<JobUI[]>([]);
 
   useEffect(() => {
+    checkAuth();
     loadSavedJobs();
     loadAppliedJobs();
-    
-    if (formattedState && NIGERIAN_STATES.includes(formattedState)) {
-      fetchJobs();
-    }
-  }, [formattedState]);
+  }, []);
 
-  const fetchJobs = async () => {
+  useEffect(() => {
+    if (user) {
+      fetchUserOnboardingData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (formattedState && NIGERIAN_STATES.includes(formattedState)) {
+      fetchJobsByState();
+    }
+  }, [formattedState, userOnboardingData, user]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setUser(session.user);
+    }
+  };
+
+  const fetchUserOnboardingData = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('onboarding_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching onboarding data:', error);
+        return;
+      }
+
+      if (data) {
+        setUserOnboardingData({
+          target_roles: data.target_roles || [],
+          cv_skills: data.cv_skills || [],
+          preferred_locations: data.preferred_locations || [],
+          experience_level: data.experience_level || null,
+          salary_min: data.salary_min || null,
+          salary_max: data.salary_max || null,
+          job_type: data.job_type || null,
+          sector: data.sector || null,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching onboarding data:', error);
+    }
+  };
+
+  const fetchJobsByState = async () => {
     try {
       setLoading(true);
       
-      // Fetch all active jobs (temporarily removed date filter for debugging)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      // Fetch ALL active jobs from last 30 days
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company, location, salary_range, created_at, posted_date, slug, type, employment_type')
+        .select('*')
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(200);
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log(`Fetched ${data?.length || 0} total jobs`);
-      console.log('Sample job location:', data?.[0]?.location);
-      console.log('Looking for state:', formattedState);
-
-      const allJobs = data || [];
-
-      // Filter state jobs
-      const stateJobs = allJobs.filter((job) => {
+      // Filter jobs by state in JavaScript (since location can be string or JSON object)
+      const stateFilteredJobs = (data || []).filter((job) => {
+        // Handle string location format
         if (typeof job.location === 'string') {
           return job.location.toLowerCase().includes(formattedState.toLowerCase());
         }
+        
+        // Handle object location format
         if (job.location && typeof job.location === 'object') {
           const locState = job.location.state || '';
           return locState.toLowerCase() === formattedState.toLowerCase();
         }
+        
         return false;
       });
 
-      console.log(`Found ${stateJobs.length} jobs in ${formattedState}`);
+      // Extract towns and state-only jobs
+      const { townCounts, stateOnlyJobs: noTownJobs } = extractTownsFromJobs(stateFilteredJobs, formattedState);
+      setTowns(townCounts);
+      setStateOnlyJobs(noTownJobs);
 
-      // Filter national jobs (exclude current state)
-      const nationalJobsData = allJobs.filter(job => {
-        if (typeof job.location === 'string') {
-          return !job.location.toLowerCase().includes(formattedState.toLowerCase());
-        }
-        if (job.location && typeof job.location === 'object') {
-          const locState = job.location.state || '';
-          return locState.toLowerCase() !== formattedState.toLowerCase();
-        }
-        return true;
-      }).slice(0, 10);
+      // Set total count for this state
+      setTotalJobs(stateFilteredJobs.length);
 
-      // Transform without matching
-      setJobs(stateJobs.map(transformJobToUI));
-      setNationalJobs(nationalJobsData.map(transformJobToUI));
+      // Use EXACT SAME matching logic as JobList.tsx
+      const processedJobs = await processJobsWithMatching(stateFilteredJobs);
+      processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+      setJobs(processedJobs);
+
+      // Fetch national jobs (excluding current state)
+      await fetchNationalJobs();
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchNationalJobs = async () => {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      // Fetch national jobs (excluding current state)
+      const { data: nationalJobsData, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'active')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(60);
+
+      if (error) throw error;
+
+      // Filter out jobs from current state
+      const filteredNationalJobs = (nationalJobsData || [])
+        .filter(job => {
+          if (typeof job.location === 'string') {
+            return !job.location.toLowerCase().includes(formattedState.toLowerCase());
+          }
+          if (job.location && typeof job.location === 'object') {
+            const locState = job.location.state || '';
+            return locState.toLowerCase() !== formattedState.toLowerCase();
+          }
+          return true;
+        })
+        .slice(0, 30);
+
+      const processedNationalJobs = await processJobsWithMatching(filteredNationalJobs);
+      processedNationalJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
+      setNationalJobs(processedNationalJobs);
+    } catch (error) {
+      console.error('Error fetching national jobs:', error);
+    }
+  };
+
+  // ========================================
+  // EXACT SAME MATCHING LOGIC FROM JOBLIST.TSX
+  // ========================================
+  const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
+    if (!userOnboardingData || !user) {
+      return jobRows.map(job => transformJobToUI(job, 0, null));
+    }
+
+    const matchCache = matchCacheService.loadMatchCache(user.id);
+    let cacheNeedsUpdate = false;
+    const updatedCache = { ...matchCache };
+
+    const batchSize = 10;
+    const processedJobs: JobUI[] = [];
+
+    for (let i = 0; i < jobRows.length; i += batchSize) {
+      const batch = jobRows.slice(i, i + batchSize);
+      
+      const batchResults = await Promise.all(
+        batch.map(async (job: any) => {
+          try {
+            let matchResult;
+            const cachedMatch = updatedCache[job.id];
+
+            if (cachedMatch) {
+              matchResult = {
+                score: cachedMatch.score,
+                breakdown: cachedMatch.breakdown,
+                computedAt: cachedMatch.cachedAt,
+              };
+            } else {
+              const jobRow: JobRow = {
+                role: job.role || job.title,
+                related_roles: job.related_roles,
+                ai_enhanced_roles: job.ai_enhanced_roles,
+                skills_required: job.skills_required,
+                ai_enhanced_skills: job.ai_enhanced_skills,
+                location: job.location,
+                experience_level: job.experience_level,
+                salary_range: job.salary_range,
+                employment_type: job.employment_type,
+                sector: job.sector,
+              };
+
+              matchResult = scoreJob(jobRow, userOnboardingData);
+
+              updatedCache[job.id] = {
+                score: matchResult.score,
+                breakdown: matchResult.breakdown,
+                cachedAt: matchResult.computedAt,
+              };
+              cacheNeedsUpdate = true;
+            }
+
+            const rsCapped = Math.min(
+              80,
+              matchResult.breakdown.rolesScore +
+              matchResult.breakdown.skillsScore +
+              matchResult.breakdown.sectorScore
+            );
+            const calculatedTotal = Math.round(
+              rsCapped +
+              matchResult.breakdown.locationScore +
+              matchResult.breakdown.experienceScore +
+              matchResult.breakdown.salaryScore +
+              matchResult.breakdown.typeScore
+            );
+
+            return transformJobToUI(job, calculatedTotal, matchResult.breakdown);
+          } catch (error) {
+            console.error(`Error processing match for job ${job.id}:`, error);
+            return transformJobToUI(job, 0, null);
+          }
+        })
+      );
+
+      processedJobs.push(...batchResults);
+
+      if (i + batchSize < jobRows.length) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+
+    if (cacheNeedsUpdate) {
+      matchCacheService.saveMatchCache(user.id, updatedCache);
+    }
+
+    return processedJobs;
+  }, [user, userOnboardingData]);
+
+  // EXACT SAME transformJobToUI from JobList.tsx
+  const transformJobToUI = (job: any, matchScore: number, breakdown: any): JobUI => {
+    const finalMatchScore = user ? matchScore : 0;
+    const finalBreakdown = user ? breakdown : null;
+    
+    let locationStr = 'Location not specified';
+    if (typeof job.location === 'string') {
+      locationStr = job.location;
+    } else if (job.location && typeof job.location === 'object') {
+      const loc = job.location;
+      if (loc.remote) {
+        locationStr = 'Remote';
+      } else {
+        const parts = [loc.city, loc.state, loc.country].filter(Boolean);
+        locationStr = parts.length > 0 ? parts.join(', ') : 'Location not specified';
+      }
+    }
+
+    let companyStr = 'Unknown Company';
+    if (typeof job.company === 'string') {
+      companyStr = job.company;
+    } else if (job.company && typeof job.company === 'object') {
+      companyStr = job.company.name || 'Unknown Company';
+    }
+
+    let salaryStr = '';
+    if (typeof job.salary === 'string') {
+      salaryStr = job.salary;
+    } else if (job.salary_range && typeof job.salary_range === 'object') {
+      const sal = job.salary_range;
+      if (sal.min !== null && sal.currency) {
+        salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
+      }
+    }
+
+    const getRelativeTime = (dateString: string | null) => {
+      if (!dateString) return null;
+      
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+        
+        if (diffInDays === 0) return 'Today';
+        if (diffInDays === 1) return '1 day ago';
+        if (diffInDays < 7) return `${diffInDays} days ago`;
+        if (diffInDays < 30) {
+          const weeks = Math.floor(diffInDays / 7);
+          return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+        }
+        if (diffInDays < 365) {
+          const months = Math.floor(diffInDays / 30);
+          return months === 1 ? '1 month ago' : `${months} months ago`;
+        }
+        const years = Math.floor(diffInDays / 365);
+        return years === 1 ? '1 year ago' : `${years} years ago`;
+      } catch {
+        return null;
+      }
+    };
+
+    return {
+      id: job.id,
+      slug: job.slug || job.id,
+      title: job.title || 'Untitled Job',
+      company: companyStr,
+      location: locationStr,
+      salary: salaryStr,
+      match: finalMatchScore,
+      calculatedTotal: finalMatchScore,
+      type: job.type || job.employment_type || '',
+      breakdown: finalBreakdown,
+
+      postedDate: getRelativeTime((job.posted_date ?? job.created_at) ?? null) ?? undefined,
+    };
   };
 
   const loadSavedJobs = () => {
@@ -220,9 +412,24 @@ export default function JobsByStatePage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleShowBreakdown = (_job: JobUI) => {
-    // No-op since matching is disabled
+  const handleShowBreakdown = (job: JobUI) => {
+    const breakdown = job.breakdown || {
+      rolesScore: 0,
+      skillsScore: 0,
+      sectorScore: 0,
+      locationScore: 0,
+      experienceScore: 0,
+      salaryScore: 0,
+      typeScore: 0,
+    };
+
+    setMatchModalData({
+      breakdown,
+      totalScore: job.calculatedTotal || job.match || 0,
+      jobTitle: job.title,
+      companyName: job.company,
+    });
+    setMatchModalOpen(true);
   };
 
   if (!formattedState || !NIGERIAN_STATES.includes(formattedState)) {
@@ -239,90 +446,126 @@ export default function JobsByStatePage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
-      {/* Header */}
-      <div className="text-white py-8 px-6" style={{ backgroundColor: '#2563EB' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <MapPin size={32} />
-            <h1 className="text-4xl font-bold">Jobs in {formattedState}</h1>
+    <>
+      <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
+        {/* Header */}
+        <div className="text-white py-8 px-6" style={{ backgroundColor: '#2563EB' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <MapPin size={32} />
+              <h1 className="text-4xl font-bold">Jobs in {formattedState}</h1>
+            </div>
+            <p className="text-lg text-white">
+              {totalJobs} job{totalJobs !== 1 ? 's' : ''} available in {formattedState}
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Back Button */}
-      <div className="px-6 py-4">
-        <Link
-          href="/jobs/state/"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
-        >
-          <ArrowLeft size={20} />
-          Back to All Locations
-        </Link>
-      </div>
+        {/* Back Button */}
+        <div className="px-6 py-4">
+          <Link
+            href="/jobs/state/"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+          >
+            <ArrowLeft size={20} />
+            Back to All Locations
+          </Link>
+        </div>
 
-      {/* Jobs List */}
-      <div className="px-6 py-4 max-w-7xl mx-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Briefcase size={48} className="mx-auto text-gray-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              No jobs found in {formattedState}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Check back soon or explore jobs in other locations.
-            </p>
-            <Link
-              href="/jobs"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Browse All Jobs
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* State Jobs */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-gray-900">Jobs in {formattedState}</h2>
-              {jobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  savedJobs={savedJobs}
-                  appliedJobs={appliedJobs}
-                  onSave={handleSave}
-                  onApply={handleApply}
-                  onShowBreakdown={handleShowBreakdown}
-                  showMatch={false}
-                />
-              ))}
-            </div>
-
-            {/* National Jobs */}
-            {nationalJobs.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-xl font-bold text-gray-900">Other Opportunities</h2>
-                {nationalJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    savedJobs={savedJobs}
-                    appliedJobs={appliedJobs}
-                    onSave={handleSave}
-                    onApply={handleApply}
-                    onShowBreakdown={handleShowBreakdown}
-                    showMatch={false}
-                  />
+        {/* Towns List */}
+        {!loading && towns.length > 0 && (
+          <div className="px-6 py-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Jobs by Town in {formattedState}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {towns.map((town) => (
+                  <Link
+                    key={town.slug}
+                    href={`/jobs/state/${state.toLowerCase()}/${town.slug}`}
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin size={20} className="text-gray-400 group-hover:text-blue-600" />
+                      <span className="font-medium text-gray-900 group-hover:text-blue-600">
+                        {town.city}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {town.count} {town.count === 1 ? 'job' : 'jobs'}
+                    </span>
+                  </Link>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         )}
-      </div>
-    </div>
+
+        {/* Jobs List */}
+        <div className="px-6 py-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+              <Briefcase size={48} className="mx-auto text-gray-400 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                No jobs found in {formattedState}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Check back soon or explore jobs in other locations.
+              </p>
+              <Link
+                href="/jobs"
+                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Browse All Jobs
+              </Link>
+            </div>
+          ) : (
+            jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                savedJobs={savedJobs}
+                appliedJobs={appliedJobs}
+                onSave={handleSave}
+                onApply={handleApply}
+                onShowBreakdown={handleShowBreakdown}
+              />
+))
+           )}
+
+          {/* Trending National Jobs */}
+          {!loading && nationalJobs.length > 0 && (
+            <div className="px-6 py-4">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Trending National Jobs</h2>
+                <p className="text-gray-600 mb-4">Popular job opportunities from across Nigeria</p>
+                <div className="space-y-4">
+                  {nationalJobs.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      savedJobs={savedJobs}
+                      appliedJobs={appliedJobs}
+                      onSave={handleSave}
+                      onApply={handleApply}
+                      onShowBreakdown={handleShowBreakdown}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+         </div>
+       </div>
+
+      <MatchBreakdownModal
+        open={matchModalOpen}
+        onClose={() => setMatchModalOpen(false)}
+        data={matchModalData}
+      />
+    </>
   );
 }
