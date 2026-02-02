@@ -53,24 +53,40 @@ export default function RelatedJobCard({ job }: RelatedJobCardProps) {
 
   // Helper to get relative time
   const getRelativeTime = () => {
-    const posted = new Date(job.posted_date);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - posted.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (!job.posted_date) return 'Recently';
     
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
+    try {
+      const posted = new Date(job.posted_date);
+      const now = new Date();
+      
+      // Check if date is valid
+      if (isNaN(posted.getTime())) return 'Recently';
+      
+      const diffTime = Math.abs(now.getTime() - posted.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      return `${Math.floor(diffDays / 30)} months ago`;
+    } catch (e) {
+      return 'Recently';
+    }
   };
+
+  // Debug log to verify link construction
+  if (typeof window !== 'undefined') {
+    console.log(`RelatedJobCard: Linking to /jobs/${job.slug} - Title: ${job.title}`);
+  }
 
   return (
     <Link
       href={`/jobs/${job.slug}`}
-      className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all"
+      className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+      prefetch={true}
     >
-      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 hover:text-blue-600 transition-colors">
         {job.title}
       </h3>
       <p className="text-sm text-gray-600 mb-3">

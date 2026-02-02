@@ -129,43 +129,84 @@ async function fetchRelatedJobs(currentJob: any) {
 
   // First, try to get jobs by category
   if (currentJob.category) {
-    const { data: categoryJobs } = await supabase
+    const { data: categoryJobs, error: catError } = await supabase
       .from('jobs')
-      .select('id, slug, title, company, location, salary_range, posted_date')
+      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
       .eq('category', currentJob.category)
       .eq('status', 'active')
       .neq('id', currentJob.id)
-      .gte('posted_date', thirtyDaysAgo.toISOString().split('T')[0])
-      .order('posted_date', { ascending: false })
+      .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
+      .order('created_at', { ascending: false })
       .limit(6);
 
-    if (categoryJobs) {
+    if (catError) {
+      console.error('Error fetching category jobs:', catError);
+    }
+
+    if (categoryJobs && categoryJobs.length > 0) {
       relatedJobs = categoryJobs;
+      console.log(`Found ${categoryJobs.length} related jobs by category: ${currentJob.category}`);
     }
   }
 
-  // If we have less than 3 jobs, supplement with sector-based jobs
-  if (relatedJobs.length < 3 && currentJob.sector) {
-    const excludeIds = relatedJobs.map(job => job.id);
-    excludeIds.push(currentJob.id);
+  // If we have less than 6 jobs, supplement with sector-based jobs
+  if (relatedJobs.length < 6 && currentJob.sector) {
+    const excludeIds = [currentJob.id, ...relatedJobs.map(job => job.id)];
 
-    const { data: sectorJobs } = await supabase
+    const { data: sectorJobs, error: sectorError } = await supabase
       .from('jobs')
-      .select('id, slug, title, company, location, salary_range, posted_date')
+      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
       .eq('sector', currentJob.sector)
       .eq('status', 'active')
       .not('id', 'in', `(${excludeIds.join(',')})`)
-      .gte('posted_date', thirtyDaysAgo.toISOString().split('T')[0])
-      .order('posted_date', { ascending: false })
+      .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
+      .order('created_at', { ascending: false })
       .limit(6 - relatedJobs.length);
 
-    if (sectorJobs) {
+    if (sectorError) {
+      console.error('Error fetching sector jobs:', sectorError);
+    }
+
+    if (sectorJobs && sectorJobs.length > 0) {
       relatedJobs = [...relatedJobs, ...sectorJobs];
+      console.log(`Added ${sectorJobs.length} related jobs by sector: ${currentJob.sector}`);
     }
   }
 
+  // If still less than 6, get any recent active jobs
+  if (relatedJobs.length < 6) {
+    const excludeIds = [currentJob.id, ...relatedJobs.map(job => job.id)];
+    
+    const { data: recentJobs, error: recentError } = await supabase
+      .from('jobs')
+      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
+      .eq('status', 'active')
+      .not('id', 'in', `(${excludeIds.join(',')})`)
+      .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
+      .order('created_at', { ascending: false })
+      .limit(6 - relatedJobs.length);
+
+    if (recentError) {
+      console.error('Error fetching recent jobs:', recentError);
+    }
+
+    if (recentJobs && recentJobs.length > 0) {
+      relatedJobs = [...relatedJobs, ...recentJobs];
+      console.log(`Added ${recentJobs.length} recent jobs`);
+    }
+  }
+
+  console.log(`Total related jobs: ${relatedJobs.length}`);
+  
+  // Ensure all jobs have required fields
+  const validJobs = relatedJobs.filter(job => job && job.slug && job.title);
+  
+  if (validJobs.length !== relatedJobs.length) {
+    console.warn(`Filtered out ${relatedJobs.length - validJobs.length} invalid jobs`);
+  }
+
   // Limit to maximum of 6 jobs
-  return relatedJobs.slice(0, 6);
+  return validJobs.slice(0, 6);
 }
 
 export default async function JobPage({ params }: { params: { slug: string } }) {

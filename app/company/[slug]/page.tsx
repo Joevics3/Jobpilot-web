@@ -41,6 +41,15 @@ interface Company {
   job_count: number;
 }
 
+interface RelatedCompany {
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  industry: string | null;
+  job_count: number;
+  headquarters_location: string | null;
+}
+
 async function getCompany(slug: string): Promise<Company | null> {
   try {
     const { data, error } = await supabase
@@ -92,6 +101,60 @@ async function getCompanyJobs(companyName: string) {
     });
   } catch (error) {
     console.error('Error fetching company jobs:', error);
+    return [];
+  }
+}
+
+async function fetchSimilarCompanies(company: Company): Promise<RelatedCompany[]> {
+  try {
+    const relatedSlugs: string[] = [];
+    
+    // Priority 1: Same industry
+    if (company.industry) {
+      const { data: industryCompanies } = await supabase
+        .from('companies')
+        .select('slug, name, logo_url, industry, job_count, headquarters_location')
+        .eq('industry', company.industry)
+        .eq('is_published', true)
+        .neq('slug', company.slug)
+        .order('job_count', { ascending: false })
+        .limit(4);
+      
+      if (industryCompanies) {
+        industryCompanies.forEach(comp => relatedSlugs.push(comp.slug));
+      }
+    }
+    
+    // Priority 2: Same location
+    if (company.headquarters_location && relatedSlugs.length < 6) {
+      const { data: locationCompanies } = await supabase
+        .from('companies')
+        .select('slug, name, logo_url, industry, job_count, headquarters_location')
+        .ilike('headquarters_location', `%${company.headquarters_location}%`)
+        .eq('is_published', true)
+        .neq('slug', company.slug)
+        .not('slug', 'in', `(${relatedSlugs.join(',')})`)
+        .order('job_count', { ascending: false })
+        .limit(6 - relatedSlugs.length);
+      
+      if (locationCompanies) {
+        locationCompanies.forEach(comp => relatedSlugs.push(comp.slug));
+      }
+    }
+    
+    // Fetch full details
+    if (relatedSlugs.length === 0) return [];
+    
+    const { data: finalCompanies } = await supabase
+      .from('companies')
+      .select('slug, name, logo_url, industry, job_count, headquarters_location')
+      .in('slug', relatedSlugs)
+      .eq('is_published', true)
+      .limit(6);
+    
+    return finalCompanies || [];
+  } catch (error) {
+    console.error('Error fetching similar companies:', error);
     return [];
   }
 }
@@ -164,6 +227,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
 
   // Get company jobs
   const companyJobs = await getCompanyJobs(company.name);
+
+  // Fetch similar companies for SEO interlinking
+  const similarCompanies = await fetchSimilarCompanies(company);
 
   // Prepare social media links
   const socialLinks = [
@@ -557,6 +623,53 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
               )}
             </div>
           </div>
+
+          {/* Similar Companies Section - SEO Interlinking */}
+          {similarCompanies.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Similar Companies
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Explore other {company.industry || 'companies'} hiring now
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {similarCompanies.map((similar) => (
+                  <Link
+                    key={similar.slug}
+                    href={`/company/${similar.slug}`}
+                    className="block bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start gap-4">
+                      {similar.logo_url ? (
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <Image
+                            src={similar.logo_url}
+                            alt={similar.name}
+                            fill
+                            className="object-contain rounded-lg"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Briefcase size={32} className="text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1 hover:text-blue-600 transition-colors">
+                          {similar.name}
+                        </h3>
+                        {similar.industry && (
+                          <p className="text-sm text-gray-600 mb-1">{similar.industry}</p>
+                        )}
+                        <p className="text-sm text-gray-500">{similar.job_count} open positions</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </>

@@ -860,16 +860,23 @@ const getExperienceLevelWithYears = (level: string) => {
 )}
 
           {/* Related Jobs Section */}
-          {relatedJobs && relatedJobs.length > 0 && (
+          {relatedJobs && relatedJobs.length > 0 ? (
             <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
               <h2 className="text-lg font-semibold mb-4 text-gray-900">
-                Related Jobs
+                Related Jobs ({relatedJobs.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedJobs.map((relatedJob) => (
                   <RelatedJobCard key={relatedJob.id} job={relatedJob} />
                 ))}
               </div>
+            </section>
+          ) : (
+            <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Related Jobs
+              </h2>
+              <p className="text-gray-600 text-sm">No related jobs found at this time.</p>
             </section>
           )}
 

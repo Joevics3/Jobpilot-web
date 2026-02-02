@@ -30,6 +30,16 @@ interface BlogPost {
   updated_at: string;
 }
 
+interface RelatedBlogPost {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  featured_image_url: string | null;
+  category: string | null;
+  published_at: string;
+  read_time_minutes: number | null;
+}
+
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
     const { data, error } = await supabase
@@ -55,6 +65,31 @@ async function incrementViewCount(slug: string) {
     await supabase.rpc('increment_blog_views', { blog_slug: slug });
   } catch (error) {
     console.error('Error incrementing view count:', error);
+  }
+}
+
+async function fetchRelatedPosts(currentPost: BlogPost): Promise<RelatedBlogPost[]> {
+  if (!currentPost.category) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('slug, title, excerpt, featured_image_url, category, published_at, read_time_minutes')
+      .eq('category', currentPost.category)
+      .eq('is_published', true)
+      .neq('slug', currentPost.slug)
+      .order('published_at', { ascending: false })
+      .limit(4);
+
+    if (error) {
+      console.error('Error fetching related posts:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching related posts:', error);
+    return [];
   }
 }
 
@@ -125,6 +160,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
   // Increment view count (non-blocking)
   incrementViewCount(params.slug);
+
+  // Fetch related posts by category for SEO interlinking
+  const relatedPosts = await fetchRelatedPosts(post);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -289,15 +327,52 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             </div>
           </article>
 
-          {/* Related Posts */}
-          {post.related_posts && post.related_posts.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h2>
+          {/* Related Posts by Category - SEO Interlinking */}
+          {relatedPosts.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                More Articles in {post.category}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Explore more career insights and job search tips
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* You can fetch and display related posts here */}
-                <p className="text-gray-600">Related posts coming soon...</p>
+                {relatedPosts.map((related) => (
+                  <Link
+                    key={related.slug}
+                    href={`/blog/${related.slug}`}
+                    className="block bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    {related.featured_image_url && (
+                      <div className="relative w-full h-48">
+                        <Image
+                          src={related.featured_image_url}
+                          alt={related.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+                        {related.title}
+                      </h3>
+                      {related.excerpt && (
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                          {related.excerpt}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span>{formatDate(related.published_at)}</span>
+                        {related.read_time_minutes && (
+                          <span>{related.read_time_minutes} min read</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>

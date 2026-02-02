@@ -24,6 +24,15 @@ interface CategoryPage {
   related_locations: string[] | null;
   view_count: number;
   job_count: number;
+  town: string | null;
+}
+
+interface RelatedCategory {
+  slug: string;
+  h1_title: string;
+  job_count: number;
+  location: string | null;
+  town: string | null;
 }
 
 async function getCategoryPage(slug: string): Promise<CategoryPage | null> {
@@ -51,6 +60,104 @@ async function incrementViewCount(slug: string) {
     await supabase.rpc('increment_category_page_views', { page_slug: slug });
   } catch (error) {
     console.error('Error incrementing view count:', error);
+  }
+}
+
+async function fetchRelatedCategories(page: CategoryPage): Promise<RelatedCategory[]> {
+  try {
+    const relatedSlugs: string[] = [];
+    
+    // Priority 1: Same town
+    if (page.town) {
+      const { data: townCategories } = await supabase
+        .from('category_pages')
+        .select('slug, h1_title, job_count, location, town')
+        .eq('town', page.town)
+        .eq('is_published', true)
+        .neq('slug', page.slug)
+        .limit(3);
+      
+      if (townCategories) {
+        townCategories.forEach(cat => relatedSlugs.push(cat.slug));
+      }
+    }
+    
+    // Priority 2: Same location (state)
+    if (page.location && relatedSlugs.length < 6) {
+      const { data: locationCategories } = await supabase
+        .from('category_pages')
+        .select('slug, h1_title, job_count, location, town')
+        .eq('location', page.location)
+        .eq('is_published', true)
+        .neq('slug', page.slug)
+        .not('slug', 'in', `(${relatedSlugs.join(',')})`)
+        .limit(6 - relatedSlugs.length);
+      
+      if (locationCategories) {
+        locationCategories.forEach(cat => relatedSlugs.push(cat.slug));
+      }
+    }
+    
+    // Priority 3: Related categories from array
+    if (page.related_categories && page.related_categories.length > 0 && relatedSlugs.length < 6) {
+      const remainingSlots = 6 - relatedSlugs.length;
+      const categoriesToFetch = page.related_categories
+        .filter(slug => !relatedSlugs.includes(slug))
+        .slice(0, remainingSlots);
+      
+      if (categoriesToFetch.length > 0) {
+        const { data: relatedCategories } = await supabase
+          .from('category_pages')
+          .select('slug, h1_title, job_count, location, town')
+          .in('slug', categoriesToFetch)
+          .eq('is_published', true)
+          .limit(remainingSlots);
+        
+        if (relatedCategories) {
+          relatedCategories.forEach(cat => relatedSlugs.push(cat.slug));
+        }
+      }
+    }
+    
+    // Priority 4: Related locations from array
+    if (page.related_locations && page.related_locations.length > 0 && relatedSlugs.length < 6) {
+      const remainingSlots = 6 - relatedSlugs.length;
+      const locationsToFetch = page.related_locations
+        .filter(slug => !relatedSlugs.includes(slug))
+        .slice(0, remainingSlots);
+      
+      if (locationsToFetch.length > 0) {
+        const { data: locationCategories } = await supabase
+          .from('category_pages')
+          .select('slug, h1_title, job_count, location, town')
+          .in('slug', locationsToFetch)
+          .eq('is_published', true)
+          .limit(remainingSlots);
+        
+        if (locationCategories) {
+          locationCategories.forEach(cat => {
+            if (!relatedSlugs.includes(cat.slug)) {
+              relatedSlugs.push(cat.slug);
+            }
+          });
+        }
+      }
+    }
+    
+    // Fetch full details for all collected slugs
+    if (relatedSlugs.length === 0) return [];
+    
+    const { data: finalCategories } = await supabase
+      .from('category_pages')
+      .select('slug, h1_title, job_count, location, town')
+      .in('slug', relatedSlugs)
+      .eq('is_published', true)
+      .limit(6);
+    
+    return finalCategories || [];
+  } catch (error) {
+    console.error('Error fetching related categories:', error);
+    return [];
   }
 }
 
@@ -125,6 +232,9 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   // Increment view count (non-blocking)
   incrementViewCount(params.slug);
+
+  // Fetch related categories for interlinking
+  const relatedCategories = await fetchRelatedCategories(page);
 
   // Structured data for SEO
   const jsonLd = {
@@ -236,6 +346,37 @@ export default async function CategoryPage({ params }: { params: { slug: string 
               <CategoryContent page={page} />
             </div>
           </div>
+
+          {/* Related Categories Section - SEO Interlinking */}
+          {relatedCategories.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Related Job Categories
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {relatedCategories.map((related) => (
+                  <Link
+                    key={related.slug}
+                    href={`/resources/${related.slug}`}
+                    className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {related.h1_title}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>{related.job_count} jobs</span>
+                      {related.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin size={14} />
+                          {related.town || related.location}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </>
