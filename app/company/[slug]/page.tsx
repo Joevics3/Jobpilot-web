@@ -256,14 +256,14 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
       )}
 
       <div className="min-h-screen bg-gray-50">
-        {/* Breadcrumb */}
+        {/* Breadcrumb - Mobile Optimized */}
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <nav className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 sm:py-4">
+            <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
               <Link href="/" className="hover:text-blue-600">Home</Link>
-              <span>/</span>
+              <span className="text-gray-400">/</span>
               <Link href="/company" className="hover:text-blue-600">Companies</Link>
-              <span>/</span>
+              <span className="text-gray-400">/</span>
               <span className="text-gray-900 font-medium line-clamp-1">
                 {company.name}
               </span>
@@ -271,9 +271,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
           </div>
         </div>
 
-        {/* Cover Image */}
+        {/* Cover Image - Mobile Optimized */}
         {company.cover_image_url && (
-          <div className="relative w-full h-64 bg-gray-200">
+          <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-64 bg-gray-200">
             <Image
               src={company.cover_image_url}
               alt={`${company.name} cover`}
@@ -283,24 +283,25 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back Button */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+          {/* Back Button - Mobile Optimized */}
           <Link
             href="/company"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
+            className="inline-flex items-center gap-1.5 sm:gap-2 text-blue-600 hover:text-blue-700 mb-4 sm:mb-6 font-medium text-sm sm:text-base"
           >
-            <ArrowLeft size={20} />
-            Back to Companies
+            <ArrowLeft size={18} className="sm:size-5" />
+            <span className="hidden sm:inline">Back to Companies</span>
+            <span className="sm:hidden">Back</span>
           </Link>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Main Content - Company Info */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Company Header */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <div className="flex items-start gap-6 mb-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              {/* Company Header - Mobile Optimized */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                <div className="flex items-start gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
                   {company.logo_url ? (
-                    <div className="relative w-24 h-24 flex-shrink-0">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 flex-shrink-0">
                       <Image
                         src={company.logo_url}
                         alt={company.name}
@@ -309,38 +310,38 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                       />
                     </div>
                   ) : (
-                    <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Briefcase size={48} className="text-gray-400" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Briefcase size={32} className="sm:size-10 lg:size-12 text-gray-400" />
                     </div>
                   )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                         {company.h1_title}
                       </h1>
                       {company.is_verified && (
-                        <CheckCircle size={24} className="text-blue-600" />
+                        <CheckCircle size={18} className="sm:size-5 lg:size-6 text-blue-600 flex-shrink-0" />
                       )}
                     </div>
                     {company.tagline && (
-                      <p className="text-lg text-gray-600 mb-4">{company.tagline}</p>
+                      <p className="text-sm sm:text-base lg:text-lg text-gray-600 mb-2 sm:mb-4">{company.tagline}</p>
                     )}
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       {company.industry && (
                         <div className="flex items-center gap-1">
-                          <Briefcase size={16} />
+                          <Briefcase size={12} className="sm:size-4" />
                           <span>{company.industry}</span>
                         </div>
                       )}
                       {company.headquarters_location && (
                         <div className="flex items-center gap-1">
-                          <MapPin size={16} />
-                          <span>{company.headquarters_location}</span>
+                          <MapPin size={12} className="sm:size-4" />
+                          <span className="truncate">{company.headquarters_location}</span>
                         </div>
                       )}
                       {company.company_size && (
                         <div className="flex items-center gap-1">
-                          <Users size={16} />
+                          <Users size={12} className="sm:size-4" />
                           <span>{company.company_size} employees</span>
                         </div>
                       )}
@@ -348,54 +349,54 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                   </div>
                 </div>
 
-                {/* Description */}
+                {/* Description - Mobile Optimized */}
                 <div className="prose max-w-none">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">About {company.name}</h2>
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-2 sm:mb-4">About {company.name}</h2>
                   <MarkdownRenderer content={company.description} />
                 </div>
               </div>
 
-              {/* Company Values */}
+              {/* Company Values - Mobile Optimized */}
               {company.company_values && company.company_values.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Values</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Our Values</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                     {company.company_values.map((value, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <CheckCircle size={20} className="text-blue-600 flex-shrink-0 mt-1" />
-                        <span className="text-gray-700">{value}</span>
+                      <div key={index} className="flex items-start gap-2 sm:gap-3">
+                        <CheckCircle size={16} className="sm:size-5 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+                        <span className="text-gray-700 text-sm sm:text-base">{value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Benefits */}
+              {/* Benefits - Mobile Optimized */}
               {company.benefits && company.benefits.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Benefits & Perks</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Benefits & Perks</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {company.benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start gap-3 bg-blue-50 rounded-lg p-4">
-                        <CheckCircle size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700 font-medium">{benefit}</span>
+                      <div key={index} className="flex items-start gap-2 sm:gap-3 bg-blue-50 rounded-lg p-2 sm:p-3 lg:p-4">
+                        <CheckCircle size={16} className="sm:size-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 font-medium text-xs sm:text-sm">{benefit}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* FAQs */}
+              {/* FAQs - Mobile Optimized */}
               {company.faqs && Array.isArray(company.faqs) && company.faqs.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-                  <div className="space-y-6">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Frequently Asked Questions</h2>
+                  <div className="space-y-4 sm:space-y-6">
                     {company.faqs.map((faq: any, index: number) => (
-                      <div key={index} className="border-b border-gray-200 last:border-0 pb-6 last:pb-0">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      <div key={index} className="border-b border-gray-200 last:border-0 pb-4 sm:pb-6 last:pb-0">
+                        <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
                           {faq.question}
                         </h3>
-                        <p className="text-gray-700 leading-relaxed">
+                        <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                           {faq.answer}
                         </p>
                       </div>
@@ -405,26 +406,26 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
               )}
             </div>
 
-            {/* Sidebar - Quick Info & CTA */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Apply CTA */}
-              <div className="bg-blue-600 rounded-lg shadow-sm p-6 text-white">
-                <h3 className="text-xl font-bold mb-2">Join Our Team</h3>
-                <p className="text-blue-100 mb-4">
+            {/* Sidebar - Quick Info & CTA - Mobile Optimized */}
+            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+              {/* Apply CTA - Mobile Optimized */}
+              <div className="bg-blue-600 rounded-lg shadow-sm p-4 sm:p-6 text-white">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold mb-1 sm:mb-2">Join Our Team</h3>
+                <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
                   {companyJobs.length} open {companyJobs.length === 1 ? 'position' : 'positions'}
                 </p>
                 <Link
                   href={company.careers_page_url || `/jobs?company=${company.slug}`}
-                  className="block w-full bg-white text-blue-600 text-center font-bold py-3 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="block w-full bg-white text-blue-600 text-center font-bold py-2 sm:py-3 rounded-lg hover:bg-blue-50 transition-colors text-sm sm:text-base"
                 >
                   View Open Positions
                 </Link>
               </div>
 
-              {/* Company Info */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Company Info</h3>
-                <div className="space-y-3 text-sm">
+              {/* Company Info - Mobile Optimized */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Company Info</h3>
+                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                   {company.founded_year && (
                     <div>
                       <span className="text-gray-600">Founded:</span>
@@ -444,54 +445,54 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                 </div>
               </div>
 
-              {/* Contact & Links */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Contact & Links</h3>
-                <div className="space-y-3">
+              {/* Contact & Links - Mobile Optimized */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Contact & Links</h3>
+                <div className="space-y-2 sm:space-y-3">
                   {company.website_url && (
                     <a
                       href={company.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-xs sm:text-sm"
                     >
-                      <Globe size={18} />
-                      <span className="text-sm">Website</span>
-                      <ExternalLink size={14} className="ml-auto" />
+                      <Globe size={14} className="sm:size-[18px]" />
+                      <span>Website</span>
+                      <ExternalLink size={12} className="sm:size-[14px] ml-auto" />
                     </a>
                   )}
                   {company.email && (
                     <a
                       href={`mailto:${company.email}`}
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-xs sm:text-sm"
                     >
-                      <Mail size={18} />
-                      <span className="text-sm">{company.email}</span>
+                      <Mail size={14} className="sm:size-[18px]" />
+                      <span className="break-all">{company.email}</span>
                     </a>
                   )}
                   {company.phone && (
                     <a
                       href={`tel:${company.phone}`}
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-xs sm:text-sm"
                     >
-                      <Phone size={18} />
-                      <span className="text-sm">{company.phone}</span>
+                      <Phone size={14} className="sm:size-[18px]" />
+                      <span>{company.phone}</span>
                     </a>
                   )}
                 </div>
 
-                {/* Social Media */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">Follow Us</h4>
-                  <div className="flex gap-3">
+                {/* Social Media - Mobile Optimized */}
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 mb-2 sm:mb-3">Follow Us</h4>
+                  <div className="flex gap-2 sm:gap-3">
                     {company.linkedin_url && (
                       <a
                         href={company.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
                       >
-                        <Linkedin size={20} />
+                        <Linkedin size={16} className="sm:size-5" />
                       </a>
                     )}
                     {company.twitter_url && (
@@ -499,9 +500,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                         href={company.twitter_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
                       >
-                        <Twitter size={20} />
+                        <Twitter size={16} className="sm:size-5" />
                       </a>
                     )}
                     {company.facebook_url && (
@@ -509,9 +510,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                         href={company.facebook_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
                       >
-                        <Facebook size={20} />
+                        <Facebook size={16} className="sm:size-5" />
                       </a>
                     )}
                     {company.instagram_url && (
@@ -519,32 +520,32 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                         href={company.instagram_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
                       >
-                        <Instagram size={20} />
+                        <Instagram size={16} className="sm:size-5" />
                       </a>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Company Jobs */}
+              {/* Company Jobs - Mobile Optimized */}
               {companyJobs.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Open Positions</h2>
-                  <div className="space-y-4">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Open Positions</h2>
+                  <div className="space-y-3 sm:space-y-4">
                     {companyJobs.map((job) => (
-                      <div key={job.id} className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition-colors">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
+                      <div key={job.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 lg:p-6 hover:border-blue-300 transition-colors">
+                        <div className="flex items-start justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0">
                             <Link 
                               href={`/jobs/${job.slug}`}
-                              className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                              className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
                             >
                               {job.title}
                             </Link>
                             
-                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
+                            <div className="flex flex-wrap gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-600">
                               {(() => {
                                 const location = typeof job.location === 'string' 
                                   ? job.location 
@@ -553,15 +554,15 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                                       : [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified');
                                 return location && location !== 'Not specified' && (
                                   <div className="flex items-center gap-1">
-                                    <MapPin size={14} />
-                                    <span>{location}</span>
+                                    <MapPin size={12} className="sm:size-[14px]" />
+                                    <span className="truncate">{location}</span>
                                   </div>
                                 );
                               })()}
                               
                               {job.employment_type && (
                                 <div className="flex items-center gap-1">
-                                  <Clock size={14} />
+                                  <Clock size={12} className="sm:size-[14px]" />
                                   <span>{job.employment_type}</span>
                                 </div>
                               )}
@@ -571,7 +572,7 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                                   const { min, currency, period } = job.salary_range;
                                   return (
                                     <div className="flex items-center gap-1">
-                                      <DollarSign size={14} />
+                                      <DollarSign size={12} className="sm:size-[14px]" />
                                       <span>{currency} {min.toLocaleString()} {period || ''}</span>
                                     </div>
                                   );
@@ -581,16 +582,16 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                               
                               {job.posted_date && (
                                 <div className="flex items-center gap-1">
-                                  <Calendar size={14} />
+                                  <Calendar size={12} className="sm:size-[14px]" />
                                   <span>{new Date(job.posted_date).toLocaleDateString()}</span>
                                 </div>
                               )}
                             </div>
                             
                             {job.description && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2 line-clamp-2">
                                 {typeof job.description === 'string' 
-                                  ? job.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
+                                  ? job.description.replace(/<[^>]*>/g, '').substring(0, 120) + '...'
                                   : 'Great opportunity at ' + company.name
                                 }
                               </p>
@@ -599,9 +600,9 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                           
                           <Link
                             href={`/jobs/${job.slug}`}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
                           >
-                            View Job
+                            View
                           </Link>
                         </div>
                       </div>
@@ -609,13 +610,13 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                   </div>
                   
                   {companyJobs.length >= 10 && (
-                    <div className="mt-6 text-center">
+                    <div className="mt-4 sm:mt-6 text-center">
                       <Link
                         href={`/jobs?company=${company.name}`}
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                        className="inline-flex items-center gap-1.5 sm:gap-2 text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-sm"
                       >
                         View all positions
-                        <ExternalLink size={16} />
+                        <ExternalLink size={14} className="sm:size-4" />
                       </Link>
                     </div>
                   )}
@@ -624,25 +625,25 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
             </div>
           </div>
 
-          {/* Similar Companies Section - SEO Interlinking */}
+          {/* Similar Companies Section - Mobile Optimized */}
           {similarCompanies.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <section className="mt-8 sm:mt-10 lg:mt-12 pt-6 sm:pt-8 border-t border-gray-200">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
                 Similar Companies
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
                 Explore other {company.industry || 'companies'} hiring now
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                 {similarCompanies.map((similar) => (
                   <Link
                     key={similar.slug}
                     href={`/company/${similar.slug}`}
-                    className="block bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all"
+                    className="block bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-6 hover:border-blue-300 hover:shadow-md transition-all"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       {similar.logo_url ? (
-                        <div className="relative w-16 h-16 flex-shrink-0">
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0">
                           <Image
                             src={similar.logo_url}
                             alt={similar.name}
@@ -651,18 +652,18 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <Briefcase size={32} className="text-gray-400" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Briefcase size={20} className="sm:size-6 lg:size-8 text-gray-400" />
                         </div>
                       )}
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1 hover:text-blue-600 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-0.5 sm:mb-1 hover:text-blue-600 transition-colors line-clamp-1">
                           {similar.name}
                         </h3>
                         {similar.industry && (
-                          <p className="text-sm text-gray-600 mb-1">{similar.industry}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1 line-clamp-1">{similar.industry}</p>
                         )}
-                        <p className="text-sm text-gray-500">{similar.job_count} open positions</p>
+                        <p className="text-xs text-gray-500">{similar.job_count} open positions</p>
                       </div>
                     </div>
                   </Link>
