@@ -75,9 +75,9 @@ export default function JobCard({
   return (
     <Link href={`/jobs/${job.slug}`} className="block">
       <div
-        className="bg-white rounded-2xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100"
+        className="bg-white rounded-2xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border-2"
         style={{
-          borderColor: theme.colors.border.light,
+          borderColor: theme.colors.primary.DEFAULT,
           backgroundColor: theme.colors.card.DEFAULT,
         }}
       >
@@ -85,8 +85,8 @@ export default function JobCard({
           {/* Left: Job Info */}
           <div className="flex-1 min-w-0">
             <h3
-              className="text-base font-semibold mb-1 truncate"
-              style={{ color: theme.colors.text.primary }}
+              className="text-base font-semibold mb-1 line-clamp-2"
+              style={{ color: theme.colors.primary.DEFAULT }}
             >
               {job.title}
             </h3>
@@ -117,26 +117,12 @@ export default function JobCard({
                   {job.salary}
                 </span>
               )}
-              
-              {/* ✅ Posted Date - On its own line */}
-              {job.postedDate && (
-                <div className="flex items-center gap-1">
-                  <Calendar size={14} style={{ color: theme.colors.text.secondary }} />
-                  <span
-                    className="text-xs"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    {job.postedDate}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Right: Match Score & Actions */}
-          <div className="flex flex-col items-center gap-3">
-            {/* Match Score Circle - Only show if showMatch is true */}
-            {showMatch && (
+          {/* Right: Match Score */}
+          {showMatch && (
+            <div className="flex flex-col items-center gap-3">
               <button
                 onClick={handleMatchClick}
                 className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
@@ -162,32 +148,48 @@ export default function JobCard({
                   Match
                 </span>
               </button>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSave}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {isSaved ? (
-                  <BookmarkCheck size={20} style={{ color: theme.colors.primary.DEFAULT }} />
-                ) : (
-                  <Bookmark size={20} style={{ color: theme.colors.text.secondary }} />
-                )}
-              </button>
-
-              <button
-                onClick={handleApply}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {isApplied ? (
-                  <Trash2 size={20} style={{ color: theme.colors.text.secondary }} />
-                ) : (
-                  <FileCheck size={20} style={{ color: theme.colors.text.secondary }} />
-                )}
-              </button>
             </div>
+          )}
+        </div>
+
+        {/* Bottom Row: Date & Action Buttons */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t" style={{ borderColor: theme.colors.border.light }}>
+          {/* Posted Date */}
+          {job.postedDate && (
+            <div className="flex items-center gap-1">
+              <Calendar size={14} style={{ color: theme.colors.text.secondary }} />
+              <span
+                className="text-xs"
+                style={{ color: theme.colors.text.secondary }}
+              >
+                {job.postedDate}
+              </span>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {isSaved ? (
+                <BookmarkCheck size={18} style={{ color: theme.colors.primary.DEFAULT }} />
+              ) : (
+                <Bookmark size={18} style={{ color: theme.colors.text.secondary }} />
+              )}
+            </button>
+
+            <button
+              onClick={handleApply}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {isApplied ? (
+                <Trash2 size={18} style={{ color: theme.colors.text.secondary }} />
+              ) : (
+                <FileCheck size={18} style={{ color: theme.colors.text.secondary }} />
+              )}
+            </button>
           </div>
         </div>
       </div>
