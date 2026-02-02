@@ -5,7 +5,6 @@ import { MessageCircle, FileCheck, GraduationCap, ArrowRight } from 'lucide-reac
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import BannerAd from '@/components/ads/BannerAd';
 
 interface Tool {
   id: string;
@@ -78,11 +77,6 @@ export default function CareerToolsPage() {
             Advanced tools for career development
           </p>
         </div>
-      </div>
-
-      {/* Top Banner Ad */}
-      <div className="px-6">
-        <BannerAd />
       </div>
 
       {/* Tools Grid */}

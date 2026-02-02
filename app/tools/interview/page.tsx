@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { theme } from '@/lib/theme';
 import { InterviewPrepService, InterviewSession } from '@/lib/services/interviewPrepService';
 import InterviewPrepModal from '@/components/tools/InterviewPrepModal';
-import BannerAd from '@/components/ads/BannerAd';
 
 export default function InterviewPage() {
   const router = useRouter();
@@ -69,11 +68,6 @@ export default function InterviewPage() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Banner Ad - Below Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <BannerAd />
       </div>
 
       {/* Main Content */}

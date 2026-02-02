@@ -17,8 +17,7 @@ import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine
 import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
-import BannerAd from '@/components/ads/BannerAd';
-import AdsterraNative from '@/components/ads/AdsterraNative';
+
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
 const STORAGE_KEYS = {
@@ -824,9 +823,7 @@ export default function JobList() {
           </div>
         )}
 
-        <div className="px-6">
-          <BannerAd />
-        </div>
+
 
         {/* ✅ NEW: Tabs Section */}
         <div className="px-6 pt-6 pb-2">
@@ -1053,29 +1050,19 @@ export default function JobList() {
                 </div>
               ) : (
                 <>
-                  {sortedJobs.map((job, index) => {
-                    const shouldShowAd = (index + 1) % 10 === 0;
-                    
-                    return (
-                      <React.Fragment key={job.id}>
-                        <JobCard
-                          job={job}
-                          savedJobs={savedJobs}
-                          appliedJobs={appliedJobs}
-                          onSave={handleSave}
-                          onApply={handleApply}
-                          onShowBreakdown={handleShowBreakdown}
-                          showMatch={false}
-                        />
-                        {shouldShowAd && (
-                          <AdsterraNative 
-                            key={`native-ad-${index}`}
-                            slotId={`job-feed-native-${index}`}
-                          />
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
+                  {sortedJobs.map((job) => (
+                    <React.Fragment key={job.id}>
+                      <JobCard
+                        job={job}
+                        savedJobs={savedJobs}
+                        appliedJobs={appliedJobs}
+                        onSave={handleSave}
+                        onApply={handleApply}
+                        onShowBreakdown={handleShowBreakdown}
+                        showMatch={false}
+                      />
+                    </React.Fragment>
+                  ))}
                   {latestJobsLoading && (
                     <div className="flex items-center justify-center py-6">
                       <p style={{ color: theme.colors.text.secondary }}>Loading more jobs...</p>
@@ -1114,29 +1101,19 @@ export default function JobList() {
                   </p>
                 </div>
               ) : (
-                matchedJobs.map((job, index) => {
-                  const shouldShowAd = (index + 1) % 10 === 0;
-                  
-                  return (
-                    <React.Fragment key={job.id}>
-                      <JobCard
-                        job={job}
-                        savedJobs={savedJobs}
-                        appliedJobs={appliedJobs}
-                        onSave={handleSave}
-                        onApply={handleApply}
-                        onShowBreakdown={handleShowBreakdown}
-                        showMatch={true}
-                      />
-                      {shouldShowAd && (
-                        <AdsterraNative 
-                          key={`native-ad-${index}`}
-                          slotId={`job-feed-native-${index}`}
-                        />
-                      )}
-                    </React.Fragment>
-                  );
-                })
+                matchedJobs.map((job) => (
+                  <React.Fragment key={job.id}>
+                    <JobCard
+                      job={job}
+                      savedJobs={savedJobs}
+                      appliedJobs={appliedJobs}
+                      onSave={handleSave}
+                      onApply={handleApply}
+                      onShowBreakdown={handleShowBreakdown}
+                      showMatch={true}
+                    />
+                  </React.Fragment>
+                ))
               )}
             </>
           )}

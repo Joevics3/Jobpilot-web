@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Eye, ArrowRight } from 'lucide-react';
-import InlineAd from '@/components/ads/InlineAd';
 import React from 'react';
 
 interface BlogPost {
@@ -114,12 +113,6 @@ export default function BlogPostsList({ posts }: BlogPostsListProps) {
             </div>
           </div>
         </article>
-        {/* In-feed Inline Ad - After every 4th post */}
-        {(index + 1) % 4 === 0 && index < posts.length - 1 && (
-          <div className="col-span-1 md:col-span-2 lg:col-span-3">
-            <InlineAd />
-          </div>
-        )}
       </React.Fragment>
       ))}
     </div>

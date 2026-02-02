@@ -11,8 +11,7 @@ import JobFilters from '@/components/jobs/JobFilters';
 import { ChevronDown, Search, X, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthModal from '@/components/AuthModal';
-import BannerAd from '@/components/ads/BannerAd';
-import AdsterraNative from '@/components/ads/AdsterraNative';
+
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
 const STORAGE_KEYS = {
@@ -460,9 +459,7 @@ export default function LatestJobsPage() {
           onSubmitJob={() => router.push('/submit')}
         />
 
-        <div className="px-6">
-          <BannerAd />
-        </div>
+
 
         {/* Page Title */}
         <div className="px-6 pt-6 pb-4">
@@ -629,29 +626,19 @@ export default function LatestJobsPage() {
             </div>
           ) : (
             <>
-              {filteredJobs.map((job, index) => {
-                const shouldShowAd = (index + 1) % 10 === 0;
-                
-                return (
-                  <React.Fragment key={job.id}>
-                    <JobCard
-                      job={job}
-                      savedJobs={savedJobs}
-                      appliedJobs={appliedJobs}
-                      onSave={handleSave}
-                      onApply={handleApply}
-                      onShowBreakdown={() => {}} // No breakdown for latest jobs
-                      showMatch={false} // Hide match circle
-                    />
-                    {shouldShowAd && (
-                      <AdsterraNative 
-                        key={`native-ad-${index}`}
-                        slotId={`latest-jobs-native-${index}`}
-                      />
-                    )}
-                  </React.Fragment>
-                );
-              })}
+              {filteredJobs.map((job) => (
+                <React.Fragment key={job.id}>
+                  <JobCard
+                    job={job}
+                    savedJobs={savedJobs}
+                    appliedJobs={appliedJobs}
+                    onSave={handleSave}
+                    onApply={handleApply}
+                    onShowBreakdown={() => {}} // No breakdown for latest jobs
+                    showMatch={false} // Hide match circle
+                  />
+                </React.Fragment>
+              ))}
               {latestJobsLoading && (
                 <div className="flex items-center justify-center py-6">
                   <p style={{ color: theme.colors.text.secondary }}>Loading more jobs...</p>

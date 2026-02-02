@@ -25,11 +25,6 @@ import Link from 'next/link';
 import Head from 'next/head';
 
 // OPTIMIZATION: Lazy load components that aren't needed immediately
-const BannerAd = dynamic(() => import('@/components/ads/BannerAd'), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
-});
-
 const AuthModal = dynamic(() => import('@/components/AuthModal'), {
   ssr: false, // Don't render on server
   loading: () => null
@@ -705,11 +700,6 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
             </div>
           </section>
         )}
-
-        {/* OPTIMIZATION: Lazy-loaded Banner Ad */}
-        <div className="px-6">
-          <BannerAd />
-        </div>
 
         {/* SEO Footer Content */}
         <section className="px-6 py-12 bg-gray-50">

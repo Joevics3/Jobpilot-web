@@ -12,7 +12,7 @@ import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
 import { ChevronDown, Briefcase } from 'lucide-react';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
-import AdsterraNative from '@/components/ads/AdsterraNative';
+
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -414,31 +414,18 @@ export default function CategoryJobList({ category, location }: CategoryJobListP
               </p>
             </div>
           ) : (
-            sortedJobs.map((job, index) => {
-              // Show native ad after every 10th job
-              const shouldShowAd = (index + 1) % 10 === 0;
-              
-              return (
-                <React.Fragment key={job.id}>
-                  <JobCard
-                    job={job}
-                    savedJobs={savedJobs}
-                    appliedJobs={appliedJobs}
-                    onSave={handleSave}
-                    onApply={handleApply}
-                    onShowBreakdown={handleShowBreakdown}
-                  />
-                  {shouldShowAd && (
-                    <div className="p-4">
-                      <AdsterraNative 
-                        key={`native-ad-${index}`}
-                        slotId={`category-feed-native-${index}`}
-                      />
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })
+            sortedJobs.map((job) => (
+              <React.Fragment key={job.id}>
+                <JobCard
+                  job={job}
+                  savedJobs={savedJobs}
+                  appliedJobs={appliedJobs}
+                  onSave={handleSave}
+                  onApply={handleApply}
+                  onShowBreakdown={handleShowBreakdown}
+                />
+              </React.Fragment>
+            ))
           )}
         </div>
       </div>

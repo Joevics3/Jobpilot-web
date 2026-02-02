@@ -12,8 +12,7 @@ import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useCredits } from '@/hooks/useCredits';
-import BannerAd from '@/components/ads/BannerAd';
-import InlineAd from '@/components/ads/InlineAd';
+
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import RelatedJobCard from '@/components/jobs/RelatedJobCard';
 
@@ -623,11 +622,6 @@ const getExperienceLevelWithYears = (level: string) => {
           </div>
         </div>
 
-        {/* Banner Ad - Before Key Information Grid */}
-        <div className="px-6">
-          <BannerAd />
-        </div>
-
         {/* Key Information Grid */}
         <div className="px-6 py-4">
           <div className="mb-6 rounded-xl p-4 shadow-sm bg-white">
@@ -791,11 +785,6 @@ const getExperienceLevelWithYears = (level: string) => {
             return null;
           })()}
 
-          {/* Banner Ad - After Key Responsibilities */}
-          <div>
-            <BannerAd />
-          </div>
-
           {/* Qualifications */}
           {(() => {
             const qualifications = job.qualifications || [];
@@ -951,10 +940,6 @@ const getExperienceLevelWithYears = (level: string) => {
             </section>
           )}
 
-          {/* Banner Ad - At Bottom */}
-          <div>
-            <BannerAd />
-          </div>
         </div>
 
         {/* Bottom Action Bar */}

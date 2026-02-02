@@ -7,9 +7,6 @@ import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
 import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
-import InlineAd from '@/components/ads/InlineAd';
-import BannerAd from '@/components/ads/BannerAd';
-
 type TabType = 'paths' | 'skills' | 'insights';
 
 export default function CareerPage() {
@@ -152,11 +149,6 @@ export default function CareerPage() {
         </div>
       </div>
 
-      {/* Inline Ad - Under Career Readiness Score */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <InlineAd />
-      </div>
-
       {/* Main Content with Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
@@ -244,10 +236,6 @@ export default function CareerPage() {
                   ))}
                 </div>
                 
-                {/* Banner Ad - End of Career Paths Tab */}
-                <div>
-                  <BannerAd />
-                </div>
               </div>
             )}
 
@@ -297,11 +285,6 @@ export default function CareerPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-                
-                {/* Banner Ad - End of Skill Gaps Tab */}
-                <div>
-                  <BannerAd />
                 </div>
               </div>
             )}
@@ -378,11 +361,6 @@ export default function CareerPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Banner Ad - End of Insights Tab */}
-                <div>
-                  <BannerAd />
                 </div>
               </div>
             )}

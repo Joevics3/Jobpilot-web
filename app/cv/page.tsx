@@ -8,7 +8,6 @@ import { theme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
-import BannerAd from '@/components/ads/BannerAd';
 import Link from 'next/link';
 
 interface CVDocument {
@@ -133,11 +132,6 @@ export default function CVListPage() {
         </div>
       </div>
 
-      {/* Banner Ad - Below header, above tabs */}
-      <div className="px-6">
-        <BannerAd />
-      </div>
-
       {/* Tabs */}
       <div className="px-6 mt-4 flex gap-2 border-b border-gray-200">
         <button
@@ -213,12 +207,7 @@ export default function CVListPage() {
                   </button>
                 </div>
               </div>
-                {/* Banner Ad - After 2nd row (6 items on desktop, 2 on tablet, 2 on mobile) */}
-                {index === 5 && (
-                  <div className="col-span-1 sm:col-span-2 lg:col-span-3">
-                    <BannerAd />
-                  </div>
-                )}
+
               </React.Fragment>
             ))}
           </div>

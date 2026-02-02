@@ -6,8 +6,6 @@ import { BookOpen, ArrowRight, Building2, Newspaper, MapPin } from 'lucide-react
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 
-import BannerAd from '@/components/ads/BannerAd';
-
 interface Tool {
   id: string;
   title: string;
@@ -96,11 +94,6 @@ export default function ToolsPage() {
               Smart tools to boost your job search
             </p>
           </div>
-        </div>
-
-        {/* Top Banner Ad */}
-        <div className="px-6">
-          <BannerAd />
         </div>
 
         {/* Tools Grid */}

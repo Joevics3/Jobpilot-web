@@ -6,7 +6,6 @@ import { ArrowLeft, Plus, FileCheck, Clock, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
 import ATSReviewModal from '@/components/tools/ATSReviewModal';
-import BannerAd from '@/components/ads/BannerAd';
 
 export default function ATSReviewPage() {
   const router = useRouter();
@@ -70,11 +69,6 @@ export default function ATSReviewPage() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Banner Ad - Below Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <BannerAd />
       </div>
 
       {/* Main Content */}
