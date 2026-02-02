@@ -238,20 +238,154 @@ export default function PrivacyPolicyPage() {
 
 
 
-        {/* Cookies Policy */}
+        {/* Cookies & Advertising Policy */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Cookies & Tracking Technologies</h2>
-          <p className="text-sm text-gray-700 leading-relaxed mb-4">
-            We use cookies and similar technologies to enhance your experience, analyze traffic, and personalize content. 
-            This includes both first-party cookies for essential platform functionality and third-party cookies through 
-            our analytics and service providers. You can control cookie settings through your browser preferences.
-          </p>
+          <div className="flex items-center gap-3 mb-4">
+            <Shield size={24} style={{ color: theme.colors.primary.DEFAULT }} />
+            <h2 className="text-xl font-bold text-gray-900">Cookies, Advertising & Third-Party Services</h2>
+          </div>
           
-          <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-            <p className="text-sm text-yellow-800">
-              <span className="font-semibold">Note:</span> Disabling certain cookies may affect some features and functionality of our platform, 
-              including the delivery of personalized advertisements.
+          {/* Google AdSense */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Google AdSense & Advertising</h3>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              We use Google AdSense and other advertising partners to display advertisements on our platform. 
+              These services help us keep JobMeter free for users while generating revenue to maintain and improve our services.
             </p>
+            
+            <div className="p-4 bg-white rounded-xl border border-gray-200 mb-4">
+              <h4 className="font-semibold text-gray-900 mb-2">How Google AdSense Works</h4>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Google AdSense uses cookies to serve ads based on your prior visits to our website and other websites</li>
+                <li>Google may use the DoubleClick cookie to enable interest-based advertising</li>
+                <li>Third-party vendors, including Google, may display ads on our platform</li>
+                <li>Google's use of advertising cookies enables it and its partners to serve ads based on your visit to our site and/or other sites on the Internet</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Personalized Advertising */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Personalized Advertising</h3>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              We participate in personalized advertising programs that deliver ads based on your interests, 
+              demographics, and online behavior. This includes:
+            </p>
+            
+            <ul className="space-y-2 text-sm text-gray-700 mb-4 ml-4">
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-gray-900">•</span>
+                <span><span className="font-semibold">Interest-Based Ads:</span> Ads tailored to your interests based on your browsing history and profile information</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-gray-900">•</span>
+                <span><span className="font-semibold">Demographic Targeting:</span> Ads selected based on general demographic information such as location, age range, or career interests</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-gray-900">•</span>
+                <span><span className="font-semibold">Contextual Ads:</span> Ads relevant to the content you are viewing on our platform</span>
+              </li>
+            </ul>
+
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 mb-4">
+              <h4 className="font-semibold text-blue-800 mb-2">Opting Out of Personalized Ads</h4>
+              <p className="text-sm text-blue-700 leading-relaxed mb-3">
+                You can opt out of personalized advertising from Google and other participating vendors by:
+              </p>
+              <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <li>Visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Google Ads Settings</a></li>
+                <li>Visiting <a href="http://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">About Ads Consumer Choice Page</a></li>
+                <li>Visiting <a href="http://www.youronlinechoices.eu/" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Your Online Choices (EU)</a></li>
+                <li>Installing the <a href="https://tools.google.com/dlpage/gaoptout/" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Google Analytics Opt-out Browser Add-on</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Cookies */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Cookies & Tracking Technologies</h3>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              We use cookies and similar tracking technologies to enhance your experience, analyze traffic, 
+              personalize content, and serve advertisements. Here's how we use different types of cookies:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-2">Essential Cookies</h4>
+                <p className="text-sm text-blue-700">
+                  Required for basic platform functionality such as user authentication, security, and session management. These cannot be disabled.
+                </p>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                <h4 className="font-semibold text-green-800 mb-2">Analytics Cookies</h4>
+                <p className="text-sm text-green-700">
+                  Help us understand how visitors interact with our website by collecting and reporting information anonymously.
+                </p>
+              </div>
+
+              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <h4 className="font-semibold text-purple-800 mb-2">Advertising Cookies</h4>
+                <p className="text-sm text-purple-700">
+                  Used by us and our advertising partners (including Google) to deliver relevant ads and track ad performance.
+                </p>
+              </div>
+
+              <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                <h4 className="font-semibold text-orange-800 mb-2">Third-Party Cookies</h4>
+                <p className="text-sm text-orange-700">
+                  Set by our partners and service providers to enable features like social sharing and embedded content.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <span className="font-semibold">Note:</span> You can control cookie settings through your browser preferences. However, disabling certain cookies may affect some features and functionality of our platform, including the delivery of personalized advertisements.
+              </p>
+            </div>
+          </div>
+
+          {/* Third-Party Vendors */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Third-Party Vendors & Service Providers</h3>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              We work with trusted third-party vendors and service providers who may use cookies and collect 
+              information to provide services on our behalf. These include:
+            </p>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-white rounded-xl border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Advertising Partners</h4>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li><span className="font-medium">Google AdSense:</span> Displays advertisements and uses cookies for personalized ads</li>
+                  <li><span className="font-medium">Other Ad Networks:</span> Various advertising partners who may display ads on our platform</li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-white rounded-xl border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Analytics & Tracking</h4>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li><span className="font-medium">Google Analytics:</span> Analyzes website traffic and user behavior</li>
+                  <li><span className="font-medium">Supabase:</span> Provides database hosting and user authentication</li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-white rounded-xl border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Communication & Services</h4>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li>Email service providers</li>
+                  <li>Hosting and infrastructure providers</li>
+                  <li>Customer support tools</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <span className="font-semibold">Important:</span> Third-party vendors and partners have their own privacy policies and may use cookies independently. We encourage you to review their privacy policies to understand how they collect and use your information.
+              </p>
+            </div>
           </div>
         </div>
 

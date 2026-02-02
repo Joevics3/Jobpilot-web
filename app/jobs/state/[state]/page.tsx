@@ -119,19 +119,22 @@ export default function JobsByStatePage() {
     try {
       setLoading(true);
       
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      // Fetch all active jobs from last 30 days
+      // Fetch all active jobs (temporarily removed date filter for debugging)
       const { data, error } = await supabase
         .from('jobs')
         .select('id, title, company, location, salary_range, created_at, posted_date, slug, type, employment_type')
         .eq('status', 'active')
-        .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log(`Fetched ${data?.length || 0} total jobs`);
+      console.log('Sample job location:', data?.[0]?.location);
+      console.log('Looking for state:', formattedState);
 
       const allJobs = data || [];
 
@@ -146,6 +149,8 @@ export default function JobsByStatePage() {
         }
         return false;
       });
+
+      console.log(`Found ${stateJobs.length} jobs in ${formattedState}`);
 
       // Filter national jobs (exclude current state)
       const nationalJobsData = allJobs.filter(job => {

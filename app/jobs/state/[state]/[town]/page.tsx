@@ -123,19 +123,22 @@ export default function JobsByTownPage() {
     try {
       setLoading(true);
       
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      // Fetch all active jobs from last 30 days
+      // Fetch all active jobs (removed date filter for debugging)
       const { data, error } = await supabase
         .from('jobs')
         .select('id, title, company, location, salary_range, created_at, posted_date, slug, type, employment_type')
         .eq('status', 'active')
-        .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log(`Fetched ${data?.length || 0} total jobs`);
+      console.log('Sample job location:', data?.[0]?.location);
+      console.log('Looking for state:', formattedState, 'town:', formattedTown);
 
       const allJobs = data || [];
 
@@ -151,6 +154,8 @@ export default function JobsByTownPage() {
         return false;
       });
 
+      console.log(`Found ${stateJobs.length} jobs in state ${formattedState}`);
+
       // Filter town jobs from state jobs
       const townJobs = stateJobs.filter((job) => {
         if (typeof job.location === 'string') {
@@ -162,6 +167,8 @@ export default function JobsByTownPage() {
         }
         return false;
       });
+
+      console.log(`Found ${townJobs.length} jobs in town ${formattedTown}`);
 
       // Filter other state jobs (same state, different town)
       const otherJobs = stateJobs.filter((job) => {
@@ -186,6 +193,8 @@ export default function JobsByTownPage() {
         }
         return true;
       }).slice(0, 10);
+
+      console.log(`Setting ${townJobs.length} town jobs, ${otherJobs.length} other state jobs, ${nationalJobsData.length} national jobs`);
 
       // Transform without matching
       setJobs(townJobs.map(transformJobToUI));

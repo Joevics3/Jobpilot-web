@@ -441,6 +441,24 @@ export default function SettingsPage() {
               </div>
               <ChevronRight size={20} className="text-gray-400" />
             </Link>
+            <Link
+              href="/disclaimer"
+              className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: theme.colors.accent.gold + '15' }}
+                >
+                  <HelpCircle size={20} style={{ color: theme.colors.accent.gold }} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold text-gray-900">Disclaimer</h3>
+                  <p className="text-xs text-gray-600">Important legal disclaimers</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-400" />
+            </Link>
           </div>
         </div>
 
