@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Newspaper, TrendingUp, Calendar, Eye, ArrowRight } from 'lucide-react';
+import { Newspaper, Calendar, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { BlogSchema } from '@/components/seo/StructuredData';
 
@@ -72,14 +72,12 @@ export default async function BlogPage() {
   const posts = await getBlogPosts();
   const categories = getCategories(posts);
   
-  const featuredPost = posts[0];
-  const recentPosts = posts.slice(1);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   };
@@ -90,189 +88,126 @@ export default async function BlogPage() {
       <BlogSchema />
 
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
+        {/* Header - Mobile Optimized */}
         <div className="text-white" style={{ backgroundColor: '#2563EB' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex items-center gap-3 mb-4">
-              <Newspaper size={32} />
-              <h1 className="text-4xl font-bold">Career Blog & Articles</h1>
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 lg:py-12">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <Newspaper size={24} className="sm:size-7 lg:size-8" />
+              <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold">Career Blog & Articles</h1>
             </div>
-            <p className="text-lg text-white max-w-3xl">
+            <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-3xl leading-relaxed">
               Expert insights, salary guides, and career tips to help you succeed in your job search and professional growth.
             </p>
           </div>
         </div>
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb - Mobile Optimized */}
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <nav className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 sm:py-4">
+            <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
               <Link href="/" className="hover:text-blue-600">Home</Link>
-              <span>/</span>
+              <span className="text-gray-400">/</span>
               <span className="text-gray-900 font-medium">Blog</span>
             </nav>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content - Mobile Optimized */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
           {posts.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-              <Newspaper size={48} className="mx-auto text-gray-400 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">No blog posts available</h2>
-              <p className="text-gray-600">Check back soon for career insights and tips.</p>
+            <div className="bg-white rounded-lg shadow-sm p-6 sm:p-12 text-center">
+              <Newspaper size={36} className="sm:size-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2">No blog posts available</h2>
+              <p className="text-sm text-gray-600">Check back soon for career insights and tips.</p>
             </div>
           ) : (
-            <div className="space-y-8">
-              {/* Featured Post */}
-              {featuredPost && (
-                <section className="mb-12">
-                  <div className="flex items-center gap-2 mb-6">
-                    <TrendingUp size={24} className="text-blue-600" />
-                    <h2 className="text-2xl font-bold text-gray-900">Featured Article</h2>
-                  </div>
-                  <Link href={`/blog/${featuredPost.slug}`}>
-                    <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-gray-200">
-                      <div className="grid md:grid-cols-2 gap-0">
-                        {featuredPost.featured_image_url && (
-                          <div className="relative h-64 md:h-auto">
-                            <Image
-                              src={featuredPost.featured_image_url}
-                              alt={featuredPost.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="p-8">
-                          {featuredPost.category && (
-                            <span className="inline-block text-xs font-semibold text-blue-600 mb-2">
-                              {featuredPost.category}
-                            </span>
-                          )}
-                          <h3 className="text-3xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
-                            {featuredPost.title}
-                          </h3>
-                          {featuredPost.excerpt && (
-                            <p className="text-gray-600 mb-4 text-lg">
-                              {featuredPost.excerpt}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={16} />
-                              <span>{formatDate(featuredPost.published_at)}</span>
-                            </div>
-                            {featuredPost.read_time_minutes && (
-                              <span>{featuredPost.read_time_minutes} min read</span>
-                            )}
-                            {featuredPost.view_count > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Eye size={16} />
-                                <span>{featuredPost.view_count}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                </section>
-              )}
-
-              {/* Categories Filter (Optional - can be added later) */}
+            <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+              {/* Categories Filter - Mobile Optimized */}
               {categories.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <span className="text-sm font-medium text-gray-700">Categories:</span>
-                  {categories.map((category) => (
-                    <span
-                      key={category}
-                      className="px-3 py-1 text-sm bg-white border border-gray-300 text-gray-700 rounded-full hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-colors"
+                <div className="mb-4 sm:mb-6 lg:mb-8">
+                  <div className="relative inline-block w-full sm:w-auto">
+                    <select 
+                      className="appearance-none bg-white border border-gray-300 text-gray-700 py-2.5 sm:py-2 px-3 sm:px-4 pr-8 sm:pr-10 rounded-lg leading-tight focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full sm:w-auto text-sm sm:text-base"
+                      onChange={(e) => {
+                        const category = e.target.value;
+                        if (category) {
+                          window.location.href = `/blog?category=${encodeURIComponent(category)}`;
+                        }
+                      }}
                     >
-                      {category}
-                    </span>
-                  ))}
+                      <option value="">Filter by Category</option>
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Recent Posts Grid */}
-              {recentPosts.length > 0 && (
+              {/* Posts Grid - Mobile Optimized */}
+              {posts.length > 0 && (
                 <section>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Articles</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {recentPosts.map((post) => (
-                      <article
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                    {posts.map((post) => (
+                      <Link
                         key={post.id}
-                        className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
+                        href={`/blog/${post.slug}`}
+                        className="group block"
                       >
-                        {post.featured_image_url && (
-                          <Link href={`/blog/${post.slug}`}>
-                            <div className="relative w-full h-48 bg-gray-200">
+                        <article className="bg-white rounded-lg sm:rounded-xl shadow-sm hover:shadow-lg sm:hover:shadow-xl hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-200 hover:border-blue-300 flex flex-col h-full">
+                          {post.featured_image_url && (
+                            <div className="relative w-full h-40 sm:h-44 lg:h-48 bg-gray-200 overflow-hidden">
                               <Image
                                 src={post.featured_image_url}
                                 alt={post.title}
                                 fill
-                                className="object-cover"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             </div>
-                          </Link>
-                        )}
-
-                        <div className="p-6 flex-1 flex flex-col">
-                          {post.category && (
-                            <span className="inline-block text-xs font-semibold text-blue-600 mb-2">
-                              {post.category}
-                            </span>
                           )}
 
-                          <Link href={`/blog/${post.slug}`}>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+                          <div className="p-3 sm:p-4 lg:p-6 flex-1 flex flex-col">
+                            {post.category && (
+                              <span className="inline-block text-[10px] sm:text-xs font-semibold text-blue-600 mb-1.5 sm:mb-2">
+                                {post.category}
+                              </span>
+                            )}
+
+                            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight sm:leading-snug">
                               {post.title}
                             </h3>
-                          </Link>
 
-                          {post.excerpt && (
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
-                              {post.excerpt}
-                            </p>
-                          )}
+                            {post.excerpt && (
+                              <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3 flex-1 leading-relaxed">
+                                {post.excerpt}
+                              </p>
+                            )}
 
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {post.tags.slice(0, 3).map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <Calendar size={14} />
-                                <span>{formatDate(post.published_at)}</span>
-                              </div>
-                              {post.view_count > 0 && (
+                            <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-gray-100">
+                              <div className="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
-                                  <Eye size={14} />
-                                  <span>{post.view_count}</span>
+                                  <Calendar size={12} className="sm:size-3.5" />
+                                  <span>{formatDate(post.published_at)}</span>
                                 </div>
-                              )}
+                                {post.read_time_minutes && (
+                                  <span className="hidden sm:inline">{post.read_time_minutes} min read</span>
+                                )}
+                              </div>
+                              <span className="flex items-center gap-0.5 sm:gap-1 text-blue-600 group-hover:text-blue-700 font-medium text-xs sm:text-sm">
+                                <span className="hidden sm:inline">Read</span>
+                                <ArrowRight size={14} className="sm:size-4 group-hover:translate-x-0.5 sm:group-hover:translate-x-1 transition-transform" />
+                              </span>
                             </div>
-                            <Link
-                              href={`/blog/${post.slug}`}
-                              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
-                            >
-                              Read
-                              <ArrowRight size={16} />
-                            </Link>
                           </div>
-                        </div>
-                      </article>
+                        </article>
+                      </Link>
                     ))}
                   </div>
                 </section>
