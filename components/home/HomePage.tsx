@@ -349,8 +349,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                 Find Your Next Career Opportunity
               </h1>
               <p className="text-lg md:text-xl text-blue-50 max-w-2xl mx-auto">
-                Browse thousands of job listings from employers and various sources. Discover opportunities that match your skills and career goals.
-              </p>
+                Browse thousands of job listings from employers and discover tools to improve your career.
             </div>
 
             {/* Tab Switcher */}
@@ -393,7 +392,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                      Browse Thousands of Jobs
                     </h2>
                     <p className="text-gray-600">
-                      Find opportunities from employers and various job sources. Search by location, industry, or role to discover your perfect match.
+                      Find opportunities from employers and various job sources.
                     </p>
                   </div>
                 </div>

@@ -3,9 +3,18 @@ import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Calendar, Eye, Clock, Tag, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, Clock, Tag } from 'lucide-react';
 import { ArticleSchema, FAQSchema } from '@/components/seo/StructuredData';
 import BlogMarkdownRenderer from '@/components/BlogMarkdownRenderer';
+import ShareButton from '@/components/blog/ShareButton';
+
+interface Author {
+  id: string;
+  slug: string;
+  name: string;
+  bio: string | null;
+  image_url: string | null;
+}
 
 interface BlogPost {
   id: string;
@@ -20,8 +29,8 @@ interface BlogPost {
   h1_title: string;
   category: string | null;
   tags: string[] | null;
-  author_name: string;
-  author_image_url: string | null;
+  author_id: string | null;
+  authors: Author | null;
   faqs: any;
   related_posts: string[] | null;
   view_count: number;
@@ -44,7 +53,16 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
     const { data, error } = await supabase
       .from('blogs')
-      .select('*')
+      .select(`
+        *,
+        authors:author_id (
+          id,
+          slug,
+          name,
+          bio,
+          image_url
+        )
+      `)
       .eq('slug', slug)
       .eq('is_published', true)
       .single();
@@ -109,7 +127,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: post.meta_title,
     description: post.meta_description,
     keywords: keywords.split(',').map(k => k.trim()),
-    authors: [{ name: post.author_name }],
+    authors: [{ name: post.authors?.name || 'JobMeter' }],
     openGraph: {
       title: post.meta_title,
       description: post.meta_description,
@@ -183,7 +201,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         datePublished={post.published_at}
         dateModified={post.updated_at}
         author={{
-          name: post.author_name,
+          name: post.authors?.name || 'JobMeter',
         }}
         url={`https://jobmeter.app/blog/${post.slug}`}
       />
@@ -250,18 +268,20 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
               {/* Meta Info - Mobile Optimized */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {post.author_image_url && (
-                    <Image
-                      src={post.author_image_url}
-                      alt={post.author_name}
-                      width={28}
-                      height={28}
-                      className="rounded-full sm:w-8 sm:h-8"
-                    />
-                  )}
-                  <span className="text-xs sm:text-sm font-medium text-gray-900">{post.author_name}</span>
-                </div>
+                {post.authors && (
+                  <Link href={`/blog/author/${post.authors.slug}`} className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity">
+                    {post.authors.image_url && (
+                      <Image
+                        src={post.authors.image_url}
+                        alt={post.authors.name}
+                        width={28}
+                        height={28}
+                        className="rounded-full sm:w-8 sm:h-8"
+                      />
+                    )}
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">{post.authors.name}</span>
+                  </Link>
+                )}
                 <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600">
                   <Calendar size={14} className="sm:size-4" />
                   <span>{formatDate(post.published_at)}</span>
@@ -277,21 +297,6 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                   <span>{post.view_count} views</span>
                 </div>
               </div>
-
-              {/* Tags - Mobile Optimized */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 lg:mb-8">
-                  <Tag size={14} className="text-gray-500 sm:size-4" />
-                  {post.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {/* Article Content */}
               <BlogMarkdownRenderer content={post.content} />
@@ -319,12 +324,30 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm font-medium text-gray-900">Share this article</span>
-                  <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                    <Share2 size={14} className="sm:size-4" />
-                    <span className="hidden sm:inline">Share</span>
-                  </button>
+                  <ShareButton 
+                    title={post.title}
+                    text={post.excerpt || post.meta_description}
+                    url={`https://jobmeter.app/blog/${post.slug}`}
+                  />
                 </div>
               </div>
+
+              {/* Tags - Mobile Optimized */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <Tag size={14} className="text-gray-500 sm:size-4" />
+                    {post.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </article>
 
