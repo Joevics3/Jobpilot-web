@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Newspaper, Calendar, ArrowRight } from 'lucide-react';
+import { Newspaper, Calendar, ArrowRight, User } from 'lucide-react';
 import Image from 'next/image';
 import { BlogSchema } from '@/components/seo/StructuredData';
 import CategoryFilter from './CategoryFilter';
@@ -26,6 +26,13 @@ export const metadata: Metadata = {
   },
 };
 
+interface Author {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string | null;
+}
+
 interface BlogPost {
   id: string;
   title: string;
@@ -37,13 +44,33 @@ interface BlogPost {
   published_at: string;
   view_count: number;
   read_time_minutes: number | null;
+  author_id: string | null;
+  authors: Author | null;
+}
+
+// Helper function to normalize authors from Supabase array to single object
+function normalizePost(post: any): BlogPost {
+  return {
+    ...post,
+    authors: post.authors && Array.isArray(post.authors) && post.authors.length > 0 
+      ? post.authors[0] 
+      : null
+  };
 }
 
 async function getBlogPosts(): Promise<BlogPost[]> {
   try {
     const { data, error } = await supabase
       .from('blogs')
-      .select('id, title, slug, excerpt, featured_image_url, category, tags, published_at, view_count, read_time_minutes')
+      .select(`
+        id, title, slug, excerpt, featured_image_url, category, tags, published_at, view_count, read_time_minutes, author_id,
+        authors:author_id (
+          id,
+          slug,
+          name,
+          image_url
+        )
+      `)
       .eq('is_published', true)
       .order('published_at', { ascending: false });
 
@@ -52,7 +79,7 @@ async function getBlogPosts(): Promise<BlogPost[]> {
       return [];
     }
 
-    return data || [];
+    return ((data || []) as any[]).map(normalizePost);
   } catch (error) {
     console.error('Error fetching blog posts:', error);
     return [];
@@ -166,14 +193,38 @@ export default async function BlogPage() {
                             )}
 
                             <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-gray-100">
-                              <div className="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <Calendar size={12} className="sm:size-3.5" />
-                                  <span>{formatDate(post.published_at)}</span>
-                                </div>
-                                {post.read_time_minutes && (
-                                  <span className="hidden sm:inline">{post.read_time_minutes} min read</span>
+                              <div className="flex flex-col gap-1.5">
+                                {/* Author Link */}
+                                {post.authors && (
+                                  <Link
+                                    href={`/blog/author/${post.authors.slug}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-600 hover:text-blue-600 transition-colors group/author"
+                                  >
+                                    {post.authors.image_url ? (
+                                      <Image
+                                        src={post.authors.image_url}
+                                        alt={post.authors.name}
+                                        width={16}
+                                        height={16}
+                                        className="rounded-full w-4 h-4 sm:w-5 sm:h-5"
+                                      />
+                                    ) : (
+                                      <User size={14} className="sm:size-4" />
+                                    )}
+                                    <span className="font-medium group-hover/author:text-blue-600">{post.authors.name}</span>
+                                  </Link>
                                 )}
+                                {/* Date and Read Time */}
+                                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar size={12} className="sm:size-3.5" />
+                                    <span>{formatDate(post.published_at)}</span>
+                                  </div>
+                                  {post.read_time_minutes && (
+                                    <span className="hidden sm:inline">{post.read_time_minutes} min read</span>
+                                  )}
+                                </div>
                               </div>
                               <span className="flex items-center gap-0.5 sm:gap-1 text-blue-600 group-hover:text-blue-700 font-medium text-xs sm:text-sm">
                                 <span className="hidden sm:inline">Read</span>

@@ -569,28 +569,39 @@ export default function JobList() {
   };
 
   const handleRefreshMatches = async () => {
-    if (!user) {
-      localStorage.removeItem('jobs_cache');
-      localStorage.removeItem('jobs_cache_timestamp');
-      localStorage.removeItem('jobs_cache_user_id');
-      await fetchJobs();
-      return;
-    }
-
     setRefreshingMatches(true);
     
     try {
+      // Clear all cached data
+      localStorage.removeItem('jobs_cache');
+      localStorage.removeItem('jobs_cache_timestamp');
+      localStorage.removeItem('jobs_cache_user_id');
+      
+      // Clear all latest_jobs cache keys
+      for (let i = 1; i <= 10; i++) {
+        localStorage.removeItem(`latest_jobs_page_${i}`);
+        localStorage.removeItem(`latest_jobs_timestamp_${i}`);
+      }
+      
+      // Clear match cache if user is logged in
       if (user) {
         matchCacheService.clearMatchCache(user.id);
       }
       
-      localStorage.removeItem('jobs_cache');
-      localStorage.removeItem('jobs_cache_timestamp');
-      localStorage.removeItem('jobs_cache_user_id');
+      // Reset states
+      setLatestJobsPage(1);
+      setLatestJobsHasMore(true);
+      setJobs([]);
       
-      await fetchJobs();
+      // Fetch fresh data based on active tab
+      if (activeTab === 'latest') {
+        setLatestJobs([]);
+        await fetchLatestJobs(1);
+      } else {
+        await fetchJobs();
+      }
     } catch (error) {
-      console.error('Error refreshing matches:', error);
+      console.error('Error refreshing:', error);
     } finally {
       setRefreshingMatches(false);
     }

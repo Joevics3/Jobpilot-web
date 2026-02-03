@@ -171,13 +171,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const keywords = company.seo_keywords?.join(', ') || 'careers, jobs, company';
   const url = `https://jobmeter.app/company/${company.slug}`;
 
+  const title = `Jobs at ${company.name} | JobMeter`;
+  
   return {
-    title: company.meta_title,
+    title,
     description: company.meta_description,
     keywords: keywords.split(',').map(k => k.trim()),
     authors: [{ name: 'JobMeter' }],
     openGraph: {
-      title: company.meta_title,
+      title,
       description: company.meta_description,
       url,
       siteName: 'JobMeter',
@@ -187,7 +189,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     },
     twitter: {
       card: 'summary_large_image',
-      title: company.meta_title,
+      title,
       description: company.meta_description,
       images: company.logo_url ? [company.logo_url] : [],
     },
@@ -317,7 +319,7 @@ export default async function CompanyProfilePage({ params }: { params: { slug: s
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
                       <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-                        {company.h1_title}
+                        Jobs at {company.name}
                       </h1>
                       {company.is_verified && (
                         <CheckCircle size={18} className="sm:size-5 lg:size-6 text-blue-600 flex-shrink-0" />
