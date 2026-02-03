@@ -25,6 +25,11 @@ import Link from 'next/link';
 import Head from 'next/head';
 
 // OPTIMIZATION: Lazy load components that aren't needed immediately
+const BannerAd = dynamic(() => import('@/components/ads/BannerAd'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+});
+
 const AuthModal = dynamic(() => import('@/components/AuthModal'), {
   ssr: false, // Don't render on server
   loading: () => null
@@ -346,10 +351,11 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           <div className="max-w-4xl mx-auto relative z-10">
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Find Your Next Career Opportunity
+                Find Your Dream Job with AI-Powered Matching
               </h1>
               <p className="text-lg md:text-xl text-blue-50 max-w-2xl mx-auto">
-                Browse thousands of job listings from employers and discover tools to improve your career.
+                Connect with top employers across industries. Get personalized job recommendations that match your skills and career goals.
+              </p>
             </div>
 
             {/* Tab Switcher */}
@@ -389,10 +395,10 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                     Browse Thousands of Jobs
+                     Browse fresh jobs Daily
                     </h2>
                     <p className="text-gray-600">
-                      Find opportunities from employers and various job sources.
+                      Get matched with your ideal jobs, get smart match scores, and apply with one click.
                     </p>
                   </div>
                 </div>
@@ -572,7 +578,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Browse Jobs by Category</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {RESOURCES.map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/resources/${cat.slug}`}
@@ -631,8 +637,8 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
                 <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ backgroundColor: theme.colors.success + '20' }}>
                   <Shield size={24} style={{ color: theme.colors.success }} />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Wide Range of Opportunities</h3>
-                <p className="text-sm text-gray-600">Access job listings from direct employer postings and various sources across the web. We bring together diverse opportunities to help you find the right fit.</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Verified Opportunities</h3>
+                <p className="text-sm text-gray-600">All job listings are from legitimate employers. We verify companies and opportunities to ensure your job search is safe and productive.</p>
               </div>
               <div className="bg-white rounded-xl p-5 border border-blue-100">
                 <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ backgroundColor: theme.colors.accent.blue + '20' }}>
@@ -700,19 +706,21 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </section>
         )}
 
+        {/* OPTIMIZATION: Lazy-loaded Banner Ad */}
+        <div className="px-6">
+          <BannerAd />
+        </div>
+
         {/* SEO Footer Content */}
         <section className="px-6 py-12 bg-gray-50">
           <div className="max-w-4xl mx-auto">
             <div className="prose prose-sm max-w-none">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Your Trusted Partner in Global Job Search</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                JobMeter connects job seekers with employment opportunities across multiple industries, experience levels, and countries. Whether you're searching for entry-level positions, professional careers, remote work, or specialized roles, our platform provides access to thousands of current job listings from direct employer postings and various sources across the web. Our intelligent job matching technology helps candidates find positions that align with their skills, experience, location preferences, and career aspirations.
+                JobMeter is a comprehensive online job board connecting job seekers with employment opportunities across multiple industries, experience levels, and countries. Whether you're searching for entry-level positions, professional careers, remote work, or specialized roles, our platform provides access to thousands of current job listings updated daily. Our intelligent job matching technology helps candidates find positions that align with their skills, experience, location preferences, and career aspirations.
               </p>
               <p className="text-gray-700 leading-relaxed mb-4">
-                <span className="font-semibold text-amber-600">Important Notice:</span> While we strive to provide quality listings, some jobs on our platform may come from third-party sources. We encourage job seekers to conduct their own research before applying. Always verify job details directly with the hiring company, research employers independently, and exercise caution when sharing personal information. Report any suspicious listings to help.jobmeter@gmail.com.
-              </p>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                From accounting and finance jobs to technology, healthcare, sales, marketing, engineering, and administrative positions, JobMeter serves as your complete career platform. Job seekers benefit from personalized match scores, application tracking, CV creation tools, interview preparation resources, and career advice. Employers can post jobs directly to reach qualified candidates. We facilitate connections between job seekers and companies, though applications are typically submitted directly to employers or their designated systems.
+                From accounting and finance jobs to technology, healthcare, sales, marketing, engineering, and administrative positions, JobMeter serves as your complete career platform. Job seekers benefit from personalized match scores, application tracking, CV creation tools, interview preparation resources, and career advice. Employers and recruiters can post job openings, reach qualified candidates, and build strong teams efficiently. Our platform supports both job seekers and companies in making informed hiring decisions.
               </p>
               <p className="text-gray-700 leading-relaxed mb-6">
                 Explore job opportunities in major cities, browse by industry sector, search by job type (full-time, part-time, contract, remote), and access career resources including salary guides, resume tips, and interview strategies. JobMeter is committed to making your job search journey seamless, productive, and successful. Join thousands of professionals who have found their ideal careers through our platform.
