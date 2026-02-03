@@ -75,9 +75,9 @@ export default function JobCard({
   return (
     <Link href={`/jobs/${job.slug}`} className="block">
       <div
-        className="bg-white rounded-2xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border-2"
+        className="bg-white rounded-2xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border"
         style={{
-          borderColor: theme.colors.primary.DEFAULT,
+          borderColor: theme.colors.text.secondary,
           backgroundColor: theme.colors.card.DEFAULT,
         }}
       >

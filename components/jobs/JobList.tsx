@@ -434,30 +434,6 @@ export default function JobList() {
     try {
       setLatestJobsLoading(true);
       
-      const CACHE_KEY = `latest_jobs_page_${page}`;
-      const CACHE_TIMESTAMP_KEY = `latest_jobs_timestamp_${page}`;
-      
-      // Check cache
-      const cachedData = localStorage.getItem(CACHE_KEY);
-      const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
-      
-      if (cachedData && cacheTimestamp) {
-        const timestamp = parseInt(cacheTimestamp, 10);
-        const isCacheValid = Date.now() - timestamp < CACHE_DURATION;
-        
-        if (isCacheValid) {
-          const parsedJobs = JSON.parse(cachedData);
-          if (page === 1) {
-            setLatestJobs(parsedJobs);
-          } else {
-            setLatestJobs(prev => [...prev, ...parsedJobs]);
-          }
-          setLatestJobsHasMore(parsedJobs.length === JOBS_PER_PAGE);
-          setLatestJobsLoading(false);
-          return;
-        }
-      }
-      
       // Fetch from database
       const start = (page - 1) * JOBS_PER_PAGE;
       const end = start + JOBS_PER_PAGE - 1;
@@ -474,10 +450,6 @@ export default function JobList() {
 
       // Transform to UI format without matching calculation
       const uiJobs = (data || []).map((job: any) => transformJobToUI(job, 0, null));
-      
-      // Cache the results
-      localStorage.setItem(CACHE_KEY, JSON.stringify(uiJobs));
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       // Update state
       if (page === 1) {
@@ -770,6 +742,11 @@ export default function JobList() {
 
   // ✅ NEW: Handle tab change
   const handleTabChange = (tab: 'latest' | 'matches') => {
+    // Check if user is trying to access matches tab without being signed in
+    if (tab === 'matches' && !user) {
+      setAuthModalOpen(true);
+      return;
+    }
     setActiveTab(tab);
     localStorage.setItem('active_jobs_tab', tab);
   };
@@ -827,9 +804,10 @@ export default function JobList() {
           <div className="flex gap-1 border-b" style={{ borderColor: theme.colors.border.DEFAULT }}>
             <button
               onClick={() => handleTabChange('latest')}
-              className="px-6 py-3 font-medium transition-all relative"
+              className="px-6 py-3 font-medium transition-all relative rounded-t-lg"
               style={{
                 color: activeTab === 'latest' ? theme.colors.primary.DEFAULT : theme.colors.text.secondary,
+                backgroundColor: activeTab === 'latest' ? theme.colors.primary.DEFAULT + '15' : 'transparent',
                 borderBottom: activeTab === 'latest' ? `2px solid ${theme.colors.primary.DEFAULT}` : '2px solid transparent',
               }}
             >
@@ -837,10 +815,11 @@ export default function JobList() {
             </button>
             <button
               onClick={() => handleTabChange('matches')}
-              className="px-6 py-3 font-medium transition-all relative"
+              className="px-6 py-3 font-medium transition-all relative rounded-t-lg"
               style={{
-                color: activeTab === 'matches' ? theme.colors.primary.DEFAULT : theme.colors.text.secondary,
-                borderBottom: activeTab === 'matches' ? `2px solid ${theme.colors.primary.DEFAULT}` : '2px solid transparent',
+                color: activeTab === 'matches' ? '#059669' : theme.colors.text.secondary,
+                backgroundColor: activeTab === 'matches' ? '#059669' + '15' : 'transparent',
+                borderBottom: activeTab === 'matches' ? `2px solid #059669` : '2px solid transparent',
               }}
             >
               Matches
