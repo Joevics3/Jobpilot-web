@@ -24,7 +24,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   const [companies, setCompanies] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [applied, setApplied] = useState(false);
-  const [upgradeErrorType, setUpgradeErrorType] = useState<string | null>(null);
+  const [upgradeErrorType, setUpgradeErrorType] = useState<'PREMIUM_REQUIRED' | 'QUOTA_EXCEEDED' | 'INSUFFICIENT_CREDITS' | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeErrorData, setUpgradeErrorData] = useState<any>(null);
 
