@@ -227,11 +227,17 @@ const getExperienceLevelWithYears = (level: string) => {
                     style={{ color: theme.colors.primary.DEFAULT }}
                   >
                     {companyInfo.name}
+                    {companyInfo.name === 'Confidential Employer' && (
+                      <span className="text-sm font-normal text-gray-500">(Recruitment agency)</span>
+                    )}
                     <Link size={16} className="opacity-70" />
                   </a>
                 ) : (
                   <p className="text-lg font-medium" style={{ color: theme.colors.primary.DEFAULT }}>
                     {companyInfo.name}
+                    {companyInfo.name === 'Confidential Employer' && (
+                      <span className="text-sm font-normal text-gray-500 ml-1">(Recruitment agency)</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -683,7 +689,7 @@ const getExperienceLevelWithYears = (level: string) => {
               className="flex-1 px-2 py-3 rounded-xl font-semibold text-sm text-white transition-colors"
               style={{ backgroundColor: theme.colors.primary.DEFAULT }}
             >
-              How to Apply
+              Apply
             </button>
           </div>
         </div>
