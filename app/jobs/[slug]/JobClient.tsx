@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MapPin, DollarSign, Calendar, Briefcase, Bookmark, BookmarkCheck, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles, Share2, Link } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, Briefcase, FileCheck, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Copy, Sparkles, Link } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
@@ -25,14 +25,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   const router = useRouter();
   const jobId = job.id;
   
-  const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
   const [applicationModalOpen, setApplicationModalOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
-  const [matchScore, setMatchScore] = useState<number>(0);
-  const [matchBreakdown, setMatchBreakdown] = useState<any>(null);
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -46,65 +41,14 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
 
   useEffect(() => {
     checkAuth();
-    loadSavedStatus();
     loadAppliedStatus();
     loadCompanies();
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchUserOnboardingData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (job && user && userOnboardingData) {
-      calculateMatchScore();
-    } else if (job && (!user || !userOnboardingData)) {
-      setMatchScore(0);
-      setMatchBreakdown(null);
-    }
-  }, [job, user, userOnboardingData]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       setUser(session.user);
-    }
-  };
-
-  const fetchUserOnboardingData = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('onboarding_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching onboarding data:', error);
-        return;
-      }
-
-      if (data) {
-        setUserOnboardingData({
-          target_roles: data.target_roles || [],
-          cv_skills: data.cv_skills || [],
-          preferred_locations: data.preferred_locations || [],
-          experience_level: data.experience_level || null,
-          salary_min: data.salary_min || null,
-          salary_max: data.salary_max || null,
-          job_type: data.job_type || null,
-          sector: data.sector || null,
-        });
-      } else {
-        setUserOnboardingData({});
-      }
-    } catch (error) {
-      console.error('Error fetching onboarding data:', error);
-      setUserOnboardingData({});
     }
   };
 
@@ -126,84 +70,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     }
   };
 
-  const calculateMatchScore = () => {
-    if (!job || !user || !userOnboardingData) {
-      setMatchScore(0);
-      return;
-    }
-
-    try {
-      const matchCache = matchCacheService.loadMatchCache(user.id);
-      const cachedMatch = matchCache[job.id];
-
-      let matchResult;
-      if (cachedMatch) {
-        matchResult = {
-          score: cachedMatch.score,
-          breakdown: cachedMatch.breakdown,
-          computedAt: cachedMatch.cachedAt,
-        };
-      } else {
-        const jobRow: JobRow = {
-          role: job.role || job.title,
-          related_roles: job.related_roles,
-          ai_enhanced_roles: job.ai_enhanced_roles,
-          skills_required: job.skills_required,
-          ai_enhanced_skills: job.ai_enhanced_skills,
-          location: job.location,
-          experience_level: job.experience_level,
-          salary_range: job.salary_range,
-          employment_type: job.employment_type,
-          sector: job.sector,
-        };
-
-        matchResult = scoreJob(jobRow, userOnboardingData);
-
-        const updatedCache = { ...matchCache };
-        updatedCache[job.id] = {
-          score: matchResult.score,
-          breakdown: matchResult.breakdown,
-          cachedAt: matchResult.computedAt,
-        };
-        matchCacheService.saveMatchCache(user.id, updatedCache);
-      }
-
-      const rsCapped = Math.min(
-        80,
-        matchResult.breakdown.rolesScore +
-        matchResult.breakdown.skillsScore +
-        matchResult.breakdown.sectorScore
-      );
-      const calculatedTotal = Math.round(
-        rsCapped +
-        matchResult.breakdown.locationScore +
-        matchResult.breakdown.experienceScore +
-        matchResult.breakdown.salaryScore +
-        matchResult.breakdown.typeScore
-      );
-
-      setMatchScore(Math.max(0, Math.min(100, calculatedTotal)));
-      setMatchBreakdown(matchResult.breakdown);
-    } catch (error) {
-      console.error('Error calculating match score:', error);
-      setMatchScore(0);
-      setMatchBreakdown(null);
-    }
-  };
-
-  const loadSavedStatus = () => {
-    if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-    if (saved) {
-      try {
-        const savedArray = JSON.parse(saved);
-        setSaved(savedArray.includes(jobId));
-      } catch (e) {
-        console.error('Error loading saved status:', e);
-      }
-    }
-  };
-
   const loadAppliedStatus = () => {
     if (typeof window === 'undefined') return;
     const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
@@ -215,45 +81,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
         console.error('Error loading applied status:', e);
       }
     }
-  };
-
-  const handleSave = () => {
-    if (typeof window === 'undefined') return;
-    
-    const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-    let savedArray: string[] = [];
-    
-    if (saved) {
-      try {
-        savedArray = JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing saved jobs:', e);
-      }
-    }
-
-    const newSaved = savedArray.includes(jobId)
-      ? savedArray.filter(id => id !== jobId)
-      : [...savedArray, jobId];
-    
-    localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
-    setSaved(newSaved.includes(jobId));
-  };
-
-  const handleShare = (type: 'whatsapp' | 'email') => {
-    const jobUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const companyName = getCompanyName(job.company);
-    const shareText = `${job.title} at ${companyName}`;
-    
-    if (type === 'whatsapp') {
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${jobUrl}`)}`;
-      window.open(whatsappUrl, '_blank');
-    } else if (type === 'email') {
-      const emailSubject = encodeURIComponent(shareText);
-      const emailBody = encodeURIComponent(`Check out this job opportunity:\n\n${shareText}\n\n${jobUrl}`);
-      window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-    }
-    
-    setShareModalOpen(false);
   };
 
   const handleApply = () => {
@@ -301,20 +128,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
         const updatedApplied = [...appliedArray, jobId];
         localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(updatedApplied));
         setApplied(true);
-
-        const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-        if (saved) {
-          try {
-            const savedArray: string[] = JSON.parse(saved);
-            if (savedArray.includes(jobId)) {
-              const updatedSaved = savedArray.filter(id => id !== jobId);
-              localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(updatedSaved));
-              setSaved(false);
-            }
-          } catch (e) {
-            console.error('Error updating saved jobs:', e);
-          }
-        }
       }
 
       fetch('/api/jobs/manual-apply', {
@@ -365,20 +178,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
         const updatedApplied = [...appliedArray, jobId];
         localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(updatedApplied));
         setApplied(true);
-
-        const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-        if (saved) {
-          try {
-            const savedArray: string[] = JSON.parse(saved);
-            if (savedArray.includes(jobId)) {
-              const updatedSaved = savedArray.filter(id => id !== jobId);
-              localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(updatedSaved));
-              setSaved(false);
-            }
-          } catch (e) {
-            console.error('Error updating saved jobs:', e);
-          }
-        }
       }
 
       const application = job.application || {};
@@ -434,12 +233,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     }
   };
 
-  const getMatchColor = (match: number) => {
-    if (match >= 50) return theme.colors.match.good;
-    if (match >= 31) return theme.colors.match.average;
-    return theme.colors.match.bad;
-  };
-
   const getCompanyInfo = () => {
     const companyName = getCompanyName(job.company);
     const company = findCompanyByName(companyName, companies);
@@ -451,7 +244,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     };
   };
 
-  const matchColor = getMatchColor(matchScore);
   const companyInfo = getCompanyInfo();
 
   const getLocationString = () => {
@@ -525,25 +317,23 @@ const getExperienceLevelWithYears = (level: string) => {
     <>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div
-          className="relative pt-12 pb-8 px-6"
-          style={{
-            backgroundColor: theme.colors.primary.DEFAULT,
-          }}
-        >
-          <button 
-           onClick={() => router.push('/jobs')}
-           className="mb-4 p-2 rounded-full hover:bg-white/20 transition-colors"  
-          style={{ backgroundColor: theme.colors.overlay.header }}
-           >
-           <ArrowLeft size={20} style={{ color: theme.colors.text.light }} />
-          </button>
+        <div className="relative pt-4 pb-4 px-6 bg-white">
+          <div className="flex items-center gap-3 mb-4">
+            <button 
+              onClick={() => router.push('/jobs')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
+              style={{ color: theme.colors.primary.DEFAULT }}
+            >
+              <ArrowLeft size={18} />
+              Back to Jobs
+            </button>
+          </div>
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1
                 className="text-2xl font-bold mb-2"
-                style={{ color: theme.colors.text.light }}
+                style={{ color: theme.colors.primary.DEFAULT }}
               >
                 {job.title || 'Untitled Job'}
               </h1>
@@ -558,65 +348,17 @@ const getExperienceLevelWithYears = (level: string) => {
                 {companyInfo.slug ? (
                   <a 
                     href={`/company/${companyInfo.slug}`}
-                    className="text-lg font-medium text-white/90 hover:text-white transition-colors flex items-center gap-1"
+                    className="text-lg font-medium hover:underline transition-colors flex items-center gap-1"
+                    style={{ color: theme.colors.primary.DEFAULT }}
                   >
                     {companyInfo.name}
-                    <Link size={16} className="text-white/70" />
+                    <Link size={16} className="opacity-70" />
                   </a>
                 ) : (
-                  <p className="text-lg font-medium text-white/90">
+                  <p className="text-lg font-medium" style={{ color: theme.colors.primary.DEFAULT }}>
                     {companyInfo.name}
                   </p>
                 )}
-              </div>
-              
-              {/* Match Score Badge, Save Icon, and Share Icon */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: theme.colors.overlay.header }}>
-                    <div
-                      className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
-                      style={{
-                        borderColor: theme.colors.text.light,
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: theme.colors.text.light }}
-                      >
-                        {matchScore}%
-                      </span>
-                    </div>
-                    <span
-                      className="font-medium"
-                      style={{ color: theme.colors.text.light }}
-                    >
-                      Match
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={handleSave}
-                    className="p-2 rounded-full hover:bg-white/20 transition-colors"
-                    style={{ backgroundColor: theme.colors.overlay.header }}
-                  >
-                    {saved ? (
-                      <BookmarkCheck size={20} style={{ color: theme.colors.text.light }} />
-                    ) : (
-                      <Bookmark size={20} style={{ color: theme.colors.overlay.headerText }} />
-                    )}
-                  </button>
-                </div>
-
-                {/* Share Button */}
-                <button
-                  onClick={() => setShareModalOpen(true)}
-                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
-                  style={{ backgroundColor: theme.colors.overlay.header }}
-                >
-                  <Share2 size={20} style={{ color: theme.colors.overlay.headerText }} />
-                </button>
               </div>
             </div>
           </div>
@@ -1252,62 +994,6 @@ const getExperienceLevelWithYears = (level: string) => {
           </div>
         )}
 
-        {/* Share Modal */}
-        {shareModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50"
-            onClick={() => setShareModalOpen(false)}
-          >
-            <div
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold mb-4" style={{ color: theme.colors.text.primary }}>
-                Share this job
-              </h3>
-              
-              <div className="space-y-3 mb-6">
-                <button
-                  onClick={() => handleShare('whatsapp')}
-                  className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
-                >
-                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">Share on WhatsApp</p>
-                    <p className="text-sm text-gray-500">Send to your contacts</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => handleShare('email')}
-                  className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
-                >
-                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                    <Mail size={24} className="text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">Share via Email</p>
-                    <p className="text-sm text-gray-500">Send to your email contacts</p>
-                  </div>
-                </button>
-              </div>
-
-              <button
-                onClick={() => setShareModalOpen(false)}
-                className="w-full px-4 py-3 rounded-xl font-semibold text-white"
-                style={{
-                  backgroundColor: theme.colors.primary.DEFAULT,
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* CV and Cover Letter Modals */}
