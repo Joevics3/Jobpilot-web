@@ -22,6 +22,8 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   
   const [saved, setSaved] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     checkAuth();
