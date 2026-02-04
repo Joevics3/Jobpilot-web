@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import BottomNavigation from '@/components/navigation/BottomNavigation';
+import Header from '@/components/navigation/Header';
 import Footer from '@/components/navigation/Footer';
 import CookieModal from '@/components/CookieModal';
 import { theme } from '@/lib/theme';
@@ -29,6 +30,9 @@ export default function RootLayoutClient({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.colors.background.DEFAULT }}>
+      {/* Header */}
+      <Header />
+
       {/* Main content with bottom padding for nav (unless hidden) */}
       <main 
         className="flex-1" 
