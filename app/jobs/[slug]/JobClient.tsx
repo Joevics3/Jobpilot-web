@@ -192,7 +192,7 @@ const getExperienceLevelWithYears = (level: string) => {
     <>
       <div className="min-h-screen bg-white">
         {/* Header */}
-        <div className="relative pt-4 pb-4 border-b border-gray-100">
+        <div className="relative pt-4 pb-4 border-b border-gray-100 px-6">
           <div className="flex items-center gap-3 mb-4">
             <button 
               onClick={() => router.push('/jobs')}
@@ -240,7 +240,7 @@ const getExperienceLevelWithYears = (level: string) => {
         </div>
 
         {/* Key Information Grid */}
-        <div className="py-6">
+        <div className="py-6 px-6">
           <div className="mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
@@ -387,7 +387,7 @@ const getExperienceLevelWithYears = (level: string) => {
             if (responsibilitiesArray.length > 0) {
               return (
                 <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-                  <h2 className="text-lg font-semibold mb-3 text-gray-900">
+                  <h2 className="text-xl font-semibold mb-3 text-gray-900">
                     Key Responsibilities
                   </h2>
                   <ul className="space-y-2">
@@ -412,7 +412,7 @@ const getExperienceLevelWithYears = (level: string) => {
             if (qualificationsArray.length > 0) {
               return (
                 <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-                  <h2 className="text-lg font-semibold mb-3 text-gray-900">
+                  <h2 className="text-xl font-semibold mb-3 text-gray-900">
                     Qualifications
                   </h2>
                   <ul className="space-y-2">
@@ -454,34 +454,10 @@ const getExperienceLevelWithYears = (level: string) => {
             return null;
           })()}
 
-{(job.posted_date || job.created_at) && (
-  <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-    <h2 className="text-lg font-semibold mb-2 text-gray-900">Posted</h2>
-    <p className="text-sm text-gray-600">
-      {(() => {
-        const dateStr = job.posted_date || job.created_at;
-        const date = new Date(dateStr);
-        
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-          return 'Date not available';
-        }
-        
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          timeZone: 'UTC' // Important: use UTC to prevent timezone issues
-        });
-      })()}
-    </p>
-  </section>
-)}
-
           {/* How to Apply Section */}
           {(job.application?.email || job.application_email || job.application?.phone || job.application_phone || job.application?.link || job.application?.url || job.application_url) && (
             <section id="how-to-apply" className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">
                 How to Apply
               </h2>
               <div className="space-y-4">
@@ -560,6 +536,30 @@ const getExperienceLevelWithYears = (level: string) => {
               </div>
             </section>
           )}
+
+{(job.posted_date || job.created_at) && (
+  <section className="mb-6 rounded-xl p-4 shadow-sm bg-white">
+    <h2 className="text-lg font-semibold mb-2 text-gray-900">Posted</h2>
+    <p className="text-sm text-gray-600">
+      {(() => {
+        const dateStr = job.posted_date || job.created_at;
+        const date = new Date(dateStr);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return 'Date not available';
+        }
+        
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC' // Important: use UTC to prevent timezone issues
+        });
+      })()}
+    </p>
+  </section>
+)}
 
           {/* Related Jobs Section */}
           {relatedJobs && relatedJobs.length > 0 ? (
