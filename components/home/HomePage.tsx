@@ -331,7 +331,9 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
         <link rel="canonical" href="https://jobmeter.com" />
         
         {/* OPTIMIZATION: Preconnect to critical domains */}
-        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
+        )}
 
       </Head>
 
@@ -350,6 +352,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
               </h1>
               <p className="text-lg md:text-xl text-blue-50 max-w-2xl mx-auto">
                 Browse thousands of job listings from employers and discover tools to improve your career.
+              </p>
             </div>
 
             {/* Tab Switcher */}
