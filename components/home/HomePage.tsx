@@ -23,6 +23,7 @@ import {
 
 import Link from 'next/link';
 import Head from 'next/head';
+import Image from 'next/image';
 
 // OPTIMIZATION: Lazy load components that aren't needed immediately
 const AuthModal = dynamic(() => import('@/components/AuthModal'), {
@@ -339,12 +340,22 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
 
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
         {/* Hero Section */}
-        <section
-          className="relative px-6 py-16 overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, ${theme.colors.primary.DEFAULT} 0%, ${theme.colors.accent.blue} 100%)`,
-          }}
-        >
+        <section className="relative px-6 py-16 overflow-hidden">
+          {/* Background Image - Lazy loaded and optimized */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/homepage.webp"
+              alt=""
+              fill
+              priority={false}
+              loading="lazy"
+              className="object-cover object-center"
+              sizes="100vw"
+              quality={80}
+            />
+            {/* Overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
           <div className="max-w-4xl mx-auto relative z-10">
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
