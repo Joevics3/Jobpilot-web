@@ -464,7 +464,7 @@ const getExperienceLevelWithYears = (level: string) => {
           {(job.application?.email || job.application_email || job.application?.phone || job.application_phone || job.application?.link || job.application?.url || job.application_url) && (
             <section id="how-to-apply" className="mb-6 rounded-xl p-4 shadow-sm bg-white">
               <h2 className="text-xl font-semibold mb-4 text-gray-900">
-                Apply
+                How To Apply
               </h2>
               <div className="space-y-4">
                 {/* Email Application */}
