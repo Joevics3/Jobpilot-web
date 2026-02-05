@@ -98,6 +98,7 @@ export default function JobList() {
     const salaryMaxParam = searchParams.get('salaryMax');
     const remoteParam = searchParams.get('remote');
     const sortParam = searchParams.get('sort');
+    const postedParam = searchParams.get('posted');
 
     if (searchParam) {
       setSearchQuery(searchParam);
@@ -438,13 +439,23 @@ export default function JobList() {
       const start = (page - 1) * JOBS_PER_PAGE;
       const end = start + JOBS_PER_PAGE - 1;
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('jobs')
         .select('*')
         .eq('status', 'active')
         .order('posted_date', { ascending: false })
         .order('created_at', { ascending: false })
         .range(start, end);
+      
+      // Filter for today's jobs if posted=today
+      const postedParam = searchParams.get('posted');
+      if (postedParam === 'today') {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        query = query.gte('posted_date', todayStr);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 

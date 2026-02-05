@@ -25,20 +25,24 @@ export default function RootLayoutClient({
     pathname?.startsWith('/dashboard') ||
     (pathname?.startsWith('/tools/interview/') && pathname !== '/tools/interview');
 
+  // Hide header on bottom nav pages (mobile-style pages)
+  const hideHeader = bottomNavPages.includes(pathname || '');
+
   // Show footer on pages that don't have bottom nav
   const showFooter = !bottomNavPages.includes(pathname || '') && !hideBottomNav;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.colors.background.DEFAULT }}>
-      {/* Header */}
-      <Header />
+      {/* Header - hidden on bottom nav pages */}
+      {!hideHeader && <Header />}
 
       {/* Main content with bottom padding for nav (unless hidden) */}
       <main 
         className="flex-1" 
         style={{ 
           backgroundColor: theme.colors.background.muted,
-          paddingBottom: hideBottomNav && !showFooter ? '0' : '80px'
+          paddingBottom: hideBottomNav && !showFooter ? '0' : '80px',
+          paddingTop: hideHeader ? '0px' : undefined
         }}
       >
         {children}
