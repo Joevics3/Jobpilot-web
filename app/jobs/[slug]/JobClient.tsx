@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MapPin, DollarSign, Calendar, Briefcase, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Sparkles, Link, Bookmark, BookmarkCheck, Search, Copy, Check } from 'lucide-react';
+import { MapPin, DollarSign, Calendar, Briefcase, Mail, Phone, ExternalLink, ArrowLeft, Clock, Building, Target, Award, Sparkles, Link, Bookmark, BookmarkCheck } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { getCompanyName, findCompanyByName } from '@/lib/utils/companyUtils';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
-import { useToast } from '@/hooks/use-toast';
 
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import RelatedJobCard from '@/components/jobs/RelatedJobCard';
@@ -20,7 +19,6 @@ const STORAGE_KEYS = {
 export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?: any[] }) {
   const router = useRouter();
   const jobId = job.id;
-  const { toast } = useToast();
   
   const [saved, setSaved] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -29,14 +27,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   const [upgradeErrorType, setUpgradeErrorType] = useState<'PREMIUM_REQUIRED' | 'QUOTA_EXCEEDED' | 'INSUFFICIENT_CREDITS' | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeErrorData, setUpgradeErrorData] = useState<any>(null);
-  const [copied, setCopied] = useState<string | null>(null);
-
-  const handleCopy = async (text: string, label: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(label);
-    toast({ title: 'Copied!', description: `${label} copied to clipboard` });
-    setTimeout(() => setCopied(null), 2000);
-  };
 
   useEffect(() => {
     checkAuth();
@@ -203,7 +193,7 @@ const getExperienceLevelWithYears = (level: string) => {
       <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="relative pt-4 pb-4 border-b border-gray-100 px-6">
-          <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4">
             <button 
               onClick={() => router.push('/jobs')}
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
@@ -212,23 +202,6 @@ const getExperienceLevelWithYears = (level: string) => {
               <ArrowLeft size={18} />
               Back to Jobs
             </button>
-            
-            <form method="GET" action="/jobs" className="flex items-center gap-2">
-              <input
-                type="text"
-                name="search"
-                placeholder="Search jobs..."
-                className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
-                style={{ minWidth: '180px' }}
-              />
-              <button
-                type="submit"
-                className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                style={{ color: theme.colors.primary.DEFAULT }}
-              >
-                <Search size={18} />
-              </button>
-            </form>
           </div>
 
           <div className="flex items-start justify-between gap-4">
@@ -239,55 +212,43 @@ const getExperienceLevelWithYears = (level: string) => {
               >
                 {job.title || 'Untitled Job'}
               </h1>
-              <p className="text-sm text-gray-500 mb-3">
-                {job.views?.toLocaleString() || 0} people viewed this job
-              </p>
-              
-              {/* Bullet Buttons */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {/* Today's Jobs */}
-                <a
-                  href={`/jobs?posted=today`}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                  style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                >
-                  Today's jobs
-                </a>
-                
-                {/* Category Jobs */}
-                {job.category && (
-                  <a
-                    href={`/resources/${job.category}`}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                    style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                  >
-                    {job.category} jobs
-                  </a>
+              <div className="flex items-center gap-2 mb-2">
+                {companyInfo.company?.logo_url && (
+                  <img 
+                    src={companyInfo.company.logo_url} 
+                    alt={companyInfo.name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
                 )}
-                
-                {/* Location Jobs */}
-                {typeof job.location === 'object' && job.location?.state && !job.location?.remote && (
-                  <a
-                    href={`/jobs/state/${job.location.state.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                    style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
+                {companyInfo.slug ? (
+                  <a 
+                    href={`/company/${companyInfo.slug}`}
+                    className="text-lg font-medium hover:underline transition-colors flex items-center gap-1"
+                    style={{ color: theme.colors.primary.DEFAULT }}
                   >
-                    {job.location.state} jobs
+                    {companyInfo.name}
+                    {companyInfo.name === 'Confidential Employer' && (
+                      <span className="text-sm font-normal text-gray-500">(Recruitment agency)</span>
+                    )}
+                    <Link size={16} className="opacity-70" />
                   </a>
-                )}
-                
-                {/* Remote Jobs */}
-                {typeof job.location === 'object' && job.location?.remote && (
-                  <a
-                    href="/jobs/remote"
-                    className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                    style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                  >
-                    Remote jobs
-                  </a>
+                ) : (
+                  <p className="text-lg font-medium" style={{ color: theme.colors.primary.DEFAULT }}>
+                    {companyInfo.name}
+                    {companyInfo.name === 'Confidential Employer' && (
+                      <span className="text-sm font-normal text-gray-500 ml-1">(Recruitment agency)</span>
+                    )}
+                  </p>
                 )}
               </div>
-              
+            </div>
+          </div>
+        </div>
+
+        {/* Key Information Grid */}
+        <div className="py-6 px-6">
+          <div className="mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-gray-500" />
                 <div>
@@ -502,83 +463,80 @@ const getExperienceLevelWithYears = (level: string) => {
           {/* How to Apply Section */}
           {(job.application?.email || job.application_email || job.application?.phone || job.application_phone || job.application?.link || job.application?.url || job.application_url) && (
             <section id="how-to-apply" className="mb-6 rounded-xl p-4 shadow-sm bg-white">
-              <h2 className="text-xl font-semibold mb-3 text-gray-900">
-                How to Apply
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">
+                Apply
               </h2>
-              
-              {/* Instruction Text */}
-              {job.apply_instruction && (
-                <p className="text-sm text-gray-600 mb-4 whitespace-pre-wrap">
-                  {job.apply_instruction}
-                </p>
-              )}
-              
-              {/* Apply Options - Column Layout */}
-              <div className="flex flex-col gap-3">
-                {/* Phone - WhatsApp only */}
-                {(job.application?.phone || job.application_phone) && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    <a 
-                      href={`https://wa.me/${(job.application?.phone || job.application_phone || '').replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium hover:underline text-green-600"
-                    >
-                      {(job.application?.phone || job.application_phone || '').replace('tel:', '')}
-                    </a>
-                    <button
-                      onClick={() => handleCopy((job.application?.phone || job.application_phone || '').replace('tel:', ''), 'Phone number')}
-                      className="ml-auto p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-                      title="Copy phone number"
-                    >
-                      {copied === 'Phone number' ? <Check size={14} className="text-green-600" /> : <Copy size={14} className="text-gray-400" />}
-                    </button>
-                  </div>
-                )}
-                
-                {/* Email */}
+              <div className="space-y-4">
+                {/* Email Application */}
                 {(job.application?.email || job.application_email) && (
-                  <div className="flex items-center gap-2">
-                    <Mail size={18} style={{ color: theme.colors.primary.DEFAULT }} />
-                    <a 
-                      href={`mailto:${(job.application?.email || job.application_email || '').replace('mailto:', '')}?subject=${encodeURIComponent(job.subject || `${job.title || 'Job'} Application`)}`}
-                      className="text-sm font-medium hover:underline"
-                      style={{ color: theme.colors.primary.DEFAULT }}
-                    >
-                      {(job.application?.email || job.application_email || '').replace('mailto:', '')}
-                    </a>
-                    <button
-                      onClick={() => handleCopy((job.application?.email || job.application_email || '').replace('mailto:', ''), 'Email')}
-                      className="ml-auto p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-                      title="Copy email"
-                    >
-                      {copied === 'Email' ? <Check size={14} className="text-green-600" /> : <Copy size={14} className="text-gray-400" />}
-                    </button>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <Mail size={20} style={{ color: theme.colors.primary.DEFAULT }} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 mb-1">Email Application</h3>
+                      <a 
+                        href={`mailto:${(job.application?.email || job.application_email || '').replace('mailto:', '')}?subject=${encodeURIComponent(job.subject || `${job.title || 'Job'} Application`)}`}
+                        className="text-sm font-medium hover:underline"
+                        style={{ color: theme.colors.primary.DEFAULT }}
+                      >
+                        📧 {(job.application?.email || job.application_email || '').replace('mailto:', '')}
+                      </a>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Subject: "{job.subject || `${job.title || 'Job'} Application - [Your Name]`}"
+                      </p>
+                    </div>
                   </div>
                 )}
                 
+                {/* Phone Application */}
+                {(job.application?.phone || job.application_phone) && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Phone size={20} className="text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 mb-1">Phone</h3>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href={`tel:${(job.application?.phone || job.application_phone || '').replace('tel:', '')}`}
+                          className="text-sm font-medium hover:underline text-green-600"
+                        >
+                          📱 {(job.application?.phone || job.application_phone || '').replace('tel:', '')}
+                        </a>
+                        <a 
+                          href={`https://wa.me/${(job.application?.phone || job.application_phone || '').replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-800"
+                          title="Open in WhatsApp"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Online Form */}
                 {(job.application?.link || job.application?.url || job.application_url) && (
-                  <div className="flex items-center gap-2">
-                    <ExternalLink size={18} className="text-purple-600" />
-                    <a 
-                      href={job.application?.link || job.application?.url || job.application_url || ''}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium hover:underline text-purple-600"
-                    >
-                      Apply Online
-                    </a>
-                    <button
-                      onClick={() => handleCopy(job.application?.link || job.application?.url || job.application_url || '', 'URL')}
-                      className="ml-auto p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-                      title="Copy URL"
-                    >
-                      {copied === 'URL' ? <Check size={14} className="text-green-600" /> : <Copy size={14} className="text-gray-400" />}
-                    </button>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                      <ExternalLink size={20} className="text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 mb-1">Online Form</h3>
+                      <a 
+                        href={job.application?.link || job.application?.url || job.application_url || ''}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium hover:underline text-purple-600"
+                      >
+                        🔗 Apply Online
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
@@ -593,6 +551,7 @@ const getExperienceLevelWithYears = (level: string) => {
         const dateStr = job.posted_date || job.created_at;
         const date = new Date(dateStr);
         
+        // Check if date is valid
         if (isNaN(date.getTime())) {
           return 'Date not available';
         }
@@ -601,7 +560,7 @@ const getExperienceLevelWithYears = (level: string) => {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
-          timeZone: 'UTC'
+          timeZone: 'UTC' // Important: use UTC to prevent timezone issues
         });
       })()}
     </p>
