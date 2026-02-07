@@ -2,12 +2,31 @@ import { createClient } from '@supabase/supabase-js';
 import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
-const MAX_JOBS_PER_SITEMAP = 5000;
+const JOBS_PER_SITEMAP = 1000;
 
-export async function GET() {
+/**
+ * Dynamic route handler for job sitemaps
+ * This should be placed at: app/sitemap-jobs-[page]/route.ts
+ * 
+ * It will handle URLs like:
+ * - /sitemap-jobs-1.xml
+ * - /sitemap-jobs-2.xml
+ * - etc.
+ */
+export async function GET(
+  request: Request,
+  { params }: { params: { page: string } }
+) {
   const routes: MetadataRoute.Sitemap = [];
 
   try {
+    // Extract page number from the parameter (e.g., "1" from "sitemap-jobs-1.xml")
+    const pageNumber = parseInt(params.page);
+
+    if (isNaN(pageNumber) || pageNumber < 1) {
+      return new Response('Invalid page number', { status: 400 });
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -18,12 +37,16 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+    // Calculate offset based on page number
+    const offset = (pageNumber - 1) * JOBS_PER_SITEMAP;
+
+    // Fetch jobs for this specific page
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select('id, slug, updated_at, created_at')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
-      .limit(MAX_JOBS_PER_SITEMAP);
+      .range(offset, offset + JOBS_PER_SITEMAP - 1);
 
     if (error) {
       console.error('Error fetching jobs:', error);
@@ -39,7 +62,9 @@ export async function GET() {
           priority: 0.7,
         });
       });
-      console.log(`📄 Jobs sitemap: ${routes.length} active jobs`);
+      console.log(`📄 Jobs sitemap page ${pageNumber}: ${routes.length} jobs (offset: ${offset})`);
+    } else {
+      console.log(`📄 Jobs sitemap page ${pageNumber}: No jobs found`);
     }
   } catch (error) {
     console.error('Error generating jobs sitemap:', error);
