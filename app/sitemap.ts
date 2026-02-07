@@ -1,17 +1,14 @@
-import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 const JOBS_PER_SITEMAP = 1000;
 
 /**
- * Main sitemap that tells Next.js about all child sitemaps.
- * This file should be at: app/sitemap.ts (NOT in a folder!)
- * 
- * Next.js will automatically generate the sitemap index XML at /sitemap.xml
+ * Main sitemap index
+ * Place at: app/sitemap.ts
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // All non-job sitemaps remain unchanged
   const baseSitemaps: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/sitemap-static.xml`,
@@ -39,7 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Calculate how many job sitemaps we need
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -66,11 +62,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const numberOfSitemaps = Math.ceil(count / JOBS_PER_SITEMAP);
     console.log(`📊 Total jobs: ${count}, Creating ${numberOfSitemaps} job sitemaps`);
 
-    // Generate sitemap entries for each partition
+    // Generate sitemap entries - CORRECTED URL STRUCTURE
     const jobSitemaps: MetadataRoute.Sitemap = Array.from(
       { length: numberOfSitemaps },
       (_, i) => ({
-        url: `${siteUrl}/sitemap-jobs-${i + 1}.xml`,
+        url: `${siteUrl}/sitemap-jobs/${i + 1}.xml`,  // Changed from sitemap-jobs-${i+1}.xml
         lastModified: new Date(),
         changeFrequency: 'hourly',
         priority: 1,
