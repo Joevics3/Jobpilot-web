@@ -165,11 +165,23 @@ export default function JobList() {
   useEffect(() => {
     if (!authChecked) return;
     
-    // Only fetch if on latest tab and no data loaded yet
-    if (activeTab === 'latest' && latestJobs.length === 0) {
+    // Only fetch if on latest tab
+    if (activeTab === 'latest') {
       fetchLatestJobs(1);
     }
   }, [authChecked, activeTab]);
+
+  // ✅ NEW: Refetch when filters change (debounced for search)
+  useEffect(() => {
+    if (!authChecked || activeTab !== 'latest') return;
+    
+    // Debounce search input
+    const timeoutId = setTimeout(() => {
+      fetchLatestJobs(1);
+    }, filters.search ? 500 : 0); // 500ms delay for search, immediate for other filters
+    
+    return () => clearTimeout(timeoutId);
+  }, [authChecked, activeTab, filters]);
 
   // ✅ MODIFIED: Only fetch matches when user switches to Matches tab
   useEffect(() => {
@@ -499,6 +511,54 @@ export default function JobList() {
         .order('created_at', { ascending: false })
         .range(start, end);
       
+      // Apply filters to the query
+      
+      // Search filter - search in title, company name, description, and sector
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,sector.ilike.%${searchTerm}%`);
+      }
+      
+      // Sector filter
+      if (filters.sector && filters.sector.length > 0) {
+        query = query.in('sector', filters.sector);
+      }
+      
+      // Role filter (if applicable)
+      if (filters.role && filters.role.length > 0) {
+        query = query.in('role', filters.role);
+      }
+      
+      // Employment type filter (jobType in your schema)
+      if (filters.jobType && filters.jobType.length > 0) {
+        query = query.in('employment_type', filters.jobType);
+      }
+      
+      // Location filter - state
+      if (filters.state) {
+        query = query.contains('location', { state: filters.state });
+      }
+      
+      // Location filter - town/city
+      if (filters.town) {
+        query = query.contains('location', { city: filters.town });
+      }
+      
+      // Remote filter
+      if (filters.workMode && filters.workMode.includes('Remote')) {
+        query = query.contains('location', { remote: true });
+      }
+      
+      // Salary range filter
+      if (filters.salaryRange && filters.salaryRange.enabled) {
+        if (filters.salaryRange.min > 0) {
+          query = query.gte('salary_range->min', filters.salaryRange.min);
+        }
+        if (filters.salaryRange.max > 0) {
+          query = query.lte('salary_range->max', filters.salaryRange.max);
+        }
+      }
+      
       // Filter for today's jobs if posted=today
       const postedParam = searchParams.get('posted');
       if (postedParam === 'today') {
@@ -510,6 +570,8 @@ export default function JobList() {
       const { data, error } = await query;
 
       if (error) throw error;
+
+      console.log(`Fetched ${data?.length || 0} jobs with filters applied`);
 
       // Transform to UI format without matching calculation
       const uiJobs = (data || []).map((job: any) => transformJobToUI(job, 0, null));
@@ -604,15 +666,14 @@ export default function JobList() {
     }
   };
 
-  const handleApply = (jobId: string) => {
-    const newApplied = appliedJobs.includes(jobId)
-      ? appliedJobs.filter(id => id !== jobId)
-      : [...appliedJobs, jobId];
-
-    setAppliedJobs(newApplied);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
-    }
+  const handleApply = (jobIdOrSlug: string) => {
+    // Find the job from either latestJobs or jobs (matches)
+    const allJobs = activeTab === 'latest' ? latestJobs : jobs;
+    const job = allJobs.find(j => j.id === jobIdOrSlug || j.slug === jobIdOrSlug);
+    
+    // Navigate to job detail page using slug if available, otherwise use id
+    const slug = job?.slug || jobIdOrSlug;
+    router.push(`/jobs/${slug}`);
   };
 
 
@@ -685,75 +746,14 @@ export default function JobList() {
     if (activeTab !== 'latest') return [];
     if (latestJobsLoading && latestJobs.length === 0) return [];
     
+    // Since filtering is now done at the database level,
+    // we only need to filter out applied jobs here
     return latestJobs.filter(job => {
       // Skip applied jobs
       if (appliedJobs.includes(job.id)) return false;
-      
-      const jobLocationLower = job.location.toLowerCase();
-      const jobTypeLower = job.type?.toLowerCase() || '';
-      
-      // Search filter
-      const query = filters.search?.toLowerCase();
-      if (query) {
-        const titleMatch = job.title.toLowerCase().includes(query);
-        const companyMatch = job.company.toLowerCase().includes(query);
-        const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
-        if (!titleMatch && !companyMatch && !descriptionMatch) return false;
-      }
-      
-      // Location filter
-      if (filters.location && filters.location.length > 0) {
-        const locationMatch = filters.location.some((loc: string) => 
-          jobLocationLower.includes(loc.toLowerCase())
-        );
-        if (!locationMatch) return false;
-      }
-      
-      // Remote filter
-      if (filters.remote && !jobLocationLower.includes('remote')) {
-        return false;
-      }
-      
-      // Employment type filter
-      if (filters.employmentType && filters.employmentType.length > 0) {
-        const typeMatch = filters.employmentType.some((type: string) => {
-          if (type.toLowerCase() === 'remote') {
-            return jobLocationLower.includes('remote');
-          }
-          return jobTypeLower.includes(type.toLowerCase()) || type.toLowerCase().includes(jobTypeLower);
-        });
-        if (!typeMatch) return false;
-      }
-      
-      // Salary filter
-      if (filters.salaryRange) {
-        const getSalaryNumber = (salary: string) => {
-          if (!salary) return 0;
-          const match = salary.match(/[\d,]+/);
-          return match ? parseInt(match[0].replace(/,/g, '')) : 0;
-        };
-        const jobSalary = getSalaryNumber(job.salary || '');
-        
-        if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) {
-          return false;
-        }
-        if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
-          return false;
-        }
-      }
-      
-      // Sector filter
-      if (filters.sector && filters.sector.length > 0) {
-        const jobSector = job.sector?.toLowerCase() || '';
-        const sectorMatch = filters.sector.some((sector: string) => 
-          jobSector.includes(sector.toLowerCase()) || sector.toLowerCase().includes(jobSector)
-        );
-        if (!sectorMatch) return false;
-      }
-      
       return true;
     });
-  }, [latestJobs, filters, appliedJobs, latestJobsLoading, activeTab]);
+  }, [latestJobs, appliedJobs, latestJobsLoading, activeTab]);
 
   // ✅ MODIFIED: Sort only applies to Latest Jobs tab
   const sortedJobs = useMemo(() => {
