@@ -18,14 +18,10 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select('id, slug, updated_at, created_at')
       .eq('status', 'active')
-      .gte('created_at', sixtyDaysAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(MAX_JOBS_PER_SITEMAP);
 
@@ -67,9 +63,9 @@ ${routes
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=21600, s-maxage=21600',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   });
 }
 
-export const revalidate = 21600;
+export const revalidate = 3600;

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { MapPin, Bookmark, BookmarkCheck, FileCheck, Trash2, Calendar } from 'lucide-react';
+import { MapPin, Bookmark, BookmarkCheck, FileCheck, Trash2, Calendar, ExternalLink, Briefcase } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 export interface JobUI {
@@ -17,6 +17,7 @@ export interface JobUI {
   calculatedTotal?: number;
   breakdown?: any;
   postedDate?: string;
+  sector?: string;
 
   /** Used for search & filtering */
   description?: string;
@@ -73,94 +74,133 @@ export default function JobCard({
   };
 
   return (
-    <Link href={`/jobs/${job.slug}`} className="block">
-      <div
-        className="bg-white rounded-2xl p-4 mb-5 shadow-sm hover:shadow-md transition-all duration-200 border"
-        style={{
-          borderColor: theme.colors.text.secondary,
-          backgroundColor: theme.colors.card.DEFAULT,
-        }}
-      >
+    <div
+      className="bg-white rounded-2xl p-5 mb-5 shadow-sm hover:shadow-lg transition-all duration-300 border relative overflow-hidden group"
+      style={{
+        borderColor: theme.colors.border.DEFAULT,
+        backgroundColor: theme.colors.card.DEFAULT,
+      }}
+    >
+      {/* Top accent bar for high match scores */}
+      {showMatch && matchScore >= 50 && (
+        <div 
+          className="absolute top-0 left-0 w-1 h-full"
+          style={{ backgroundColor: theme.colors.match.good }}
+        />
+      )}
+
+      <div className="flex flex-col gap-4">
+        {/* Header Section */}
         <div className="flex items-start justify-between gap-4">
-          {/* Left: Job Info */}
+          {/* Job Info */}
           <div className="flex-1 min-w-0">
-            <h3
-              className="text-base font-semibold mb-1 line-clamp-2"
-              style={{ color: theme.colors.primary.DEFAULT }}
-            >
-              {job.title}
-            </h3>
-            <p
-              className="text-sm font-medium mb-3"
-              style={{ color: theme.colors.text.secondary }}
-            >
-              {job.company}
-            </p>
-            
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <MapPin size={14} style={{ color: theme.colors.text.secondary }} />
-                <span
-                  className="text-xs"
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3
+                  className="text-lg font-semibold mb-1 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors"
+                  style={{ color: theme.colors.text.primary }}
+                >
+                  {job.title}
+                </h3>
+                <p
+                  className="text-sm font-medium mb-2 flex items-center gap-1"
                   style={{ color: theme.colors.text.secondary }}
                 >
-                  {job.location}
-                </span>
+                  <Briefcase size={14} />
+                  {job.company}
+                </p>
               </div>
               
-              {/* ✅ Salary - Only show if exists */}
-              {job.salary && (
-                <span
-                  className="text-xs"
-                  style={{ color: theme.colors.text.secondary }}
+              {/* Match Score - Compact Circle */}
+              {showMatch && (
+                <button
+                  onClick={handleMatchClick}
+                  className="flex-shrink-0 relative group/match"
                 >
-                  {job.salary}
-                </span>
+                  <div
+                    className="w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110"
+                    style={{
+                      borderColor: matchColor,
+                      backgroundColor: matchColor + '10',
+                    }}
+                  >
+                    <span
+                      className="text-sm font-bold"
+                      style={{ color: matchColor }}
+                    >
+                      {matchScore}%
+                    </span>
+                  </div>
+                  <span
+                    className="text-[10px] font-medium absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 group-hover/match:opacity-100 transition-opacity whitespace-nowrap"
+                    style={{ color: theme.colors.text.secondary }}
+                  >
+                    View Match
+                  </span>
+                </button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Right: Match Score */}
-          {showMatch && (
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={handleMatchClick}
-                className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+        {/* Job Details Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Location */}
+          <div className="flex items-center gap-2">
+            <MapPin size={16} style={{ color: theme.colors.text.muted }} />
+            <span
+              className="text-sm truncate"
+              style={{ color: theme.colors.text.secondary }}
+            >
+              {job.location}
+            </span>
+          </div>
+          
+          {/* Employment Type */}
+          {job.type && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.colors.primary.DEFAULT }} />
+              <span
+                className="text-sm"
+                style={{ color: theme.colors.text.secondary }}
               >
-                <div
-                  className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
-                  style={{
-                    borderColor: matchColor,
-                    backgroundColor: theme.colors.background.muted,
-                  }}
-                >
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: matchColor }}
-                  >
-                    {matchScore}%
-                  </span>
-                </div>
-                <span
-                  className="text-[10px] font-medium mt-1"
-                  style={{ color: theme.colors.text.secondary }}
-                >
-                  Match
-                </span>
-              </button>
+                {job.type}
+              </span>
+            </div>
+          )}
+          
+          {/* Salary */}
+          {job.salary && 
+           job.salary !== '0' && 
+           job.salary !== '₦0' && 
+           job.salary !== 'NGN0' && 
+           job.salary !== 'NGN 0' && 
+           job.salary !== '0.00' && 
+           job.salary !== '$0' && 
+           !job.salary.includes('₦0') && 
+           !job.salary.includes('NGN0') && 
+           !job.salary.includes('NGN 0') && 
+           !job.salary.includes('$0') && 
+           !job.salary.startsWith('0') && 
+           !job.salary.includes(' 0') && 
+           job.salary.trim() !== '' && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium" style={{ color: theme.colors.success }}>
+                {job.salary}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Bottom Row: Date & Action Buttons */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t" style={{ borderColor: theme.colors.border.light }}>
+        {/* Bottom Section: Date and Actions */}
+        <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: theme.colors.border.light }}>
           {/* Posted Date */}
           {job.postedDate && (
-            <div className="flex items-center gap-1">
-              <Calendar size={14} style={{ color: theme.colors.text.secondary }} />
+            <div className="flex items-center gap-2">
+              <Calendar size={14} style={{ color: theme.colors.text.muted }} />
               <span
                 className="text-xs"
-                style={{ color: theme.colors.text.secondary }}
+                style={{ color: theme.colors.text.muted }}
               >
                 {job.postedDate}
               </span>
@@ -169,9 +209,15 @@ export default function JobCard({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Save Button */}
             <button
               onClick={handleSave}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg border transition-all hover:scale-105"
+              style={{
+                borderColor: isSaved ? theme.colors.primary.DEFAULT : theme.colors.border.DEFAULT,
+                backgroundColor: isSaved ? theme.colors.primary.DEFAULT + '10' : 'transparent',
+              }}
+              title={isSaved ? "Remove from saved" : "Save job"}
             >
               {isSaved ? (
                 <BookmarkCheck size={18} style={{ color: theme.colors.primary.DEFAULT }} />
@@ -180,19 +226,37 @@ export default function JobCard({
               )}
             </button>
 
-            <button
-              onClick={handleApply}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {isApplied ? (
-                <Trash2 size={18} style={{ color: theme.colors.text.secondary }} />
-              ) : (
-                <FileCheck size={18} style={{ color: theme.colors.text.secondary }} />
-              )}
-            </button>
+            {/* Apply Button */}
+            <Link href={`/jobs/${job.slug}`} className="block">
+              <button
+                onClick={handleApply}
+                className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all hover:scale-105 ${
+                  isApplied 
+                    ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100' 
+                    : 'border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100'
+                }`}
+                style={{
+                  backgroundColor: isApplied ? '#FEE2E2' : theme.colors.primary.DEFAULT + '10',
+                  borderColor: isApplied ? '#FCA5A5' : theme.colors.primary.DEFAULT + '30',
+                  color: isApplied ? '#DC2626' : theme.colors.primary.DEFAULT,
+                }}
+              >
+                {isApplied ? (
+                  <>
+                    <Trash2 size={16} />
+                    Applied
+                  </>
+                ) : (
+                  <>
+                    <FileCheck size={16} />
+                    Apply Now
+                  </>
+                )}
+              </button>
+            </Link>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

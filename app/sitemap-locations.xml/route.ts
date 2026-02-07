@@ -113,9 +113,9 @@ ${routes
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=21600, s-maxage=21600',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   });
 }
 
-export const revalidate = 21600;
+export const revalidate = 3600;

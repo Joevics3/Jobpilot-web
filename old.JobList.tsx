@@ -4,13 +4,13 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
-
+import JobFeedHeader from '@/components/jobs/JobFeedHeader';
 import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
 import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
 import JobFilters from '@/components/jobs/JobFilters';
-import { ChevronDown, LogIn, Search, X, Filter, SlidersHorizontal, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { ChevronDown, LogIn, Search, X, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthModal from '@/components/AuthModal';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
@@ -67,25 +67,6 @@ export default function JobList() {
     remote: false,
   });
 
-  const checkAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        fetchUserProfile();
-        fetchUserOnboardingData();
-      } else {
-        setUser(null);
-        setUserName(null);
-        setUserOnboardingData(null);
-      }
-    } catch (error) {
-      console.error('Error checking auth:', error);
-    } finally {
-      setAuthChecked(true);
-    }
-  };
-
   useEffect(() => {
     checkAuth();
     loadSavedJobs();
@@ -117,6 +98,7 @@ export default function JobList() {
     const salaryMaxParam = searchParams.get('salaryMax');
     const remoteParam = searchParams.get('remote');
     const sortParam = searchParams.get('sort');
+    const postedParam = searchParams.get('posted');
 
     if (searchParam) {
       setSearchQuery(searchParam);
@@ -227,48 +209,15 @@ export default function JobList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, activeTab, user, userOnboardingData]);
 
-  // ✅ MODIFIED: Only fetch matches when user switches to Matches tab
-  useEffect(() => {
-    if (!authChecked || activeTab !== 'matches') {
-      return;
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setUser(session.user);
+    } else {
+      setUser(null);
     }
-
-    // Check if matches are already loaded
-    if (jobs.length > 0) {
-      return;
-    }
-
-    const cachedJobsKey = 'jobs_cache';
-    const cacheTimestampKey = 'jobs_cache_timestamp';
-    const cacheUserIdKey = 'jobs_cache_user_id';
-    
-    try {
-      const cachedJobs = localStorage.getItem(cachedJobsKey);
-      const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
-      const cachedUserId = localStorage.getItem(cacheUserIdKey);
-      
-      // ✅ Check if cache is valid
-      if (cachedJobs && cacheTimestamp) {
-        const timestamp = parseInt(cacheTimestamp, 10);
-        const now = Date.now();
-        const isCacheValid = now - timestamp < CACHE_DURATION;
-        const isUserMatching = (!user && !cachedUserId) || (user && cachedUserId === user.id);
-
-        if (isCacheValid && isUserMatching) {
-          const parsedCachedJobs = JSON.parse(cachedJobs);
-          setJobs(parsedCachedJobs);
-          console.log(`Loaded ${parsedCachedJobs.length} jobs from cache for user ${user?.id || 'anonymous'}`);
-          return;
-        }
-      }
-
-      // ✅ If no valid cache, fetch fresh data
-      fetchJobs();
-    } catch (error) {
-      console.error('Error loading cached jobs:', error);
-      fetchJobs();
-    }
-  }, [authChecked, activeTab, user]);
+    setAuthChecked(true);
+  };
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -477,7 +426,6 @@ export default function JobList() {
       type: job.type || job.employment_type || '',
       breakdown: finalBreakdown,
       postedDate: getRelativeTime(job.posted_date || job.created_at),
-      sector: job.sector || '',
       description: job.description || job.job_description || '',
     };
   };
@@ -612,10 +560,24 @@ export default function JobList() {
     setAppliedJobs(newApplied);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
+
+      if (!appliedJobs.includes(jobId)) {
+        const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
+        if (saved) {
+          try {
+            const savedArray: string[] = JSON.parse(saved);
+            if (savedArray.includes(jobId)) {
+              const updatedSaved = savedArray.filter(id => id !== jobId);
+              localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(updatedSaved));
+              setSavedJobs(updatedSaved);
+            }
+          } catch (e) {
+            console.error('Error updating saved jobs:', e);
+          }
+        }
+      }
     }
   };
-
-
 
   const handleRefreshMatches = async () => {
     setRefreshingMatches(true);
@@ -693,7 +655,7 @@ export default function JobList() {
       const jobTypeLower = job.type?.toLowerCase() || '';
       
       // Search filter
-      const query = filters.search?.toLowerCase();
+      const query = filters.search.toLowerCase();
       if (query) {
         const titleMatch = job.title.toLowerCase().includes(query);
         const companyMatch = job.company.toLowerCase().includes(query);
@@ -703,7 +665,7 @@ export default function JobList() {
       
       // Location filter
       if (filters.location && filters.location.length > 0) {
-        const locationMatch = filters.location.some((loc: string) => 
+        const locationMatch = filters.location.some(loc => 
           jobLocationLower.includes(loc.toLowerCase())
         );
         if (!locationMatch) return false;
@@ -716,7 +678,7 @@ export default function JobList() {
       
       // Employment type filter
       if (filters.employmentType && filters.employmentType.length > 0) {
-        const typeMatch = filters.employmentType.some((type: string) => {
+        const typeMatch = filters.employmentType.some(type => {
           if (type.toLowerCase() === 'remote') {
             return jobLocationLower.includes('remote');
           }
@@ -740,15 +702,6 @@ export default function JobList() {
         if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
           return false;
         }
-      }
-      
-      // Sector filter
-      if (filters.sector && filters.sector.length > 0) {
-        const jobSector = job.sector?.toLowerCase() || '';
-        const sectorMatch = filters.sector.some((sector: string) => 
-          jobSector.includes(sector.toLowerCase()) || sector.toLowerCase().includes(jobSector)
-        );
-        if (!sectorMatch) return false;
       }
       
       return true;
@@ -820,51 +773,6 @@ export default function JobList() {
     localStorage.setItem('active_jobs_tab', tab);
   };
 
-  // ✅ NEW: Helper functions for enhanced filter UX
-  const hasActiveFilters = () => {
-    return (
-      (filters.location && filters.location.length > 0) ||
-      (filters.sector && filters.sector.length > 0) ||
-      (filters.employmentType && filters.employmentType.length > 0) ||
-      filters.salaryRange ||
-      filters.remote ||
-      filters.search
-    );
-  };
-
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (filters.location?.length) count += filters.location.length;
-    if (filters.sector?.length) count += filters.sector.length;
-    if (filters.employmentType?.length) count += filters.employmentType.length;
-    if (filters.salaryRange) count += 1;
-    if (filters.remote) count += 1;
-    if (filters.search) count += 1;
-    return count;
-  };
-
-  const clearAllFilters = () => {
-    const clearedFilters = {
-      search: '',
-      location: [] as string[],
-      sector: [] as string[],
-      employmentType: [] as string[],
-      salaryRange: undefined,
-      remote: false,
-    };
-    setFilters(clearedFilters);
-    setSearchQuery('');
-    
-    // Clear URL parameters
-    const params = new URLSearchParams();
-    if (sortBy !== 'latest') {
-      params.set('sort', sortBy);
-    }
-    const queryString = params.toString();
-    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(newUrl);
-  };
-
   return (
     <>
       <OrganizationSchema />
@@ -876,7 +784,15 @@ export default function JobList() {
       />
       
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
-        {/* Header removed as requested */}
+        <JobFeedHeader
+          userName={userName}
+          refreshingMatches={refreshingMatches}
+          onRefreshMatches={handleRefreshMatches}
+          onCreateCV={() => {
+            router.push('/cv?tab=cv');
+          }}
+          onSubmitJob={() => router.push('/submit')}
+        />
 
         {!user && (
           <div
@@ -906,39 +822,26 @@ export default function JobList() {
 
 
         {/* ✅ NEW: Tabs Section */}
-        {/* Header Section */}
         <div className="px-6 pt-6 pb-2">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: theme.colors.text.primary }}>
-              Find Your Next Opportunity
-            </h1>
-            <p className="text-lg" style={{ color: theme.colors.text.secondary }}>
-              Browse the latest job openings
-            </p>
-          </div>
-        </div>
-
-        {/* Tabs Section */}
-        <div className="px-6 pb-2">
           <div className="flex gap-1 border-b" style={{ borderColor: theme.colors.border.DEFAULT }}>
             <button
               onClick={() => handleTabChange('latest')}
-              className="flex-1 px-6 py-3 font-medium transition-all relative rounded-t-lg text-center"
+              className="px-6 py-3 font-medium transition-all relative rounded-t-lg"
               style={{
-                color: activeTab === 'latest' ? '#2563EB' : theme.colors.text.secondary,
-                backgroundColor: activeTab === 'latest' ? '#EFF6FF' : 'transparent',
-                borderBottom: activeTab === 'latest' ? '2px solid #2563EB' : '2px solid transparent',
+                color: activeTab === 'latest' ? theme.colors.primary.DEFAULT : theme.colors.text.secondary,
+                backgroundColor: activeTab === 'latest' ? theme.colors.primary.DEFAULT + '15' : 'transparent',
+                borderBottom: activeTab === 'latest' ? `2px solid ${theme.colors.primary.DEFAULT}` : '2px solid transparent',
               }}
             >
               Latest Jobs
             </button>
             <button
               onClick={() => handleTabChange('matches')}
-              className="flex-1 px-6 py-3 font-medium transition-all relative rounded-t-lg text-center"
+              className="px-6 py-3 font-medium transition-all relative rounded-t-lg"
               style={{
                 color: activeTab === 'matches' ? '#059669' : theme.colors.text.secondary,
-                backgroundColor: activeTab === 'matches' ? '#D1FAE5' : 'transparent',
-                borderBottom: activeTab === 'matches' ? '2px solid #059669' : '2px solid transparent',
+                backgroundColor: activeTab === 'matches' ? '#059669' + '15' : 'transparent',
+                borderBottom: activeTab === 'matches' ? `2px solid #059669` : '2px solid transparent',
               }}
             >
               Matches
@@ -948,178 +851,121 @@ export default function JobList() {
 
         {/* Search Bar and Filters - Only show for Latest tab */}
         {activeTab === 'latest' && (
-          <div className="px-6 py-6 space-y-5">
-            {/* Enhanced Search Bar */}
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl opacity-0 group-focus-within:opacity-30 transition-opacity blur"></div>
-              <Search 
-                size={22} 
-                className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-blue-500 z-10"
-                style={{ color: theme.colors.primary.DEFAULT }}
-              />
-              <input
-                type="text"
-                placeholder="Search by job title, company, or keywords..."
-                value={filters.search}
-                onChange={(e) => {
-                  const newSearch = e.target.value;
-                  setFilters(prev => ({ ...prev, search: newSearch }));
-                  setSearchQuery(newSearch);
+          <div className="px-6 py-4 space-y-4">
+          <div className="relative">
+            <Search 
+              size={20} 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: theme.colors.text.secondary }}
+            />
+            <input
+              type="text"
+              placeholder="Search jobs by title, company, or description..."
+              value={filters.search}
+              onChange={(e) => {
+                const newSearch = e.target.value;
+                setFilters(prev => ({ ...prev, search: newSearch }));
+                setSearchQuery(newSearch);
+                
+                const params = new URLSearchParams(searchParams.toString());
+                if (newSearch) {
+                  params.set('search', newSearch);
+                } else {
+                  params.delete('search');
+                }
+                const queryString = params.toString();
+                const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                router.replace(newUrl);
+              }}
+              className="w-full pl-10 pr-10 py-3 rounded-lg border outline-none focus:ring-2 transition-all"
+              style={{
+                backgroundColor: theme.colors.background.DEFAULT,
+                borderColor: theme.colors.border.DEFAULT,
+                color: theme.colors.text.primary,
+              }}
+            />
+            {filters.search && (
+              <button
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, search: '' }));
+                  setSearchQuery('');
                   
                   const params = new URLSearchParams(searchParams.toString());
-                  if (newSearch) {
-                    params.set('search', newSearch);
-                  } else {
-                    params.delete('search');
-                  }
+                  params.delete('search');
                   const queryString = params.toString();
                   const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
                   router.replace(newUrl);
                 }}
-                className="relative w-full pl-14 pr-14 py-5 rounded-xl border-2 outline-none focus:ring-0 focus:border-blue-500 transition-all text-base font-medium shadow-lg hover:shadow-xl z-10"
-                style={{
-                  backgroundColor: theme.colors.background.DEFAULT,
-                  borderColor: theme.colors.primary.DEFAULT,
-                  color: theme.colors.text.primary,
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={16} style={{ color: theme.colors.text.secondary }} />
+              </button>
+            )}
+          </div>
+          
+          {/* Filter and Sort Row */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => setFiltersOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Filter size={18} />
+              <span className="font-medium">Filters</span>
+              {(
+                (filters.location && filters.location.length > 0) ||
+                (filters.sector && filters.sector.length > 0) ||
+                (filters.employmentType && filters.employmentType.length > 0) ||
+                filters.salaryRange ||
+                filters.remote
+              ) && (
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
+                  Active
+                </span>
+              )}
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  const newSortBy = e.target.value as 'latest' | 'salary';
+                  setSortBy(newSortBy);
+                  
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set('sort', newSortBy);
+                  
+                  const queryString = params.toString();
+                  const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                  router.replace(newUrl);
                 }}
-              />
-              {filters.search && (
-                <button
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, search: '' }));
-                    setSearchQuery('');
-                    
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.delete('search');
-                    const queryString = params.toString();
-                    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-                    router.replace(newUrl);
-                  }}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 p-2.5 hover:bg-gray-100 rounded-full transition-all hover:scale-110 z-10"
-                  style={{ backgroundColor: theme.colors.primary.DEFAULT + '10' }}
-                >
-                  <X size={20} style={{ color: theme.colors.primary.DEFAULT }} />
-                </button>
-              )}
+                className="text-sm font-medium border border-gray-300 rounded-lg pl-3 pr-8 outline-none appearance-none cursor-pointer"
+                style={{ 
+                  backgroundColor: theme.colors.background.DEFAULT,
+                  color: theme.colors.text.primary 
+                }}
+              >
+                <option value="latest">Sort by Latest</option>
+                <option value="salary">Sort by Salary</option>
+              </select>
+              <ChevronDown size={16} style={{ color: theme.colors.text.secondary }} className="pointer-events-none" />
             </div>
-            
-            {/* Enhanced Filter and Sort Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Quick Filters & Advanced Filters Button */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* Quick Filter Chips */}
-                <div className="flex items-center gap-2 flex-wrap">
-
-                  
-                  {filters.remote && (
-                    <span 
-                      className="px-3 py-1.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-200"
-                      style={{ backgroundColor: '#9333EA15', color: '#9333EA' }}
-                    >
-                      Remote
-                    </span>
-                  )}
-                  
-                  {filters.employmentType && filters.employmentType.length > 0 && (
-                    <span 
-                      className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full border border-blue-200"
-                      style={{ backgroundColor: theme.colors.primary.DEFAULT + '15', color: theme.colors.primary.DEFAULT }}
-                    >
-                      {filters.employmentType[0]}
-                    </span>
-                  )}
-                  
-                  {filters.location && filters.location.length > 0 && (
-                    <span 
-                      className="px-3 py-1.5 text-xs font-medium bg-teal-100 text-teal-700 rounded-full border border-teal-200"
-                      style={{ backgroundColor: '#14B8A615', color: '#0D9488' }}
-                    >
-                      {filters.location[0]}
-                    </span>
-                  )}
-                  
-                  {filters.sector && filters.sector.length > 0 && (
-                    <span 
-                      className="px-3 py-1.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full border border-orange-200"
-                      style={{ backgroundColor: '#F9731615', color: '#EA580C' }}
-                    >
-                      {filters.sector[0]}
-                    </span>
-                  )}
-                </div>
-
-                {/* Advanced Filters Button */}
-                <button
-                  onClick={() => setFiltersOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
-                  style={{
-                    backgroundColor: hasActiveFilters() ? theme.colors.primary.DEFAULT + '10' : theme.colors.background.DEFAULT,
-                    borderColor: hasActiveFilters() ? theme.colors.primary.DEFAULT : theme.colors.border.DEFAULT,
-                  }}
-                >
-                  <SlidersHorizontal size={16} />
-                  <span className="font-medium text-sm">Filters</span>
-                  {hasActiveFilters() && (
-                    <span className="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded-full">
-                      {getActiveFilterCount()}
-                    </span>
-                  )}
-                </button>
-              </div>
-              
-              {/* Sort Control */}
-              <div className="flex items-center gap-2">
-                {/* Sort Badge */}
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      const newSortBy = sortBy === 'latest' ? 'salary' : 'latest';
-                      setSortBy(newSortBy);
-                      
-                      const params = new URLSearchParams(searchParams.toString());
-                      params.set('sort', newSortBy);
-                      
-                      const queryString = params.toString();
-                      const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-                      router.replace(newUrl);
-                    }}
-                    className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full border border-gray-200 hover:bg-gray-200 transition-colors flex items-center gap-1"
-                  >
-                    <ArrowUpDown size={12} />
-                    {sortBy === 'latest' ? 'Most Recent' : 'Highest Salary'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Results Count and Clear Filters */}
-            <div className="flex items-center justify-between">
-              {!latestJobsLoading && hasActiveFilters() && (
-                <div className="flex items-center gap-3">
-                  <p className="text-sm font-medium" style={{ color: theme.colors.text.primary }}>
-                    {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
-                  </p>
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              )}
-              
-              {refreshingMatches && (
-                <div className="flex items-center gap-2 text-sm" style={{ color: theme.colors.text.secondary }}>
-                  <RefreshCw size={14} className="animate-spin" />
-                  Refreshing...
-                </div>
-              )}
-            </div>
+          </div>
+          
+          {!latestJobsLoading && (filters.search || 
+            (filters.location && filters.location.length > 0) ||
+            (filters.sector && filters.sector.length > 0) ||
+            (filters.employmentType && filters.employmentType.length > 0) ||
+            filters.salaryRange ||
+            filters.remote) && (
+            <p className="text-sm" style={{ color: theme.colors.text.secondary }}>
+              Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+            </p>
+          )}
 
         {/* Filters Modal */}
         <JobFilters
           filters={filters}
-          onFiltersChange={(newFilters: any) => {
+          onFiltersChange={(newFilters) => {
             setFilters(newFilters);
             
             const params = new URLSearchParams();
@@ -1128,37 +974,29 @@ export default function JobList() {
               params.set('search', newFilters.search);
             }
             
-            if (newFilters.sector) {
-              params.set('sector', newFilters.sector);
+            if (newFilters.location && newFilters.location.length > 0) {
+              params.set('location', newFilters.location.join(','));
             }
             
-            if (newFilters.role) {
-              params.set('role', newFilters.role);
+            if (newFilters.sector && newFilters.sector.length > 0) {
+              params.set('sector', newFilters.sector.join(','));
             }
             
-            if (newFilters.state) {
-              params.set('state', newFilters.state);
+            if (newFilters.employmentType && newFilters.employmentType.length > 0) {
+              params.set('employmentType', newFilters.employmentType.join(','));
             }
             
-            if (newFilters.town) {
-              params.set('town', newFilters.town);
-            }
-            
-            if (newFilters.jobType && newFilters.jobType.length > 0) {
-              params.set('jobType', newFilters.jobType.join(','));
-            }
-            
-            if (newFilters.workMode && newFilters.workMode.length > 0) {
-              params.set('workMode', newFilters.workMode.join(','));
-            }
-            
-            if (newFilters.salaryRange && newFilters.salaryRange.enabled) {
+            if (newFilters.salaryRange) {
               if (newFilters.salaryRange.min > 0) {
                 params.set('salaryMin', newFilters.salaryRange.min.toString());
               }
               if (newFilters.salaryRange.max > 0) {
                 params.set('salaryMax', newFilters.salaryRange.max.toString());
               }
+            }
+            
+            if (newFilters.remote) {
+              params.set('remote', 'true');
             }
             
             if (sortBy !== 'latest') {
@@ -1172,48 +1010,15 @@ export default function JobList() {
           isOpen={filtersOpen}
           onToggle={() => setFiltersOpen(!filtersOpen)}
         />
-          </div>
+        </div>
         )}
 
-        {/* ✅ ENHANCED: Matches Tab Header */}
+        {/* ✅ NEW: Matches Tab Header */}
         {activeTab === 'matches' && (
-          <div className="px-6 py-6">
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-green-100">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1" style={{ color: theme.colors.text.primary }}>
-                    Your Personalized Matches
-                  </h3>
-                  <p className="text-sm" style={{ color: theme.colors.text.secondary }}>
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <RefreshCw size={14} className="animate-spin" />
-                        Calculating your match scores...
-                      </span>
-                    ) : (
-                      <>
-                        Found <span className="font-semibold text-green-600">{matchedJobs.length}</span> job{matchedJobs.length !== 1 ? 's' : ''} that match your profile
-                      </>
-                    )}
-                  </p>
-                  {!loading && matchedJobs.length > 0 && (
-                    <p className="text-xs mt-2" style={{ color: theme.colors.text.muted }}>
-                      Jobs are sorted by how well they match your skills, experience, and preferences
-                    </p>
-                  )}
-                </div>
-                {user && (
-                  <button
-                    onClick={handleRefreshMatches}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-all"
-                    disabled={refreshingMatches}
-                  >
-                    <RefreshCw size={14} className={refreshingMatches ? 'animate-spin' : ''} />
-                    Refresh
-                  </button>
-                )}
-              </div>
-            </div>
+          <div className="px-6 py-4">
+            <p className="text-sm" style={{ color: theme.colors.text.secondary }}>
+              {loading ? 'Calculating match scores...' : `${matchedJobs.length} job${matchedJobs.length !== 1 ? 's' : ''} matched`}
+            </p>
           </div>
         )}
 
@@ -1223,38 +1028,23 @@ export default function JobList() {
           {activeTab === 'latest' && (
             <>
               {latestJobsLoading && latestJobs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-12 h-12 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                  <p style={{ color: theme.colors.text.secondary }}>Finding the latest jobs for you...</p>
+                <div className="flex items-center justify-center py-12">
+                  <p style={{ color: theme.colors.text.secondary }}>Loading latest jobs...</p>
                 </div>
               ) : sortedJobs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Search size={24} style={{ color: theme.colors.text.muted }} />
-                  </div>
-                  <h3 
-                    className="text-lg font-semibold mb-2"
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p
+                    className="text-base font-medium mb-2"
                     style={{ color: theme.colors.text.primary }}
                   >
-                    {filters.search ? 'No matching jobs found' : 'No jobs available'}
-                  </h3>
-                  <p 
-                    className="text-sm mb-4"
+                    {filters.search ? 'No jobs found matching your search' : 'No jobs found'}
+                  </p>
+                  <p
+                    className="text-sm text-center"
                     style={{ color: theme.colors.text.secondary }}
                   >
-                    {filters.search 
-                      ? 'Try adjusting your search terms or filters to find more opportunities'
-                      : 'Check back later for new job postings'
-                    }
+                    {filters.search ? 'Try adjusting your search terms' : 'Check back later for new opportunities'}
                   </p>
-                  {hasActiveFilters() && (
-                    <button
-                      onClick={clearAllFilters}
-                      className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                    >
-                      Clear filters
-                    </button>
-                  )}
                 </div>
               ) : (
                 <>
@@ -1290,45 +1080,23 @@ export default function JobList() {
           {activeTab === 'matches' && (
             <>
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-12 h-12 border-3 border-gray-200 border-t-green-500 rounded-full animate-spin mb-4"></div>
-                  <p style={{ color: theme.colors.text.secondary }}>Analyzing jobs for your perfect match...</p>
+                <div className="flex items-center justify-center py-12">
+                  <p style={{ color: theme.colors.text.secondary }}>Loading jobs. Checking for matches...</p>
                 </div>
               ) : matchedJobs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
-                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
-                    <Search size={24} style={{ color: theme.colors.warning }} />
-                  </div>
-                  <h3 
-                    className="text-lg font-semibold mb-2"
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p
+                    className="text-base font-medium mb-2"
                     style={{ color: theme.colors.text.primary }}
                   >
-                    No matches found yet
-                  </h3>
-                  <p 
-                    className="text-sm mb-4"
+                    No job matches found
+                  </p>
+                  <p
+                    className="text-sm text-center"
                     style={{ color: theme.colors.text.secondary }}
                   >
-                    {user 
-                      ? 'Update your profile to improve matching or check back later for new opportunities'
-                      : 'Create an account to get personalized job matches based on your profile'
-                    }
+                    {user ? 'Check back later for new opportunities that match your profile' : 'Sign up to see personalized job matches'}
                   </p>
-                  {user ? (
-                    <button
-                      onClick={() => router.push('/onboarding')}
-                      className="px-4 py-2 text-sm bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-medium"
-                    >
-                      Update Profile
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setAuthModalOpen(true)}
-                      className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                    >
-                      Sign Up Free
-                    </button>
-                  )}
                 </div>
               ) : (
                 matchedJobs.map((job) => (

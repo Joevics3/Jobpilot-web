@@ -126,82 +126,48 @@ async function fetchRelatedJobs(currentJob: any) {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   let relatedJobs: any[] = [];
+  const MAX_JOBS = 10;
 
+  // First, fetch jobs by category (up to 8)
   if (currentJob.category) {
     const { data: categoryJobs, error: catError } = await supabase
       .from('jobs')
-      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
+      .select('id, slug, title, company, location, salary_range, posted_date, created_at, category, sector')
       .eq('category', currentJob.category)
       .eq('status', 'active')
       .neq('id', currentJob.id)
       .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
       .order('created_at', { ascending: false })
-      .limit(6);
+      .limit(8);
 
-    if (catError) {
-      console.error('Error fetching category jobs:', catError);
-    }
-
-    if (categoryJobs && categoryJobs.length > 0) {
+    if (!catError && categoryJobs && categoryJobs.length > 0) {
       relatedJobs = categoryJobs;
-      console.log(`Found ${categoryJobs.length} related jobs by category: ${currentJob.category}`);
     }
   }
 
-  if (relatedJobs.length < 6 && currentJob.sector) {
+  // If less than MAX_JOBS, fetch jobs by sector
+  if (relatedJobs.length < MAX_JOBS && currentJob.sector) {
     const excludeIds = [currentJob.id, ...relatedJobs.map(job => job.id)];
+    const remainingSlots = MAX_JOBS - relatedJobs.length;
 
     const { data: sectorJobs, error: sectorError } = await supabase
       .from('jobs')
-      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
+      .select('id, slug, title, company, location, salary_range, posted_date, created_at, category, sector')
       .eq('sector', currentJob.sector)
       .eq('status', 'active')
+      .neq('id', currentJob.id)
       .not('id', 'in', `(${excludeIds.join(',')})`)
       .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
       .order('created_at', { ascending: false })
-      .limit(6 - relatedJobs.length);
+      .limit(remainingSlots);
 
-    if (sectorError) {
-      console.error('Error fetching sector jobs:', sectorError);
-    }
-
-    if (sectorJobs && sectorJobs.length > 0) {
+    if (!sectorError && sectorJobs && sectorJobs.length > 0) {
       relatedJobs = [...relatedJobs, ...sectorJobs];
-      console.log(`Added ${sectorJobs.length} related jobs by sector: ${currentJob.sector}`);
     }
   }
 
-  if (relatedJobs.length < 6) {
-    const excludeIds = [currentJob.id, ...relatedJobs.map(job => job.id)];
-    
-    const { data: recentJobs, error: recentError } = await supabase
-      .from('jobs')
-      .select('id, slug, title, company, location, salary_range, posted_date, created_at')
-      .eq('status', 'active')
-      .not('id', 'in', `(${excludeIds.join(',')})`)
-      .or(`posted_date.gte.${thirtyDaysAgo.toISOString().split('T')[0]},created_at.gte.${thirtyDaysAgo.toISOString()}`)
-      .order('created_at', { ascending: false })
-      .limit(6 - relatedJobs.length);
-
-    if (recentError) {
-      console.error('Error fetching recent jobs:', recentError);
-    }
-
-    if (recentJobs && recentJobs.length > 0) {
-      relatedJobs = [...relatedJobs, ...recentJobs];
-      console.log(`Added ${recentJobs.length} recent jobs`);
-    }
-  }
-
-  console.log(`Total related jobs: ${relatedJobs.length}`);
-  
   const validJobs = relatedJobs.filter(job => job && job.slug && job.title);
-  
-  if (validJobs.length !== relatedJobs.length) {
-    console.warn(`Filtered out ${relatedJobs.length - validJobs.length} invalid jobs`);
-  }
-
-  return validJobs.slice(0, 6);
+  return validJobs.slice(0, MAX_JOBS);
 }
 
 export default async function JobPage({ params }: { params: { slug: string } }) {

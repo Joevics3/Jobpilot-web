@@ -8,7 +8,7 @@ export default function PWAInstaller() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -19,6 +19,13 @@ export default function PWAInstaller() {
         .catch((error) => {
           console.log('Service Worker registration failed:', error);
         });
+    }
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then((permission) => {
+        console.log('Notification permission:', permission);
+      });
     }
 
     // Listen for install prompt

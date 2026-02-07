@@ -46,7 +46,6 @@ export default function JobsByStatePage() {
   const [totalJobs, setTotalJobs] = useState(0);
   const [towns, setTowns] = useState<TownJobCount[]>([]);
   const [stateOnlyJobs, setStateOnlyJobs] = useState<any[]>([]);
-  const [nationalJobs, setNationalJobs] = useState<JobUI[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -150,51 +149,10 @@ export default function JobsByStatePage() {
       const processedJobs = await processJobsWithMatching(stateFilteredJobs);
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
       setJobs(processedJobs);
-
-      // Fetch national jobs (excluding current state)
-      await fetchNationalJobs();
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchNationalJobs = async () => {
-    try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      // Fetch national jobs (excluding current state)
-      const { data: nationalJobsData, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('status', 'active')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (error) throw error;
-
-      // Filter out jobs from current state
-      const filteredNationalJobs = (nationalJobsData || [])
-        .filter(job => {
-          if (typeof job.location === 'string') {
-            return !job.location.toLowerCase().includes(formattedState.toLowerCase());
-          }
-          if (job.location && typeof job.location === 'object') {
-            const locState = job.location.state || '';
-            return locState.toLowerCase() !== formattedState.toLowerCase();
-          }
-          return true;
-        })
-        .slice(0, 30);
-
-      const processedNationalJobs = await processJobsWithMatching(filteredNationalJobs);
-      processedNationalJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
-      setNationalJobs(processedNationalJobs);
-    } catch (error) {
-      console.error('Error fetching national jobs:', error);
     }
   };
 
@@ -533,33 +491,10 @@ export default function JobsByStatePage() {
                 onApply={handleApply}
                 onShowBreakdown={handleShowBreakdown}
               />
-))
-           )}
-
-          {/* Trending National Jobs */}
-          {!loading && nationalJobs.length > 0 && (
-            <div className="px-6 py-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Trending National Jobs</h2>
-                <p className="text-gray-600 mb-4">Popular job opportunities from across Nigeria</p>
-                <div className="space-y-4">
-                  {nationalJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      savedJobs={savedJobs}
-                      appliedJobs={appliedJobs}
-                      onSave={handleSave}
-                      onApply={handleApply}
-                      onShowBreakdown={handleShowBreakdown}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            ))
           )}
-         </div>
-       </div>
+        </div>
+      </div>
 
       <MatchBreakdownModal
         open={matchModalOpen}

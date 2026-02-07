@@ -74,9 +74,9 @@ ${routes
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   });
 }
 
-export const revalidate = 86400;
+export const revalidate = 3600;
