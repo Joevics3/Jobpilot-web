@@ -229,7 +229,6 @@ export default function JobCard({
             {/* Apply Button */}
             <Link href={`/jobs/${job.slug}`} className="block">
               <button
-                onClick={handleApply}
                 className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all hover:scale-105 ${
                   isApplied 
                     ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100' 

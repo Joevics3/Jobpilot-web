@@ -58,12 +58,17 @@ export default function JobList() {
   const [coverLetterModalOpen, setCoverLetterModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<any>({
     search: '',
     location: [] as string[],
-    sector: [] as string[],
+    sector: [] as string[] | string,
+    role: '' as string,
+    state: '' as string,
+    town: '' as string,
+    jobType: [] as string[],
+    workMode: [] as string[],
     employmentType: [] as string[],
-    salaryRange: undefined as { min: number; max: number } | undefined,
+    salaryRange: undefined as { min: number; max: number; enabled?: boolean } | undefined,
     remote: false,
   });
 
@@ -520,8 +525,12 @@ export default function JobList() {
       }
       
       // Sector filter
-      if (filters.sector && filters.sector.length > 0) {
-        query = query.in('sector', filters.sector);
+      if (filters.sector) {
+        if (Array.isArray(filters.sector) && filters.sector.length > 0) {
+          query = query.in('sector', filters.sector);
+        } else if (typeof filters.sector === 'string' && filters.sector !== '') {
+          query = query.eq('sector', filters.sector);
+        }
       }
       
       // Role filter (if applicable)
@@ -824,7 +833,12 @@ export default function JobList() {
   const hasActiveFilters = () => {
     return (
       (filters.location && filters.location.length > 0) ||
-      (filters.sector && filters.sector.length > 0) ||
+      (filters.sector && (Array.isArray(filters.sector) ? filters.sector.length > 0 : filters.sector)) ||
+      (filters.role && filters.role !== '') ||
+      (filters.state && filters.state !== '') ||
+      (filters.town && filters.town !== '') ||
+      (filters.jobType && filters.jobType.length > 0) ||
+      (filters.workMode && filters.workMode.length > 0) ||
       (filters.employmentType && filters.employmentType.length > 0) ||
       filters.salaryRange ||
       filters.remote ||
@@ -835,7 +849,13 @@ export default function JobList() {
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.location?.length) count += filters.location.length;
-    if (filters.sector?.length) count += filters.sector.length;
+    if (Array.isArray(filters.sector) && filters.sector.length) count += filters.sector.length;
+    else if (typeof filters.sector === 'string' && filters.sector) count += 1;
+    if (filters.role) count += 1;
+    if (filters.state) count += 1;
+    if (filters.town) count += 1;
+    if (filters.jobType?.length) count += filters.jobType.length;
+    if (filters.workMode?.length) count += filters.workMode.length;
     if (filters.employmentType?.length) count += filters.employmentType.length;
     if (filters.salaryRange) count += 1;
     if (filters.remote) count += 1;
@@ -847,7 +867,12 @@ export default function JobList() {
     const clearedFilters = {
       search: '',
       location: [] as string[],
-      sector: [] as string[],
+      sector: [] as string[] | string,
+      role: '' as string,
+      state: '' as string,
+      town: '' as string,
+      jobType: [] as string[],
+      workMode: [] as string[],
       employmentType: [] as string[],
       salaryRange: undefined,
       remote: false,
