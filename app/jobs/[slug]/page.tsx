@@ -23,16 +23,19 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
 
+  // NULL SAFE: Company name extraction
   const companyName = typeof job.company === 'string' 
     ? job.company 
     : (job.company?.name || 'Company');
   
+  // NULL SAFE: Location string extraction
   const locationStr = typeof job.location === 'string'
     ? job.location
     : (job.location?.remote 
         ? 'Remote'
         : [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified');
 
+  // NULL SAFE: Salary string extraction
   const getSalaryString = () => {
     if (job.salary) return job.salary;
     
@@ -54,9 +57,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 
   const salaryStr = getSalaryString();
-  const title = `${job.title} at ${companyName}`;
+  // NULL SAFE: Job title - handle null title
+  const jobTitle = job.title || 'Job Opportunity';
+  const title = `${jobTitle} at ${companyName}`;
   
-  let description = `Apply for ${job.title} at ${companyName} in ${locationStr}`;
+  let description = `Apply for ${jobTitle} at ${companyName} in ${locationStr}`;
   
   if (salaryStr) {
     description += `. Salary: ${salaryStr}`;
@@ -66,14 +71,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   
   if (description.length > 155) {
     if (salaryStr) {
-      description = `Apply for ${job.title} at ${companyName} in ${locationStr}. Apply now on JobMeter.`;
+      description = `Apply for ${jobTitle} at ${companyName} in ${locationStr}. Apply now on JobMeter.`;
     }
     
     if (description.length > 155) {
       const maxTitleLength = 155 - `Apply for  at ${companyName} in ${locationStr}. Apply now!`.length;
-      const truncatedTitle = job.title.length > maxTitleLength 
-        ? job.title.substring(0, maxTitleLength - 3) + '...'
-        : job.title;
+      const truncatedTitle = jobTitle.length > maxTitleLength 
+        ? jobTitle.substring(0, maxTitleLength - 3) + '...'
+        : jobTitle;
       description = `Apply for ${truncatedTitle} at ${companyName} in ${locationStr}. Apply now!`;
     }
   }
@@ -86,7 +91,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       type: 'website',
       siteName: 'JobMeter',
-      url: `https://www.jobmeter.app/jobs/${job.slug}`,
+      // NULL SAFE: slug fallback to id
+      url: `https://www.jobmeter.app/jobs/${job.slug || job.id}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -94,7 +100,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
     },
     alternates: {
-      canonical: `https://www.jobmeter.app/jobs/${job.slug}`,
+      // NULL SAFE: slug fallback to id
+      canonical: `https://www.jobmeter.app/jobs/${job.slug || job.id}`,
     },
     robots: {
       index: true,
@@ -129,6 +136,7 @@ async function fetchRelatedJobs(currentJob: any) {
   const MAX_JOBS = 10;
 
   // First, fetch jobs by category (up to 8)
+  // NULL SAFE: Check if category exists
   if (currentJob.category) {
     const { data: categoryJobs, error: catError } = await supabase
       .from('jobs')
@@ -146,6 +154,7 @@ async function fetchRelatedJobs(currentJob: any) {
   }
 
   // If less than MAX_JOBS, fetch jobs by sector
+  // NULL SAFE: Check if sector exists
   if (relatedJobs.length < MAX_JOBS && currentJob.sector) {
     const excludeIds = [currentJob.id, ...relatedJobs.map(job => job.id)];
     const remainingSlots = MAX_JOBS - relatedJobs.length;
@@ -166,6 +175,7 @@ async function fetchRelatedJobs(currentJob: any) {
     }
   }
 
+  // NULL SAFE: Filter out jobs with missing critical fields
   const validJobs = relatedJobs.filter(job => job && job.slug && job.title);
   return validJobs.slice(0, MAX_JOBS);
 }
