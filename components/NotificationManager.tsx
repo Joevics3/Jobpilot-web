@@ -10,12 +10,45 @@ export default function NotificationManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [selectedSector, setSelectedSector] = useState('');
 
-  // Initialize email from localStorage on mount
+  const sectors = [
+    "Information Technology & Software",
+    "Engineering & Manufacturing", 
+    "Finance & Banking",
+    "Healthcare & Medical",
+    "Education & Training",
+    "Sales & Marketing",
+    "Human Resources & Recruitment",
+    "Customer Service & Support",
+    "Media Advertising & Communications",
+    "Design Arts & Creative",
+    "Construction & Real Estate",
+    "Logistics Transport & Supply Chain",
+    "Agriculture & Agribusiness",
+    "Energy & Utilities",
+    "Legal & Compliance",
+    "Government & Public Administration",
+    "Retail & E-commerce",
+    "Hospitality & Tourism",
+    "Science & Research",
+    "Security & Defense",
+    "Telecommunications",
+    "Nonprofit & NGO",
+    "Environment & Sustainability",
+    "Product Management & Operations",
+    "Data & Analytics"
+  ];
+
+// Initialize email and sector from localStorage on mount
   useEffect(() => {
     const storedEmail = localStorage.getItem('subscriber-email');
+    const storedSector = localStorage.getItem('subscriber-sector');
     if (storedEmail) {
       setEmail(storedEmail);
+    }
+    if (storedSector) {
+      setSelectedSector(storedSector);
     }
   }, []);
 
@@ -24,30 +57,44 @@ export default function NotificationManager() {
 
     console.log('🔔 NotificationManager mounted');
 
+// Check if notification permission is already set up
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Request permission if not yet set
+      Notification.requestPermission().then(permission => {
+        console.log('🔔 Notification permission:', permission);
+      });
+    }
+
     // Show email prompt after 20 seconds
-    const timer = setTimeout(() => {
+    const emailTimer = setTimeout(() => {
       const dismissed = localStorage.getItem('email-prompt-dismissed');
       const subscribed = localStorage.getItem('email-subscribed');
       const storedEmail = localStorage.getItem('subscriber-email');
+      const storedSector = localStorage.getItem('subscriber-sector');
       const dismissedTime = dismissed ? parseInt(dismissed) : 0;
       const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
 
       // Don't show if already subscribed with a valid email
       if (!subscribed || !storedEmail) {
-        if (!dismissed || daysSinceDismissed > 7) {
+          if (!dismissed || daysSinceDismissed > 7) {
           setShowEmailPrompt(true);
-          // Pre-fill email if we have it stored
+          // Pre-fill email and sector if we have them stored
           if (storedEmail) {
             setEmail(storedEmail);
           }
+          if (storedSector) {
+            setSelectedSector(storedSector);
+          }
         }
       }
-    }, 10000); // 10 seconds
+}, 20000); // 20 seconds
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(emailTimer);
+    };
   }, []);
 
-  const handleEmailSubscribe = async () => {
+const handleEmailSubscribe = async () => {
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
       return;
@@ -57,12 +104,13 @@ export default function NotificationManager() {
     setError(null);
 
     try {
-      // Save email to database
+      // Save email and sector to database
       const { error } = await supabase
         .from('email_subscribers')
         .upsert(
           {
             email: email,
+            sector: selectedSector,
             source: 'homepage_popup',
             created_at: new Date().toISOString(),
             status: 'active'
@@ -78,10 +126,11 @@ export default function NotificationManager() {
         return;
       }
 
-      // Show success message
+// Show success message
       setSuccess(true);
       localStorage.setItem('email-subscribed', 'true');
       localStorage.setItem('subscriber-email', email);
+      localStorage.setItem('subscriber-sector', selectedSector);
       
       // Trigger system notification if permission is granted
       if ('Notification' in window && Notification.permission === 'granted') {
@@ -92,11 +141,12 @@ export default function NotificationManager() {
         });
       }
 
-      // Hide prompt after success
+// Hide prompt after success
       setTimeout(() => {
         setShowEmailPrompt(false);
         setSuccess(false);
         setEmail('');
+        setSelectedSector('');
       }, 3000);
 
     } catch (err) {
@@ -135,6 +185,20 @@ export default function NotificationManager() {
               <p className="text-sm text-gray-600 mt-1">
                 Subscribe to get daily job updates.
               </p>
+
+              {/* Sector Dropdown */}
+              <select
+                value={selectedSector}
+                onChange={(e) => setSelectedSector(e.target.value)}
+                className="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+              >
+                <option value="">Select your sector (optional)</option>
+                {sectors.map((sector) => (
+                  <option key={sector} value={sector}>
+                    {sector}
+                  </option>
+                ))}
+              </select>
 
               {success ? (
                 <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
