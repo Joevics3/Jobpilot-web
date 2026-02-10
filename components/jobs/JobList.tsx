@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
 };
 
 // ✅ OPTIMIZATION: Pagination constants
-const JOBS_PER_PAGE = 100;
+const JOBS_PER_PAGE_DISPLAY = 50; // Jobs per page for display
 const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours
 
 export default function JobList() {
@@ -38,8 +38,7 @@ export default function JobList() {
   const [activeTab, setActiveTab] = useState<'latest' | 'matches'>('latest');
   const [latestJobs, setLatestJobs] = useState<JobUI[]>([]);
   const [latestJobsLoading, setLatestJobsLoading] = useState(true);
-  const [latestJobsPage, setLatestJobsPage] = useState(1);
-  const [latestJobsHasMore, setLatestJobsHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -167,7 +166,7 @@ export default function JobList() {
     
     // Only fetch if on latest tab and no data loaded yet
     if (activeTab === 'latest' && latestJobs.length === 0) {
-      fetchLatestJobs(1);
+      fetchLatestJobs();
     }
   }, [authChecked, activeTab]);
 
@@ -482,24 +481,25 @@ export default function JobList() {
     };
   };
 
-  // ✅ NEW: Fetch latest jobs without matching (for Latest Jobs tab)
-  const fetchLatestJobs = async (page: number = 1) => {
+  // ✅ NEW: Fetch all latest jobs from last 30 days at once
+  const fetchLatestJobs = async () => {
     try {
       setLatestJobsLoading(true);
       
-      // Fetch from database
-      const start = (page - 1) * JOBS_PER_PAGE;
-      const end = start + JOBS_PER_PAGE - 1;
+      // Calculate 30 days ago date
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
       
       let query = supabase
         .from('jobs')
         .select('*')
         .eq('status', 'active')
+        .gte('posted_date', thirtyDaysAgoStr) // ✅ Filter for last 30 days
         .order('posted_date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .range(start, end);
+        .order('created_at', { ascending: false });
       
-      // Filter for today's jobs if posted=today
+      // Filter for today's jobs if posted=today (overrides 30-day filter)
       const postedParam = searchParams.get('posted');
       if (postedParam === 'today') {
         const today = new Date();
@@ -511,17 +511,14 @@ export default function JobList() {
 
       if (error) throw error;
 
+      console.log(`Fetched ALL ${data?.length || 0} jobs from last 30 days`);
+
       // Transform to UI format without matching calculation
       const uiJobs = (data || []).map((job: any) => transformJobToUI(job, 0, null));
       
-      // Update state
-      if (page === 1) {
-        setLatestJobs(uiJobs);
-      } else {
-        setLatestJobs(prev => [...prev, ...uiJobs]);
-      }
-      
-      setLatestJobsHasMore(uiJobs.length === JOBS_PER_PAGE);
+      // Set all jobs at once
+      setLatestJobs(uiJobs);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error fetching latest jobs:', error);
     } finally {
@@ -539,7 +536,7 @@ export default function JobList() {
         .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .range(0, JOBS_PER_PAGE - 1); // ✅ Limit to 100 jobs
+        .range(0, 99); // ✅ Limit to 100 jobs
 
       if (error) throw error;
 
@@ -626,26 +623,19 @@ export default function JobList() {
       localStorage.removeItem('jobs_cache_timestamp');
       localStorage.removeItem('jobs_cache_user_id');
       
-      // Clear all latest_jobs cache keys
-      for (let i = 1; i <= 10; i++) {
-        localStorage.removeItem(`latest_jobs_page_${i}`);
-        localStorage.removeItem(`latest_jobs_timestamp_${i}`);
-      }
-      
       // Clear match cache if user is logged in
       if (user) {
         matchCacheService.clearMatchCache(user.id);
       }
       
       // Reset states
-      setLatestJobsPage(1);
-      setLatestJobsHasMore(true);
+      setCurrentPage(1);
       setJobs([]);
       
       // Fetch fresh data based on active tab
       if (activeTab === 'latest') {
         setLatestJobs([]);
-        await fetchLatestJobs(1);
+        await fetchLatestJobs();
       } else {
         await fetchJobs();
       }
@@ -755,6 +745,8 @@ export default function JobList() {
     });
   }, [latestJobs, filters, appliedJobs, latestJobsLoading, activeTab]);
 
+  
+
   // ✅ MODIFIED: Sort only applies to Latest Jobs tab
   const sortedJobs = useMemo(() => {
     if (activeTab !== 'latest') return [];
@@ -776,38 +768,22 @@ export default function JobList() {
     });
   }, [filteredJobs, sortBy, latestJobsLoading, activeTab]);
 
+  // ✅ NEW: Pagination logic for filtered jobs
+  const paginatedJobs = useMemo(() => {
+    const startIndex = (currentPage - 1) * JOBS_PER_PAGE_DISPLAY;
+    const endIndex = startIndex + JOBS_PER_PAGE_DISPLAY;
+    return sortedJobs.slice(startIndex, endIndex);
+  }, [sortedJobs, currentPage]);
+
+  const totalPages = Math.ceil(sortedJobs.length / JOBS_PER_PAGE_DISPLAY);
+
   // ✅ NEW: Get jobs for Matches tab (already sorted by match score)
   const matchedJobs = useMemo(() => {
     if (activeTab !== 'matches') return [];
     return jobs.filter(job => !appliedJobs.includes(job.id));
   }, [jobs, appliedJobs, activeTab]);
 
-  // ✅ NEW: Handle infinite scroll for Latest tab
-  useEffect(() => {
-    if (activeTab !== 'latest') return;
-    if (!latestJobsHasMore || latestJobsLoading) return;
 
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = document.documentElement.clientHeight;
-      
-      // Load more when user is 200px from bottom
-      if (scrollTop + clientHeight >= scrollHeight - 200) {
-        setLatestJobsPage(prev => prev + 1);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeTab, latestJobsHasMore, latestJobsLoading]);
-
-  // ✅ NEW: Fetch next page when page number changes
-  useEffect(() => {
-    if (latestJobsPage > 1) {
-      fetchLatestJobs(latestJobsPage);
-    }
-  }, [latestJobsPage]);
 
   // ✅ NEW: Handle tab change
   const handleTabChange = (tab: 'latest' | 'matches') => {
@@ -1258,7 +1234,7 @@ export default function JobList() {
                 </div>
               ) : (
                 <>
-                  {sortedJobs.map((job) => (
+                  {paginatedJobs.map((job) => (
                     <React.Fragment key={job.id}>
                       <JobCard
                         job={job}
@@ -1271,17 +1247,79 @@ export default function JobList() {
                       />
                     </React.Fragment>
                   ))}
-                  {latestJobsLoading && (
+                  {latestJobsLoading && paginatedJobs.length === 0 && (
                     <div className="flex items-center justify-center py-6">
-                      <p style={{ color: theme.colors.text.secondary }}>Loading more jobs...</p>
-                    </div>
-                  )}
-                  {!latestJobsHasMore && latestJobs.length > 0 && (
-                    <div className="flex items-center justify-center py-6">
-                      <p style={{ color: theme.colors.text.secondary }}>No more jobs to load</p>
+                      <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
                     </div>
                   )}
                 </>
+              )}
+
+              {/* ✅ NEW: Pagination Controls */}
+              {totalPages > 1 && !latestJobsLoading && (
+                <div className="flex items-center justify-center py-6 space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      borderColor: theme.colors.border.DEFAULT,
+                      color: currentPage === 1 ? theme.colors.text.muted : theme.colors.text.primary,
+                      backgroundColor: currentPage === 1 ? theme.colors.background.muted : 'transparent'
+                    }}
+                  >
+                    Previous
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisiblePages = 5;
+                      
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                      
+                      if (endPage - startPage + 1 < maxVisiblePages) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => setCurrentPage(i)}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              currentPage === i
+                                ? 'text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                            style={{
+                              backgroundColor: currentPage === i ? theme.colors.primary.DEFAULT : 'transparent'
+                            }}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+                      
+                      return pages;
+                    })()}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      borderColor: theme.colors.border.DEFAULT,
+                      color: currentPage === totalPages ? theme.colors.text.muted : theme.colors.text.primary,
+                      backgroundColor: currentPage === totalPages ? theme.colors.background.muted : 'transparent'
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
               )}
             </>
           )}
