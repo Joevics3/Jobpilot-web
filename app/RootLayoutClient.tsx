@@ -7,6 +7,7 @@ import Header from '@/components/navigation/Header';
 import Footer from '@/components/navigation/Footer';
 import CookieModal from '@/components/CookieModal';
 import { theme } from '@/lib/theme';
+import WhatsAppFloatButton from '@/components/WhatsAppFloatButton';
 export default function RootLayoutClient({
   children,
 }: {
@@ -54,8 +55,11 @@ export default function RootLayoutClient({
       {/* Footer - shown on pages without bottom nav */}
       {showFooter && <Footer />}
       
-      {/* Cookie Modal */}
+       {/* Cookie Modal */}
       <CookieModal />
+      
+      {/* WhatsApp Floating Button - Global */}
+      <WhatsAppFloatButton />
     </div>
   );
 }
