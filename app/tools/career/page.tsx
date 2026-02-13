@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, RefreshCw, TrendingUp, Target, Award, AlertTriangle, Lightbulb, Briefcase, DollarSign } from 'lucide-react';
+import { ArrowLeft, RefreshCw, TrendingUp, Target, Award, AlertTriangle, Lightbulb, Briefcase, DollarSign, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
 import { theme } from '@/lib/theme';
@@ -16,6 +16,7 @@ export default function CareerPage() {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [showReanalyzeWarning, setShowReanalyzeWarning] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('paths');
+  const [seoExpanded, setSeoExpanded] = useState(false);
 
   useEffect(() => {
     loadAnalysis();
@@ -396,6 +397,75 @@ export default function CareerPage() {
           </div>
         </div>
       )}
+
+      {/* SEO Content Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setSeoExpanded(!seoExpanded)}
+            className="w-full flex items-center justify-between p-6 text-left"
+          >
+            <h2 className="text-xl font-bold text-gray-900">Learn More About Career Coaching</h2>
+            <ChevronDown
+              size={24}
+              className={`text-gray-500 transition-transform duration-200 ${seoExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+          
+          {seoExpanded && (
+            <div className="px-6 pb-6 pt-0">
+              <div className="prose prose-lg max-w-none text-gray-700 space-y-6">
+                <p>
+                  Welcome to JobMeter's AI-powered Career Coach, your personal career development assistant designed to help Nigerian professionals navigate their career journey with confidence. Whether you're just starting out or looking to make a significant career change, our comprehensive tool provides personalized guidance tailored to your unique skills, experience, and career aspirations.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Why Career Coaching Matters in Nigeria</h3>
+                <p>
+                  The Nigerian job market is evolving rapidly, with new industries emerging and traditional sectors transforming. Many professionals find themselves uncertain about which career path to pursue or how to develop the skills needed to advance. Our AI Career Coach bridges this gap by providing data-driven insights and personalized recommendations based on current market trends and your individual profile.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">How Our Career Coach Works</h3>
+                <p>
+                  Our career coaching tool uses advanced artificial intelligence to analyze your profile, including your education, work experience, skills, and career goals. Based on this analysis, we generate personalized career paths, identify skill gaps, and provide actionable recommendations for career advancement. The tool considers current market trends in Nigeria and globally to ensure its recommendations are relevant and valuable.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Key Features of Our Career Coach</h3>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li><strong>Personalized Career Paths:</strong> Discover career options that align with your skills and interests</li>
+                  <li><strong>Skill Gap Analysis:</strong> Identify missing skills and get personalized development plans</li>
+                  <li><strong>Market Insights:</strong> Stay informed about industry trends and opportunities in Nigeria</li>
+                  <li><strong>Career Readiness Score:</strong> Understand how prepared you are for your target roles</li>
+                  <li><strong>Actionable Recommendations:</strong> Get specific steps to improve your career prospects</li>
+                </ul>
+
+                <h3 className="text-xl font-semibold text-gray-900">Understanding Your Career Readiness Score</h3>
+                <p>
+                  Your career readiness score is a comprehensive evaluation of your professional profile against your target career paths. The score considers multiple factors including your technical skills, soft skills, educational background, work experience, and industry relevance. A higher score indicates you're well-positioned for your desired roles, while a lower score suggests areas for improvement.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Identifying and Bridging Skill Gaps</h3>
+                <p>
+                  One of the most valuable features of our Career Coach is the skill gap analysis. This feature compares your current skill set against the requirements of your target career paths and identifies specific gaps. For each skill gap, we provide a detailed development plan with recommended courses, certifications, and practical steps to acquire the missing skills. This targeted approach ensures you focus your learning efforts where they matter most.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Exploring Career Paths in Nigeria</h3>
+                <p>
+                  Nigeria offers diverse career opportunities across various sectors including technology, finance, healthcare, manufacturing, entertainment, and emerging industries like fintech and e-commerce. Our Career Coach helps you explore these options and identify roles that match your skills and interests. Whether you're interested in traditional careers or emerging opportunities in the digital economy, we provide comprehensive guidance to help you make informed decisions.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Tips for Career Advancement</h3>
+                <p>
+                  Beyond using our Career Coach tool, here are essential tips for advancing your career in Nigeria: Continuously update your skills through formal education and professional certifications, build a strong professional network both online and offline, seek mentorship from experienced professionals in your field, maintain a strong online presence through LinkedIn and professional platforms, and stay updated with industry trends and developments. Remember, career growth is a journey that requires continuous learning and adaptation.
+                </p>
+
+                <p>
+                  Start your career transformation today with JobMeter's AI Career Coach. Get personalized insights, identify growth opportunities, and take actionable steps toward achieving your professional goals.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

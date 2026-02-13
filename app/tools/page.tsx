@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, ArrowRight, Building2, Newspaper, MapPin } from 'lucide-react';
+import { BookOpen, ArrowRight, Building2, Newspaper, Search, Shield, FileCheck, Calculator, Laptop, ChevronDown, MessageCircle, GraduationCap, FileText, Users, Globe } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
 
@@ -15,51 +15,136 @@ interface Tool {
   route?: string;
 }
 
+interface AccordionItem {
+  id: string;
+  title: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  items: Tool[];
+}
+
 export default function ToolsPage() {
   const router = useRouter();
+  const [openAccordion, setOpenAccordion] = useState<string | null>('resources');
 
-  const tools: Tool[] = [
+  const accordions: AccordionItem[] = [
     {
-      id: '1',
-      title: 'Job Categories',
-      description: 'Find jobs based on categories and location',
+      id: 'resources',
+      title: 'Resources',
       icon: BookOpen,
       color: theme.colors.accent.gold,
-      route: '/resources',
+      items: [
+        {
+          id: 'r1',
+          title: 'Blogs',
+          description: 'Expert insights, salary guides, and career tips',
+          icon: Newspaper,
+          color: '#9333EA',
+          route: '/blog',
+        },
+        {
+          id: 'r2',
+          title: 'Resource Pages',
+          description: 'Find helpful resources for your job search',
+          icon: BookOpen,
+          color: theme.colors.accent.gold,
+          route: '/resources',
+        },
+        {
+          id: 'r3',
+          title: 'Company Pages',
+          description: 'Explore top companies, culture, benefits, and open positions',
+          icon: Building2,
+          color: '#EA580C',
+          route: '/company',
+        },
+      ]
     },
     {
-      id: '2',
-      title: 'Location',
-      description: 'Browse jobs by state and location',
-      icon: MapPin,
-      color: theme.colors.accent.green,
-      route: '/jobs/state',
-    },
-    {
-      id: '3',
-      title: 'Blog & Articles',
-      description: 'Read expert insights, salary guides, and career tips for job seekers',
-      icon: Newspaper,
-      color: '#9333EA',
-      route: '/blog',
-    },
-    {
-      id: '4',
-      title: 'Company Directory',
-      description: 'Explore top companies, their culture, benefits, and open positions',
-      icon: Building2,
-      color: '#EA580C',
-      route: '/company',
-    },
-    {
-      id: '5',
+      id: 'career-tools',
       title: 'Career Tools',
-      description: 'Advanced tools for interview prep, CV review, and career coaching',
-      icon: BookOpen,
+      icon: GraduationCap,
       color: theme.colors.accent.blue,
-      route: '/career-tools',
-    },
+      items: [
+        {
+          id: 'c1',
+          title: 'Interview Practice',
+          description: 'Practice with personalized questions based on job descriptions',
+          icon: MessageCircle,
+          color: '#8B5CF6',
+          route: '/tools/interview',
+        },
+        {
+          id: 'c2',
+          title: 'ATS CV Review',
+          description: 'Optimize your CV for ATS systems and job matching',
+          icon: FileCheck,
+          color: '#10B981',
+          route: '/tools/ats-review',
+        },
+        {
+          id: 'c3',
+          title: 'Career Coach',
+          description: 'Get personalized career guidance and skill recommendations',
+          icon: GraduationCap,
+          color: '#F59E0B',
+          route: '/tools/career',
+        },
+        {
+          id: 'c4',
+          title: 'Role Finder',
+          description: 'Discover new career paths based on your skills',
+          icon: Search,
+          color: '#8B5CF6',
+          route: '/tools/role-finder',
+        },
+        {
+          id: 'c5',
+          title: 'CV Keyword Checker',
+          description: 'Check keyword match between your CV and job descriptions',
+          icon: FileText,
+          color: '#10B981',
+          route: '/tools/keyword-checker',
+        },
+        {
+          id: 'c6',
+          title: 'Job Scam Detector',
+          description: 'AI-powered analysis to detect job scams in any text',
+          icon: Shield,
+          color: '#EF4444',
+          route: '/tools/scam-detector',
+        },
+        {
+          id: 'c7',
+          title: 'Job Scam Checker',
+          description: 'Search and report fraudulent companies and recruiters',
+          icon: Shield,
+          color: '#EF4444',
+          route: '/tools/scam-checker',
+        },
+        {
+          id: 'c8',
+          title: 'PAYE Calculator',
+          description: 'Calculate net salary with 2026 Nigeria tax rates',
+          icon: Calculator,
+          color: '#3B82F6',
+          route: '/tools/paye-calculator',
+        },
+        {
+          id: 'c9',
+          title: 'Remote Jobs',
+          description: 'Find remote job opportunities in Nigeria and worldwide',
+          icon: Laptop,
+          color: '#06B6D4',
+          route: '/tools/remote-jobs-finder',
+        },
+      ]
+    }
   ];
+
+  const toggleAccordion = (id: string) => {
+    setOpenAccordion(openAccordion === id ? null : id);
+  };
 
   const handleToolClick = (tool: Tool) => {
     if (tool.route) {
@@ -96,48 +181,78 @@ export default function ToolsPage() {
           </div>
         </div>
 
-        {/* Tools Grid */}
-        <div className="px-6 py-6">
-          <div className="flex flex-col gap-4">
-            {tools.map((tool, index) => {
-              const Icon = tool.icon;
-              return (
-                <React.Fragment key={tool.id}>
+        {/* Accordions */}
+        <div className="px-6 py-6 max-w-3xl mx-auto">
+          {accordions.map((accordion) => {
+            const AccordionIcon = accordion.icon;
+            const isOpen = openAccordion === accordion.id;
+            
+            return (
+              <div key={accordion.id} className="mb-4">
+                {/* Accordion Header */}
                 <button
-                  onClick={() => handleToolClick(tool)}
-                  className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
+                  onClick={() => toggleAccordion(accordion.id)}
+                  className="w-full bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between"
                   style={{
                     border: `1px solid ${theme.colors.border.DEFAULT}`,
                   }}
                 >
-                  {/* Icon Container */}
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${tool.color}15` }}
-                  >
-                    <Icon size={28} style={{ color: tool.color }} />
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: `${accordion.color}15` }}
+                    >
+                      <AccordionIcon size={24} style={{ color: accordion.color }} />
+                    </div>
+                    <div className="text-left">
+                      <h2 className="text-lg font-bold text-gray-900">{accordion.title}</h2>
+                      <p className="text-sm text-gray-500">{accordion.items.length} tools available</p>
+                    </div>
                   </div>
-
-                  {/* Tool Info */}
-                  <div className="flex-1 text-left">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">
-                      {tool.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {tool.description}
-                    </p>
-                  </div>
-
-                  {/* Arrow */}
-                  <ArrowRight
-                    size={20}
-                    className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                  <ChevronDown 
+                    size={24} 
+                    className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
-                </React.Fragment>
-              );
-            })}
-          </div>
+
+                {/* Accordion Content */}
+                {isOpen && (
+                  <div className="mt-3 space-y-3">
+                    {accordion.items.map((tool) => {
+                      const Icon = tool.icon;
+                      return (
+                        <button
+                          key={tool.id}
+                          onClick={() => handleToolClick(tool)}
+                          className="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 group"
+                          style={{
+                            border: `1px solid ${theme.colors.border.DEFAULT}`,
+                          }}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${tool.color}15` }}
+                          >
+                            <Icon size={22} style={{ color: tool.color }} />
+                          </div>
+
+                          <div className="flex-1 text-left">
+                            <h3 className="font-bold text-gray-900">{tool.title}</h3>
+                            <p className="text-sm text-gray-600">{tool.description}</p>
+                          </div>
+
+                          <ArrowRight
+                            size={18}
+                            className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </>

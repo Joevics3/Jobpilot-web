@@ -336,8 +336,8 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 style={{ color: theme.colors.primary.DEFAULT }}
               >
                 <ArrowLeft size={18} />
-                <span className="hidden sm:inline">Back to Jobs</span>
-                <span className="sm:hidden">Back</span>
+<span className="hidden sm:inline">All Jobs</span>
+                <span className="sm:hidden">All Jobs</span>
               </button>
               
                <form method="GET" action="/jobs" className="flex items-center gap-0">

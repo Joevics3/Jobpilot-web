@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, MessageCircle, FileCheck, Clock, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, MessageCircle, FileCheck, Clock, TrendingUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
 import { InterviewPrepService, InterviewSession } from '@/lib/services/interviewPrepService';
@@ -12,6 +12,7 @@ export default function InterviewPage() {
   const router = useRouter();
   const [sessionHistory, setSessionHistory] = useState<InterviewSession[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [seoExpanded, setSeoExpanded] = useState(false);
 
   // Load session history
   useEffect(() => {
@@ -176,6 +177,70 @@ export default function InterviewPage() {
           loadSessionHistory(); // Reload history after modal closes
         }}
       />
+
+      {/* SEO Content Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setSeoExpanded(!seoExpanded)}
+            className="w-full flex items-center justify-between p-6 text-left"
+          >
+            <h2 className="text-xl font-bold text-gray-900">Learn More About Interview Practice</h2>
+            <ChevronDown
+              size={24}
+              className={`text-gray-500 transition-transform duration-200 ${seoExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+          
+          {seoExpanded && (
+            <div className="px-6 pb-6 pt-0">
+              <div className="prose prose-lg max-w-none text-gray-700 space-y-6">
+                <p>
+                  Welcome to JobMeter's AI-powered Interview Practice tool, designed specifically to help Nigerian job seekers master the art of interviewing. Whether you're a fresh graduate preparing for your first corporate interview or a seasoned professional looking to switch careers, our platform provides personalized practice sessions that simulate real interview scenarios.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Why Interview Practice Matters</h3>
+                <p>
+                  Studies show that candidates who practice interviews regularly have a 60% higher success rate compared to those who don't prepare. In Nigeria's competitive job market, where positions often receive hundreds of applications, standing out during the interview phase is crucial. Our AI-powered interview practice tool helps you build confidence, refine your answers, and develop the communication skills that recruiters look for.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">How Our Interview Practice Works</h3>
+                <p>
+                  Our platform uses advanced artificial intelligence to analyze your CV or target job description and generate personalized interview questions specific to your industry and role. Simply upload your CV or paste a job description, and our system will create a tailored interview experience. You'll answer questions in a mock interview format, and receive instant feedback on your responses, tone, and delivery.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Key Features of Our Interview Practice Tool</h3>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li><strong>Personalized Questions:</strong> Questions are generated based on your CV and the specific job you're targeting</li>
+                  <li><strong>Industry-Specific Content:</strong> Our AI understands different industries and roles in the Nigerian job market</li>
+                  <li><strong>Instant Feedback:</strong> Get detailed analysis of your answers with suggestions for improvement</li>
+                  <li><strong>Multiple Practice Sessions:</strong> Create unlimited practice sessions for different job applications</li>
+                  <li><strong>Progress Tracking:</strong> Monitor your improvement over time with session history</li>
+                </ul>
+
+                <h3 className="text-xl font-semibold text-gray-900">Tips for Acing Your Next Interview</h3>
+                <p>
+                  Beyond using our practice tool, here are essential tips for Nigerian job seekers: Research the company thoroughly before your interview, understand the role requirements, prepare STAR method answers for behavioral questions, dress appropriately for the company culture, arrive on time (or join virtual interviews early), and prepare thoughtful questions to ask the interviewer. Remember, first impressions matter, so be professional, maintain good eye contact, and showcase your enthusiasm for the role.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Common Interview Questions in Nigeria</h3>
+                <p>
+                  Based on our analysis of successful interviews in Nigeria, some common questions include: "Tell me about yourself," "Why do you want to work for this company," "What are your strengths and weaknesses," "Where do you see yourself in five years," "Why should we hire you," and role-specific technical questions. Our practice tool covers all these categories and more, helping you craft compelling answers that highlight your unique value proposition.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Virtual Interview Tips</h3>
+                <p>
+                  With the rise of remote work and virtual interviews, it's essential to prepare for video calls. Ensure you have a stable internet connection, test your camera and microphone beforehand, choose a quiet and well-lit location, dress professionally from head to toe, look at the camera when speaking, and have your CV and notes handy. Our practice tool can simulate virtual interview scenarios to help you adapt to this format.
+                </p>
+
+                <p>
+                  Start using JobMeter's Interview Practice tool today and transform your interview performance. With consistent practice, you'll enter every interview room with confidence, prepared to make a lasting impression on your potential employers.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

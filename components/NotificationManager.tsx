@@ -57,14 +57,6 @@ export default function NotificationManager() {
 
     console.log('🔔 NotificationManager mounted');
 
-// Check if notification permission is already set up
-    if ('Notification' in window && Notification.permission === 'default') {
-      // Request permission if not yet set
-      Notification.requestPermission().then(permission => {
-        console.log('🔔 Notification permission:', permission);
-      });
-    }
-
     // Show email prompt after 20 seconds
     const emailTimer = setTimeout(() => {
       const dismissed = localStorage.getItem('email-prompt-dismissed');

@@ -21,7 +21,7 @@ export default function BottomNavigation() {
     { label: 'Jobs', href: '/jobs', icon: Briefcase },
     { label: 'Saved', href: '/saved', icon: Bookmark },
     { label: 'CV', href: '/cv', icon: FileText },
-    { label: 'Tools', href: '/tools', icon: Wrench },
+    { label: 'Resources', href: '/tools', icon: Wrench },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 

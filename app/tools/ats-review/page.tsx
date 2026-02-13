@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, FileCheck, Clock, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, FileCheck, Clock, TrendingUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
 import ATSReviewModal from '@/components/tools/ATSReviewModal';
@@ -11,6 +11,7 @@ export default function ATSReviewPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [seoExpanded, setSeoExpanded] = useState(false);
 
   // Load session history
   useEffect(() => {
@@ -158,6 +159,70 @@ export default function ATSReviewPage() {
         isOpen={showModal}
         onClose={handleModalClose}
       />
+
+      {/* SEO Content Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setSeoExpanded(!seoExpanded)}
+            className="w-full flex items-center justify-between p-6 text-left"
+          >
+            <h2 className="text-xl font-bold text-gray-900">Learn More About ATS CV Review</h2>
+            <ChevronDown
+              size={24}
+              className={`text-gray-500 transition-transform duration-200 ${seoExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+          
+          {seoExpanded && (
+            <div className="px-6 pb-6 pt-0">
+              <div className="prose prose-lg max-w-none text-gray-700 space-y-6">
+                <p>
+                  Welcome to JobMeter's ATS CV Review tool, your comprehensive solution for optimizing resumes for Applicant Tracking Systems and maximizing your chances of landing interviews in Nigeria's competitive job market. Many qualified candidates get filtered out simply because their CVs aren't properly optimized for ATS software used by recruiters.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">What is ATS and Why Does It Matter?</h3>
+                <p>
+                  Applicant Tracking Systems (ATS) are software applications used by employers to manage their recruitment process electronically. These systems scan CVs for keywords, qualifications, and experience matching the job requirements before a human recruiter ever sees them. In Nigeria, over 80% of large companies and multinational corporations use ATS to screen candidates, making it essential to optimize your CV for these systems.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">How Our ATS CV Review Tool Works</h3>
+                <p>
+                  Our AI-powered ATS review tool analyzes your CV against specific job descriptions or general industry standards. Simply upload your CV and optionally provide a job description you're targeting. Our system evaluates multiple factors including keyword density, formatting compatibility, section organization, and overall ATS readability score. You'll receive a detailed report with specific recommendations to improve your CV's performance.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Key Features of Our ATS CV Review</h3>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li><strong>Keyword Analysis:</strong> Identifies missing keywords from job descriptions and suggests improvements</li>
+                  <li><strong>Format Compatibility:</strong> Checks if your CV format is ATS-friendly (no tables, graphics, or complex layouts)</li>
+                  <li><strong>Section Optimization:</strong> Ensures all essential sections are properly structured and complete</li>
+                  <li><strong>Score Prediction:</strong> Provides an ATS compatibility score to gauge your CV's effectiveness</li>
+                  <li><strong>Job-Specific Review:</strong> Compare your CV against specific job postings for targeted optimization</li>
+                </ul>
+
+                <h3 className="text-xl font-semibold text-gray-900">Common ATS Mistakes to Avoid</h3>
+                <p>
+                  Many Nigerian job seekers make critical errors that cause their CVs to be rejected by ATS. These include using tables and columns that ATS cannot read, including images or graphics that are not parseable, using headers and footers for important information, submitting PDF when DOC format is preferred, using creative fonts instead of standard fonts, and lacking relevant keywords. Our tool helps you identify and fix all these issues.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">How to Optimize Your CV for ATS</h3>
+                <p>
+                  To improve your ATS score, start by analyzing the job description and identifying key skills and requirements. Incorporate these keywords naturally throughout your CV, especially in the skills and experience sections. Use standard section headings like "Work Experience," "Education," and "Skills" to help ATS categorize your information. Save your CV in the format requested by the employer, typically Microsoft Word (.doc or .docx) for better compatibility. Keep your CV length reasonable (1-2 pages) and avoid complex formatting.
+                </p>
+
+                <h3 className="text-xl font-semibold text-gray-900">Understanding ATS Scoring</h3>
+                <p>
+                  ATS scoring typically ranges from 0-100%, with scores above 80% considered good. The score is calculated based on various factors including keyword matches, format compatibility, section completeness, and relevance to the job. Different ATS systems weigh these factors differently, but our tool provides a comprehensive analysis that covers the most common ATS platforms used in Nigeria including Taleo, Workday, Greenhouse, and Lever.
+                </p>
+
+                <p>
+                  Use JobMeter's ATS CV Review tool today to ensure your resume passes the initial screening and reaches the hands of hiring managers. With our comprehensive analysis and actionable recommendations, you'll be one step closer to landing your dream job.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
