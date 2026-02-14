@@ -5,17 +5,37 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, FileCheck, Clock, TrendingUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { theme } from '@/lib/theme';
+import { supabase } from '@/lib/supabase';
 import ATSReviewModal from '@/components/tools/ATSReviewModal';
+import AuthModal from '@/components/AuthModal';
 
 export default function ATSReviewPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
   const [seoExpanded, setSeoExpanded] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSessionHistory();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        loadSessionHistory();
+      } else {
+        setAuthModalOpen(true);
+        loadSessionHistory();
+      }
+    } catch (error) {
+      loadSessionHistory();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadSessionHistory = () => {
     try {
