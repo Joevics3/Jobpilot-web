@@ -72,20 +72,22 @@ export default function ScamCheckerPage() {
     setError(null);
 
     try {
-      const { data, error: apiError } = await supabase.functions.invoke('scam-checker', {
-        body: { action: 'search', q: query }
-      });
+      // Direct Supabase query - no function needed
+      const { data, error } = await supabase
+        .from('reported_entities')
+        .select('*')
+        .ilike('company_name', `%${query}%`)
+        .order('report_count', { ascending: false })
+        .limit(20);
 
-      if (apiError) {
-        console.error('API Error:', apiError);
-        throw apiError;
-      }
+      if (error) throw error;
 
-      if (data?.success) {
-        setSearchResults(data.data || []);
-      } else {
-        throw new Error(data?.error || 'Search failed');
-      }
+      // Filter results - only return published or confirmed/under_review entities
+      const results = data?.filter(entity => 
+        entity.is_published || ['confirmed', 'under_review'].includes(entity.verification_status)
+      ) || [];
+      
+      setSearchResults(results);
     } catch (err: any) {
       console.error('Search error:', err);
       setError(err.message || 'Failed to search. Please try again.');
@@ -111,14 +113,18 @@ export default function ScamCheckerPage() {
     setSearchQuery(entity.company_name);
     setSearchResults([]);
     
-    // Fetch reports for this entity
+    // Fetch reports for this entity directly from Supabase
     try {
-      const { data, error } = await supabase.functions.invoke('scam-checker', {
-        body: { action: 'get_reports', entity_id: entity.id }
-      });
+      const { data, error } = await supabase
+        .from('scam_reports')
+        .select('*')
+        .eq('entity_id', entity.id)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      if (data?.success) {
-        setEntityReports(data.data || []);
+      if (!error && data) {
+        setEntityReports(data);
       }
     } catch (err) {
       console.error('Error fetching reports:', err);
@@ -131,43 +137,85 @@ export default function ScamCheckerPage() {
     setError(null);
 
     try {
-      const payload = {
-        action: 'submit_report',
-        ...formData,
-        emails: formData.emails.split(',').map(e => e.trim()).filter(Boolean),
-        phone_numbers: formData.phone_numbers.split(',').map(p => p.trim()).filter(Boolean),
-        aliases: []
-      };
+      const emailsArray = formData.emails.split(',').map(e => e.trim()).filter(Boolean);
+      const phonesArray = formData.phone_numbers.split(',').map(p => p.trim()).filter(Boolean);
 
-      const { data, error: apiError } = await supabase.functions.invoke('scam-checker', {
-        body: payload
-      });
+      // Check if entity already exists
+      const { data: existingEntity } = await supabase
+        .from('reported_entities')
+        .select('id, report_count')
+        .ilike('company_name', formData.company_name)
+        .single();
 
-      if (apiError) {
-        console.error('API Error:', apiError);
-        throw apiError;
+      let entityId: string;
+
+      if (existingEntity) {
+        // Update existing entity
+        const { data: updatedEntity, error: updateError } = await supabase
+          .from('reported_entities')
+          .update({ 
+            report_count: existingEntity.report_count + 1,
+            verification_status: 'under_review'
+          })
+          .eq('id', existingEntity.id)
+          .select('id')
+          .single();
+
+        if (updateError) throw updateError;
+        entityId = updatedEntity.id;
+      } else {
+        // Create new entity
+        const { data: newEntity, error: insertError } = await supabase
+          .from('reported_entities')
+          .insert({
+            entity_type: formData.entity_type,
+            company_name: formData.company_name,
+            aliases: [],
+            website: formData.website || null,
+            emails: emailsArray,
+            phone_numbers: phonesArray,
+            address: null,
+            report_count: 1,
+            verification_status: 'under_review',
+            is_published: false
+          })
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        entityId = newEntity.id;
       }
 
-      if (data?.success) {
-        setSubmitSuccess(true);
-        setFormData({
-          company_name: '',
-          entity_type: 'company',
-          website: '',
-          emails: '',
-          phone_numbers: '',
-          report_type: '',
-          description: '',
-          evidence_url: '',
-          user_email: ''
+      // Create the report
+      const { error: reportError } = await supabase
+        .from('scam_reports')
+        .insert({
+          entity_id: entityId,
+          report_type: formData.report_type,
+          description: formData.description,
+          evidence_url: formData.evidence_url || null,
+          user_email: formData.user_email || null,
+          status: 'pending'
         });
-        
-        // Refresh search if we have a search query
-        if (searchQuery) {
-          handleSearch(searchQuery);
-        }
-      } else {
-        throw new Error(data.error);
+
+      if (reportError) throw reportError;
+
+      setSubmitSuccess(true);
+      setFormData({
+        company_name: '',
+        entity_type: 'company',
+        website: '',
+        emails: '',
+        phone_numbers: '',
+        report_type: '',
+        description: '',
+        evidence_url: '',
+        user_email: ''
+      });
+      
+      // Refresh search if we have a search query
+      if (searchQuery) {
+        handleSearch(searchQuery);
       }
     } catch (err: any) {
       console.error('Submit error:', err);

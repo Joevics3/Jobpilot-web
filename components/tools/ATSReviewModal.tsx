@@ -83,26 +83,39 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
     }
   };
 
-  // Load jobs from localStorage
+  // Load jobs from Supabase
   const loadJobs = async () => {
     try {
-      const cachedJobs = localStorage.getItem('cached_jobs');
-      if (cachedJobs) {
-        const jobsData = JSON.parse(cachedJobs);
-        const formattedJobs: Job[] = jobsData.map((job: any) => ({
-          id: job.id,
-          title: job.title || 'Untitled Job',
-          company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-          location: typeof job.location === 'string' ? job.location : 
-            (job.location?.remote ? 'Remote' : 
-            [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-          description: job.description || '',
-        }));
-        setJobs(formattedJobs);
-        setFilteredJobs(formattedJobs);
-      }
+      setLoading(true);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, title, company, location, description')
+        .eq('status', 'active')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      const formattedJobs: Job[] = (data || []).map((job: any) => ({
+        id: job.id,
+        title: job.title || 'Untitled Job',
+        company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
+        location: typeof job.location === 'string' ? job.location : 
+          (job.location?.remote ? 'Remote' : 
+          [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+        description: job.description || '',
+      }));
+      
+      setJobs(formattedJobs);
+      setFilteredJobs(formattedJobs);
     } catch (error) {
       console.error('Error loading jobs:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,23 +184,7 @@ export default function ATSReviewModal({ isOpen, onClose }: ATSReviewModalProps)
 
   const fetchFullJobDetails = async (jobId: string): Promise<Job | null> => {
     try {
-      // First, try to get from cached jobs (might have description)
-      const cachedJobs = localStorage.getItem('cached_jobs');
-      if (cachedJobs) {
-        const jobsData = JSON.parse(cachedJobs);
-        const cachedJob = jobsData.find((j: any) => j.id === jobId);
-        if (cachedJob && cachedJob.description && cachedJob.description.trim()) {
-          return {
-            id: cachedJob.id,
-            title: cachedJob.title || 'Untitled Job',
-            company: cachedJob.company || 'Company',
-            location: cachedJob.location || 'Not specified',
-            description: cachedJob.description,
-          };
-        }
-      }
-
-      // If not in cache or no description, fetch from Supabase
+      // Fetch from Supabase
       const { data, error } = await supabase
         .from('jobs')
         .select('id, title, company, location, description')

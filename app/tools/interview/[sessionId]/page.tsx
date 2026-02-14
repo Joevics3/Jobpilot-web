@@ -302,7 +302,7 @@ export default function InterviewSessionPage() {
       </div>
 
       {/* Chat Interface - Takes remaining space */}
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 pb-48">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
           {/* Chat Messages - Scrollable area */}
           <div
@@ -388,61 +388,63 @@ export default function InterviewSessionPage() {
             )}
           </div>
 
-          {/* Input Area - Fixed at bottom */}
+          {/* Input Area - Fixed at bottom of viewport */}
           {!session.completed && (
-            <div className="border-t border-gray-200 bg-white flex-shrink-0">
-              {/* Textbox - Above buttons */}
-              <div className="p-4 pb-2">
-                <textarea
-                  ref={inputRef}
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your answer here... (Press Enter to send)"
-                  className="w-full min-h-[80px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  disabled={isWaitingForResponse}
-                />
-                <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
-                  <span>Press Enter to send • Auto mode: {autoMode ? 'TTS → STT' : 'Manual control'}</span>
-                  {isRecording && <span className="text-red-600 animate-pulse">● Recording...</span>}
+            <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white z-20">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Textbox - Above buttons */}
+                <div className="py-3">
+                  <textarea
+                    ref={inputRef}
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your answer here... (Press Enter to send)"
+                    className="w-full min-h-[80px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    disabled={isWaitingForResponse}
+                  />
+                  <div className="mt-1 text-xs text-gray-500 flex items-center justify-between">
+                    <span>Press Enter to send • Auto mode: {autoMode ? 'TTS → STT' : 'Manual control'}</span>
+                    {isRecording && <span className="text-red-600 animate-pulse">● Recording...</span>}
+                  </div>
                 </div>
-              </div>
-              {/* Buttons - Horizontal line */}
-              <div className="px-4 pb-4 flex items-center gap-3">
-                <button
-                  onClick={togglePlayback}
-                  disabled={!(session.chat || []).some(msg => msg.type === 'question')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
-                    isPlaying
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  title={isPlaying ? 'Stop playback' : 'Play latest question'}
-                >
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                  <span className="text-sm font-medium">{isPlaying ? 'Stop' : 'Play'}</span>
-                </button>
-                <button
-                  onClick={toggleRecording}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
-                    isRecording
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-gray-600 text-white hover:bg-gray-700'
-                  }`}
-                  title={isRecording ? 'Stop recording' : 'Start voice input'}
-                >
-                  {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-                  <span className="text-sm font-medium">{isRecording ? 'Stop' : 'Record'}</span>
-                </button>
-                <button
-                  onClick={sendMessage}
-                  disabled={!userInput.trim() || isWaitingForResponse}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="Send message"
-                >
-                  <Send size={20} />
-                  <span className="text-sm font-medium">Send</span>
-                </button>
+                {/* Buttons - Horizontal line */}
+                <div className="pb-4 flex items-center gap-3">
+                  <button
+                    onClick={togglePlayback}
+                    disabled={!(session.chat || []).some(msg => msg.type === 'question')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
+                      isPlaying
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    title={isPlaying ? 'Stop playback' : 'Play latest question'}
+                  >
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                    <span className="text-sm font-medium">{isPlaying ? 'Stop' : 'Play'}</span>
+                  </button>
+                  <button
+                    onClick={toggleRecording}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
+                      isRecording
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-gray-600 text-white hover:bg-gray-700'
+                    }`}
+                    title={isRecording ? 'Stop recording' : 'Start voice input'}
+                  >
+                    {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                    <span className="text-sm font-medium">{isRecording ? 'Stop' : 'Record'}</span>
+                  </button>
+                  <button
+                    onClick={sendMessage}
+                    disabled={!userInput.trim() || isWaitingForResponse}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Send message"
+                  >
+                    <Send size={20} />
+                    <span className="text-sm font-medium">Send</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

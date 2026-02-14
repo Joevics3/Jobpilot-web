@@ -1,110 +1,418 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, MapPin, Briefcase, DollarSign, Building2, Clock, Filter, Loader2, ArrowRight, Wifi, Globe, Laptop, ChevronDown, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
-import Link from 'next/link';
+import JobCard from '@/components/jobs/JobCard';
+import { JobUI } from '@/components/jobs/JobCard';
+import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
+import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
+import { ChevronDown, Briefcase, Globe, Wifi, Search, Filter, X } from 'lucide-react';
+import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
+import { matchCacheService } from '@/lib/matching/matchCache';
 
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  salary?: string;
-  job_type?: string;
-  remote?: boolean;
-  posted_date?: string;
-  description?: string;
-  slug?: string;
-  category?: string;
-}
+const STORAGE_KEYS = {
+  SAVED_JOBS: 'saved_jobs',
+  APPLIED_JOBS: 'applied_jobs',
+};
+
+const JOBS_PER_PAGE = 50;
 
 export default function RemoteJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const [user, setUser] = useState<any>(null);
+  const [jobs, setJobs] = useState<JobUI[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
+  const [sortBy, setSortBy] = useState<'match' | 'date'>('date');
+  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
+  
+  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    sector: [] as string[],
+    employmentType: [] as string[],
+  });
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedJobType, setSelectedJobType] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
 
-  const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance'];
-  const categories = [
+  const sectors = [
     'Technology', 'Marketing', 'Sales', 'Design', 'Finance', 
-    'Healthcare', 'Education', 'Engineering', 'Admin', 'Customer Service'
+    'Healthcare', 'Education', 'Engineering', 'Admin', 'Customer Service', 
+    'Legal', 'HR', 'Manufacturing', 'Retail', 'Media'
   ];
-
-  const fetchJobs = useCallback(async (pageNum: number = 1) => {
-    setIsLoading(true);
-    setJobs([]);
-    try {
-      const params = new URLSearchParams();
-      params.set('page', pageNum.toString());
-      params.set('limit', '20');
-      
-      // Try remote=true first, if no results, fallback to location search
-      params.set('remote', 'true');
-      
-      if (searchQuery) params.set('search', searchQuery);
-      if (selectedJobType) params.set('job_type', selectedJobType);
-      if (selectedCategory) params.set('category', selectedCategory);
-
-      console.log('Fetching jobs with params:', params.toString());
-      
-      let response = await fetch(`/api/jobs?${params.toString()}`);
-      let data = await response.json();
-      
-      console.log('Jobs API response:', data);
-      
-      // If no remote jobs found, try searching by "remote" in location
-      if (!data.success || !data.jobs || data.jobs.length === 0) {
-        console.log('No remote jobs found, trying location search...');
-        params.delete('remote');
-        params.set('location', 'remote');
-        response = await fetch(`/api/jobs?${params.toString()}`);
-        data = await response.json();
-        console.log('Fallback jobs response:', data);
-      }
-      
-      if (data.success) {
-        setJobs(data.jobs || []);
-        setTotalPages(data.totalPages || 1);
-        setTotalJobs(data.total || 0);
-      } else {
-        console.error('API error:', data.error);
-      }
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchQuery, selectedJobType, selectedCategory]);
+  
+  const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance'];
 
   useEffect(() => {
-    fetchJobs(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    checkAuth();
+    loadSavedJobs();
+    loadAppliedJobs();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+        setUserOnboardingData(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserOnboardingData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Initialize from URL params
+    const searchParam = searchParams.get('search');
+    const sectorParam = searchParams.get('sector');
+    const employmentTypeParam = searchParams.get('employmentType');
+    const pageParam = searchParams.get('page');
+
+    if (searchParam) setSearchQuery(searchParam);
+    if (sectorParam) setFilters(prev => ({ ...prev, sector: sectorParam.split(',') }));
+    if (employmentTypeParam) setFilters(prev => ({ ...prev, employmentType: employmentTypeParam.split(',') }));
+    if (pageParam) setCurrentPage(parseInt(pageParam));
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchRemoteJobs();
+  }, [currentPage, filters, user, userOnboardingData]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setUser(session.user);
+    }
+  };
+
+  const fetchUserOnboardingData = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('onboarding_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') return;
+
+      if (data) {
+        setUserOnboardingData({
+          target_roles: data.target_roles || [],
+          cv_skills: data.cv_skills || [],
+          preferred_locations: data.preferred_locations || [],
+          experience_level: data.experience_level || null,
+          salary_min: data.salary_min || null,
+          salary_max: data.salary_max || null,
+          job_type: data.job_type || null,
+          sector: data.sector || null,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching onboarding data:', error);
+    }
+  };
+
+  const fetchRemoteJobs = async () => {
+    try {
+      setLoading(true);
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+      
+      // Build query for counting total
+      let countQuery = supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .eq('location->>remote', 'true')
+        .gte('created_at', thirtyDaysAgoISO);
+
+      if (searchQuery) {
+        countQuery = countQuery.or(`title.ilike.%${searchQuery}%,company->>name.ilike.%${searchQuery}%`);
+      }
+      if (filters.sector.length > 0) {
+        countQuery = countQuery.in('sector', filters.sector);
+      }
+      if (filters.employmentType.length > 0) {
+        countQuery = countQuery.in('employment_type', filters.employmentType);
+      }
+
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) throw countError;
+      
+      const total = count || 0;
+      setTotalJobs(total);
+      setTotalPages(Math.ceil(total / JOBS_PER_PAGE));
+
+      // Fetch actual jobs for current page
+      let query = supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'active')
+        .eq('location->>remote', 'true')
+        .gte('created_at', thirtyDaysAgoISO)
+        .order('created_at', { ascending: false })
+        .range((currentPage - 1) * JOBS_PER_PAGE, currentPage * JOBS_PER_PAGE - 1);
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,company->>name.ilike.%${searchQuery}%`);
+      }
+      if (filters.sector.length > 0) {
+        query = query.in('sector', filters.sector);
+      }
+      if (filters.employmentType.length > 0) {
+        query = query.in('employment_type', filters.employmentType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const processedJobs = await processJobsWithMatching(data || []);
+      
+      processedJobs.sort((a, b) => {
+        const dateA = new Date(a.postedDate || 0).getTime();
+        const dateB = new Date(b.postedDate || 0).getTime();
+        return dateB - dateA;
+      });
+
+      setJobs(processedJobs);
+    } catch (error) {
+      console.error('Error fetching remote jobs:', error);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
+    if (!userOnboardingData || !user) {
+      return jobRows.map((job: any) => transformJobToUI(job, 0, null));
+    }
+
+    const matchCache = matchCacheService.loadMatchCache(user.id);
+    let cacheNeedsUpdate = false;
+    const updatedCache = { ...matchCache };
+
+    const processedJobs = await Promise.all(
+      jobRows.map(async (job: any) => {
+        try {
+          let matchResult;
+          const cachedMatch = updatedCache[job.id];
+
+          if (cachedMatch) {
+            matchResult = {
+              score: cachedMatch.score,
+              breakdown: cachedMatch.breakdown,
+              computedAt: cachedMatch.cachedAt,
+            };
+          } else {
+            const jobRow: JobRow = {
+              role: job.role || job.title,
+              related_roles: job.related_roles,
+              ai_enhanced_roles: job.ai_enhanced_roles,
+              skills_required: job.skills_required,
+              ai_enhanced_skills: job.ai_enhanced_skills,
+              location: job.location,
+              experience_level: job.experience_level,
+              salary_range: job.salary_range,
+              employment_type: job.employment_type,
+              sector: job.sector,
+            };
+
+            matchResult = scoreJob(jobRow, userOnboardingData);
+
+            updatedCache[job.id] = {
+              score: matchResult.score,
+              breakdown: matchResult.breakdown,
+              cachedAt: matchResult.computedAt,
+            };
+            cacheNeedsUpdate = true;
+          }
+
+          const rsCapped = Math.min(
+            80,
+            matchResult.breakdown.rolesScore +
+            matchResult.breakdown.skillsScore +
+            matchResult.breakdown.sectorScore
+          );
+          const calculatedTotal = Math.round(
+            rsCapped +
+            matchResult.breakdown.locationScore +
+            matchResult.breakdown.experienceScore +
+            matchResult.breakdown.salaryScore +
+            matchResult.breakdown.typeScore
+          );
+
+          return transformJobToUI(job, calculatedTotal, matchResult.breakdown);
+        } catch (error) {
+          return transformJobToUI(job, 0, null);
+        }
+      })
+    );
+
+    if (cacheNeedsUpdate) {
+      matchCacheService.saveMatchCache(user.id, updatedCache);
+    }
+
+    return processedJobs;
+  }, [user, userOnboardingData]);
+
+  const transformJobToUI = (job: any, matchScore: number, breakdown: any): JobUI => {
+    const finalMatchScore = user ? matchScore : 0;
+    const finalBreakdown = user ? breakdown : null;
+    
+    let locationStr = 'Remote';
+    
+    let companyStr = 'Unknown Company';
+    if (typeof job.company === 'string') {
+      companyStr = job.company;
+    } else if (job.company && typeof job.company === 'object') {
+      companyStr = job.company.name || 'Unknown Company';
+    }
+
+    let salaryStr = '';
+    if (typeof job.salary === 'string') {
+      salaryStr = job.salary;
+    } else if (job.salary_range && typeof job.salary_range === 'object') {
+      const sal = job.salary_range;
+      if (sal.min !== null && sal.currency) {
+        salaryStr = `${sal.currency} ${sal.min.toLocaleString()} ${sal.period || ''}`.trim();
+      }
+    }
+
+    return {
+      id: job.id,
+      slug: job.slug || job.id,
+      title: job.title || 'Untitled Job',
+      company: companyStr,
+      location: locationStr,
+      salary: salaryStr,
+      match: finalMatchScore,
+      calculatedTotal: finalMatchScore,
+      type: job.type || job.employment_type || '',
+      breakdown: finalBreakdown,
+      postedDate: job.posted_date || job.created_at || null,
+    };
+  };
+
+  const loadSavedJobs = () => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
+    if (saved) {
+      try {
+        setSavedJobs(JSON.parse(saved));
+      } catch (e) {}
+    }
+  };
+
+  const loadAppliedJobs = () => {
+    if (typeof window === 'undefined') return;
+    const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
+    if (applied) {
+      try {
+        setAppliedJobs(JSON.parse(applied));
+      } catch (e) {}
+    }
+  };
+
+  const handleSave = (jobId: string) => {
+    const newSaved = savedJobs.includes(jobId)
+      ? savedJobs.filter(id => id !== jobId)
+      : [...savedJobs, jobId];
+    setSavedJobs(newSaved);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
+    }
+  };
+
+  const handleApply = (jobId: string) => {
+    const newApplied = appliedJobs.includes(jobId)
+      ? appliedJobs.filter(id => id !== jobId)
+      : [...appliedJobs, jobId];
+    setAppliedJobs(newApplied);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
+    }
+  };
+
+  const handleShowBreakdown = (job: JobUI) => {
+    const breakdown = job.breakdown || {
+      rolesScore: 0, skillsScore: 0, sectorScore: 0,
+      locationScore: 0, experienceScore: 0, salaryScore: 0, typeScore: 0,
+    };
+    setMatchModalData({
+      breakdown,
+      totalScore: job.calculatedTotal || job.match || 0,
+      jobTitle: job.title,
+      companyName: job.company,
+    });
+    setMatchModalOpen(true);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    fetchJobs(1);
+    setCurrentPage(1);
+    updateURL();
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Yesterday';
-    if (diff < 7) return `${diff} days ago`;
-    if (diff < 30) return `${Math.floor(diff / 7)} weeks ago`;
-    return `${Math.floor(diff / 30)} months ago`;
+  const updateURL = () => {
+    const params = new URLSearchParams();
+    params.set('remote', 'true');
+    if (searchQuery) params.set('search', searchQuery);
+    if (filters.sector.length > 0) params.set('sector', filters.sector.join(','));
+    if (filters.employmentType.length > 0) params.set('employmentType', filters.employmentType.join(','));
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    router.push(`/tools/remote-jobs-finder?${params.toString()}`);
   };
+
+  const handleFilterChange = (filterType: 'sector' | 'employmentType', value: string) => {
+    setFilters(prev => {
+      const current = prev[filterType];
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value];
+      return { ...prev, [filterType]: updated };
+    });
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ sector: [], employmentType: [] });
+    setSearchQuery('');
+    setCurrentPage(1);
+    router.push('/tools/remote-jobs-finder?remote=true');
+  };
+
+  const sortedJobs = [...jobs].sort((a, b) => {
+    if (sortBy === 'match') {
+      return (b.calculatedTotal || b.match || 0) - (a.calculatedTotal || a.match || 0);
+    }
+    const dateA = new Date(a.postedDate || 0).getTime();
+    const dateB = new Date(b.postedDate || 0).getTime();
+    return dateB - dateA;
+  });
+
+  const hasFilters = searchQuery || filters.sector.length > 0 || filters.employmentType.length > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
@@ -113,22 +421,25 @@ export default function RemoteJobsPage() {
         className="pt-12 pb-8 px-6"
         style={{ backgroundColor: theme.colors.primary.DEFAULT }}
       >
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <a href="/tools" className="text-sm text-white/80 hover:text-white transition-colors self-start inline-block mb-2">
             ← Back to Tools
           </a>
-          <h1 className="text-2xl font-bold" style={{ color: theme.colors.text.light }}>
-            Remote Jobs Finder
-          </h1>
-          <p className="text-sm mt-1" style={{ color: theme.colors.text.light }}>
-            Find the best remote job opportunities in Nigeria and worldwide
+          <div className="flex items-center gap-3 mb-2">
+            <Wifi size={32} />
+            <h1 className="text-2xl font-bold" style={{ color: theme.colors.text.light }}>
+              Remote Jobs
+            </h1>
+          </div>
+          <p className="text-sm" style={{ color: theme.colors.text.light }}>
+            Find remote job opportunities in Nigeria and worldwide
           </p>
         </div>
       </div>
 
-      <div className="px-6 py-6 max-w-4xl mx-auto">
+      <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
         {/* Search & Filters */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6" style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}>
+        <div className="bg-white rounded-2xl p-4 mb-6" style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}>
           <form onSubmit={handleSearch} className="mb-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -137,7 +448,7 @@ export default function RemoteJobsPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search remote jobs (e.g., React, Marketing, Sales)..."
+                  placeholder="Search remote jobs (job title, company)..."
                   className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -148,175 +459,179 @@ export default function RemoteJobsPage() {
                 <Search size={18} />
                 Search
               </button>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className={`px-4 py-3 border rounded-xl flex items-center gap-2 ${filtersOpen ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}`}
+              >
+                <Filter size={18} />
+                Filters
+                {hasFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
+              </button>
             </div>
           </form>
 
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-          >
-            <Filter size={16} />
-            Filters
-            <ChevronDown size={16} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
+          {/* Filters Panel */}
+          {filtersOpen && (
+            <div className="pt-4 border-t space-y-4">
+              {/* Sector Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sector</label>
+                <div className="flex flex-wrap gap-2">
+                  {sectors.map(sector => (
+                    <button
+                      key={sector}
+                      onClick={() => handleFilterChange('sector', sector)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        filters.sector.includes(sector)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {sector}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Filters */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Employment Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
-                <select
-                  value={selectedJobType}
-                  onChange={(e) => {
-                    setSelectedJobType(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Job Types</option>
-                  {jobTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                <div className="flex flex-wrap gap-2">
+                  {employmentTypes.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => handleFilterChange('employmentType', type)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        filters.employmentType.includes(type)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Clear Filters */}
+              {hasFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                 >
-                  <option value="">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+                  <X size={14} /> Clear all filters
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Results Count */}
+        {/* Results Summary */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-gray-600">
-            {isLoading ? 'Loading...' : `${totalJobs.toLocaleString()} remote jobs found`}
+            {loading ? 'Loading...' : `${totalJobs.toLocaleString()} remote jobs found`}
+            {hasFilters && ` (filtered)`}
           </p>
+          <div className="flex items-center gap-3">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'match' | 'date')}
+              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 outline-none cursor-pointer"
+            >
+              <option value="date">Newest First</option>
+              {user && <option value="match">Best Match</option>}
+            </select>
+          </div>
         </div>
 
         {/* Jobs List */}
-        <div className="space-y-4 mb-6">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="animate-spin mx-auto text-blue-600 mb-3" size={32} />
-              <p className="text-gray-600">Loading remote jobs...</p>
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center">
-              <Globe className="mx-auto text-gray-400 mb-3" size={40} />
-              <p className="text-gray-600 mb-4">No remote jobs found matching your criteria</p>
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedJobType('');
-                  setSelectedCategory('');
-                  setPage(1);
-                }}
-                className="text-blue-600 hover:underline"
-              >
-                Clear filters
-              </button>
-            </div>
-          ) : (
-            jobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/jobs/${job.slug || job.id}`}
-                className="block bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
-                style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
-                        <Wifi size={10} />
-                        Remote
-                      </span>
-                      {job.job_type && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
-                          {job.job_type}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{job.title}</h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={14} />
-                        {job.company}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} />
-                        {job.location || 'Remote'}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight size={20} className="text-gray-400" />
-                </div>
-
-                {job.salary && (
-                  <div className="flex items-center gap-1 mt-3 text-sm text-green-700">
-                    <DollarSign size={14} />
-                    {job.salary}
-                  </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="divide-y" style={{ borderColor: theme.colors.border.DEFAULT }}>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <p style={{ color: theme.colors.text.secondary }}>Loading remote jobs...</p>
+              </div>
+            ) : sortedJobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6">
+                <Globe size={48} className="text-gray-400 mb-4" />
+                <p className="text-base font-medium mb-2" style={{ color: theme.colors.text.primary }}>
+                  No remote jobs found
+                </p>
+                <p className="text-sm text-center" style={{ color: theme.colors.text.secondary }}>
+                  {hasFilters ? 'Try adjusting your filters' : 'Check back later for new remote opportunities'}
+                </p>
+                {hasFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="mt-4 text-blue-600 hover:underline"
+                  >
+                    Clear filters
+                  </button>
                 )}
-
-                {job.description && (
-                  <p className="text-sm text-gray-600 mt-3 line-clamp-2">
-                    {job.description.replace(/<[^>]*>/g, '')}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                  {job.posted_date && (
-                    <span className="flex items-center gap-1">
-                      <Clock size={12} />
-                      {formatDate(job.posted_date)}
-                    </span>
-                  )}
-                  {job.category && (
-                    <span className="flex items-center gap-1">
-                      <Briefcase size={12} />
-                      {job.category}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))
-          )}
+              </div>
+            ) : (
+              sortedJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  savedJobs={savedJobs}
+                  appliedJobs={appliedJobs}
+                  onSave={handleSave}
+                  onApply={handleApply}
+                  onShowBreakdown={handleShowBreakdown}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
+              onClick={() => { setCurrentPage(Math.max(1, currentPage - 1)); updateURL(); }}
+              disabled={currentPage === 1}
               className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
               Previous
             </button>
             
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => { setCurrentPage(pageNum); updateURL(); }}
+                    className={`px-4 py-2 rounded-lg ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white'
+                        : 'border hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
             <span className="px-4 py-2 text-sm text-gray-600">
-              Page {page} of {totalPages}
+              Page {currentPage} of {totalPages}
             </span>
             
             <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
+              onClick={() => { setCurrentPage(Math.min(totalPages, currentPage + 1)); updateURL(); }}
+              disabled={currentPage === totalPages}
               className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
               Next
@@ -324,140 +639,11 @@ export default function RemoteJobsPage() {
           </div>
         )}
 
-        {/* SEO Content - Improved */}
-        <div className="mt-16">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Remote Jobs in Nigeria</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Discover work-from-home opportunities and flexible remote positions with top companies in Nigeria and worldwide.</p>
-          </div>
-
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl border border-cyan-200">
-              <div className="w-12 h-12 bg-cyan-500 rounded-lg flex items-center justify-center mb-3">
-                <Wifi className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Fully Remote</h3>
-              <p className="text-sm text-gray-700">Work from anywhere without going to an office.</p>
-            </div>
-            <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3">
-                <Globe className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Global Companies</h3>
-              <p className="text-sm text-gray-700">Access opportunities with international employers.</p>
-            </div>
-            <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-3">
-                <Laptop className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Flexible Work</h3>
-              <p className="text-sm text-gray-700">Hybrid and flexible arrangements available.</p>
-            </div>
-          </div>
-
-          {/* Main SEO Content */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center text-white text-sm">1</span>
-                Why Work Remotely?
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <p>Remote work has transformed the Nigerian job market. More companies are offering remote positions due to technology advancements and changing workplace preferences.</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                  {['Flexible Schedule', 'No Commute', 'Work-Life Balance', 'Global Access'].map(item => (
-                    <div key={item} className="bg-cyan-50 rounded-lg p-2 text-center text-sm text-cyan-800">{item}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm">2</span>
-                Types of Remote Work
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900">Fully Remote</h4>
-                    <p className="text-sm text-blue-800">Work from anywhere without office visits</p>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-purple-900">Hybrid</h4>
-                    <p className="text-sm text-purple-800">Mix of remote and office work</p>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-900">Contract</h4>
-                    <p className="text-sm text-green-800">Project-based with flexible hours</p>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-orange-900">Freelance</h4>
-                    <p className="text-sm text-orange-800">Work with multiple clients</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm">3</span>
-                Popular Remote Job Categories
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {['Software Development', 'Data Analysis', 'Digital Marketing', 'Customer Service', 'UI/UX Design', 'Content Writing', 'Virtual Assistant', 'Project Management', 'Accounting', 'Human Resources'].map(cat => (
-                    <span key={cat} className="px-3 py-1 bg-gray-100 rounded-full text-sm">{cat}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center text-white text-sm">4</span>
-                Tips for Remote Job Success
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {['Test internet before interviews', 'Create a quiet workspace', 'Dress professionally', 'Have documents ready', 'Ask about remote tools', 'Follow up after interviews'].map(tip => (
-                    <div key={tip} className="flex items-center gap-2">
-                      <CheckCircle className="text-green-500 flex-shrink-0" size={16} />
-                      <span className="text-sm">{tip}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-bold mb-4">Find Your Remote Dream Job</h3>
-              <p className="text-white/90 mb-4">Browse hundreds of remote job opportunities in Nigeria and worldwide. Updated daily with new positions.</p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Free Access</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Daily Updates</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Nigeria Focused</span>
-              </div>
-            </div>
-          </div>
-
-          {/* JSON-LD Schema */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebApplication",
-                "name": "Remote Jobs Finder",
-                "description": "Find remote jobs and work-from-home opportunities in Nigeria and worldwide. Search remote positions by category, job type, and more.",
-                "url": "https://jobmeter.com/tools/remote-jobs-finder",
-                "applicationCategory": "Career",
-                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "NGN" }
-              })
-            }}
-          />
-        </div>
+        <MatchBreakdownModal
+          open={matchModalOpen}
+          onClose={() => setMatchModalOpen(false)}
+          data={matchModalData}
+        />
       </div>
     </div>
   );

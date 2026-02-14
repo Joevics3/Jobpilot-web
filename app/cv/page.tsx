@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Plus, FileText, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
@@ -18,13 +17,13 @@ interface CVDocument {
   structured_data: any;
   content: string;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
 }
 
 export default function CVListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [user, setUser] = useState<any>(null);
   const [documents, setDocuments] = useState<CVDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'cv' | 'cover-letter'>('cv');
@@ -41,22 +40,8 @@ export default function CVListPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    checkAuth();
-    loadDocuments();
-  }, []);
-
-  useEffect(() => {
     loadDocuments();
   }, [activeTab]);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-    } else {
-      setLoading(false);
-    }
-  };
 
   const loadDocuments = () => {
     try {
@@ -194,7 +179,7 @@ export default function CVListPage() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1">{doc.name}</h3>
                     <p className="text-xs text-gray-500">
-                      {new Date(doc.created_at).toLocaleDateString()}
+                      {new Date(doc.createdAt || doc.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <button

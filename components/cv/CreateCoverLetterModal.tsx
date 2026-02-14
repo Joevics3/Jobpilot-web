@@ -34,7 +34,7 @@ interface CreateCoverLetterModalProps {
   onComplete: (coverLetterId: string) => void;
 }
 
-type Step = 'job-selection' | 'cv-selection' | 'format-selection' | 'generating';
+type Step = 'job-selection' | 'cv-selection' | 'generating';
 
 export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: CreateCoverLetterModalProps) {
   const [step, setStep] = useState<Step>('job-selection');
@@ -70,20 +70,43 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
   const loadJobs = async () => {
     setLoadingJobs(true);
     try {
-      const cachedJobs = localStorage.getItem('cached_jobs');
+      // First try to load from localStorage cache
+      const cachedJobs = localStorage.getItem('jobs_cache');
+      let jobsData: any[] = [];
+      
       if (cachedJobs) {
-        const jobsData = JSON.parse(cachedJobs);
-        const formattedJobs: Job[] = jobsData.map((job: any) => ({
-          id: job.id,
-          title: job.title || 'Untitled Job',
-          company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-          location: typeof job.location === 'string' ? job.location : 
-            (job.location?.remote ? 'Remote' : 
-            [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-        }));
-        setJobs(formattedJobs);
-        setFilteredJobs(formattedJobs);
+        try {
+          jobsData = JSON.parse(cachedJobs);
+        } catch (e) {
+          console.error('Error parsing cached jobs:', e);
+        }
       }
+      
+      // If no cached jobs, fetch from Supabase
+      if (jobsData.length === 0) {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, title, company, location, status')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        
+        if (!error && data) {
+          jobsData = data;
+        }
+      }
+      
+      // Transform to Job format
+      const formattedJobs: Job[] = jobsData.map((job: any) => ({
+        id: job.id,
+        title: job.title || 'Untitled Job',
+        company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
+        location: typeof job.location === 'string' ? job.location : 
+          (job.location?.remote ? 'Remote' : 
+          [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+      }));
+      setJobs(formattedJobs);
+      setFilteredJobs(formattedJobs);
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -145,7 +168,7 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
   const handleCVSelect = (cv: CVDocument) => {
     setSelectedCV(cv);
     setCvSelectionMethod(null);
-    setStep('format-selection');
+    handleGenerate('document');
   };
 
   const handlePasteCV = () => {
@@ -154,30 +177,30 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
       return;
     }
     setCvSelectionMethod(null);
-    setStep('format-selection');
+    handleGenerate('document');
   };
 
   const handleFormatSelect = (format: 'document' | 'email') => {
     setCoverLetterFormat(format);
-    // Proceed to generate immediately
     handleGenerate(format);
   };
 
   const handleGenerate = async (format?: 'document' | 'email') => {
-    const finalFormat = format || coverLetterFormat;
-    if (!finalFormat) {
-      alert('Please select a format');
-      return;
-    }
+    const finalFormat = format || 'document';
 
     setStep('generating');
     setLoading(true);
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      // Get current user or use anonymous ID
+      let userId = 'anonymous_user';
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch (e) {
+        // Use anonymous user
       }
 
       // Prepare job data
@@ -207,7 +230,7 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
 
       // Generate cover letter
       const coverLetterStructuredData = await generateCoverLetter({
-        userId: user.id,
+        userId: userId,
         jobId,
         jobPastedText,
         cvPastedText,
@@ -246,7 +269,7 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
     } catch (error) {
       console.error('Error generating cover letter:', error);
       alert('Failed to generate cover letter. Please try again.');
-      setStep('format-selection');
+      setStep('cv-selection');
     } finally {
       setLoading(false);
     }
@@ -518,43 +541,7 @@ export default function CreateCoverLetterModal({ isOpen, onClose, onComplete }: 
             </div>
           )}
 
-          {/* Step 3: Format Selection */}
-          {step === 'format-selection' && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">3</div>
-                <h3 className="text-lg font-semibold text-gray-900">Choose Format</h3>
-                <button
-                  onClick={() => setStep('cv-selection')}
-                  className="ml-auto text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Back
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <label className="block text-sm font-semibold mb-3 text-gray-900">Cover Letter Format</label>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleFormatSelect('document')}
-                    className="flex-1 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 transition-all"
-                  >
-                    <FileText size={24} className="mx-auto mb-2 text-gray-600" />
-                    <p className="font-medium text-sm text-gray-700">Document</p>
-                  </button>
-                  <button
-                    onClick={() => handleFormatSelect('email')}
-                    className="flex-1 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 transition-all"
-                  >
-                    <FileText size={24} className="mx-auto mb-2 text-gray-600" />
-                    <p className="font-medium text-sm text-gray-700">Email</p>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Generating */}
+          {/* Step 3: Generating */}
           {step === 'generating' && (
             <div className="text-center py-12">
               <Loader2 className="animate-spin mx-auto mb-4 text-blue-600" size={48} />

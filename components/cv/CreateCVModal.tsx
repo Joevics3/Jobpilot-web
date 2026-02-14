@@ -51,22 +51,43 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
   const loadJobs = async () => {
     setLoadingJobs(true);
     try {
-      // Load cached jobs from homepage localStorage
-      const cachedJobs = localStorage.getItem('cached_jobs');
+      // First try to load from localStorage cache
+      const cachedJobs = localStorage.getItem('jobs_cache');
+      let jobsData: any[] = [];
+      
       if (cachedJobs) {
-        const jobsData = JSON.parse(cachedJobs);
-        // Transform to Job format
-        const formattedJobs: Job[] = jobsData.map((job: any) => ({
-          id: job.id,
-          title: job.title || 'Untitled Job',
-          company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
-          location: typeof job.location === 'string' ? job.location : 
-            (job.location?.remote ? 'Remote' : 
-            [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
-        }));
-        setJobs(formattedJobs);
-        setFilteredJobs(formattedJobs);
+        try {
+          jobsData = JSON.parse(cachedJobs);
+        } catch (e) {
+          console.error('Error parsing cached jobs:', e);
+        }
       }
+      
+      // If no cached jobs, fetch from Supabase
+      if (jobsData.length === 0) {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, title, company, location, status')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        
+        if (!error && data) {
+          jobsData = data;
+        }
+      }
+      
+      // Transform to Job format
+      const formattedJobs: Job[] = jobsData.map((job: any) => ({
+        id: job.id,
+        title: job.title || 'Untitled Job',
+        company: typeof job.company === 'string' ? job.company : job.company?.name || 'Company',
+        location: typeof job.location === 'string' ? job.location : 
+          (job.location?.remote ? 'Remote' : 
+          [job.location?.city, job.location?.state, job.location?.country].filter(Boolean).join(', ') || 'Not specified'),
+      }));
+      setJobs(formattedJobs);
+      setFilteredJobs(formattedJobs);
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -114,25 +135,26 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
 
   const handleCoverLetterCheck = (checked: boolean) => {
     setCreateCoverLetter(checked);
-    if (!checked) {
-      setCoverLetterFormat(null);
+    if (checked) {
+      setCoverLetterFormat('document');
     }
   };
 
   const handleGenerate = async () => {
-    if (createCoverLetter && !coverLetterFormat) {
-      alert('Please select cover letter format');
-      return;
-    }
 
     setStep('generating');
     setLoading(true);
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      // Get current user or use anonymous ID
+      let userId = 'anonymous_user';
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch (e) {
+        // Use anonymous user
       }
 
       // Generate CV
@@ -140,7 +162,7 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
       const jobPastedText = selectedJob?.id?.startsWith('pasted-') ? pastedJobDetails : undefined;
 
       const cvStructuredData = await generateCV({
-        userId: user.id,
+        userId: userId,
         jobId,
         jobPastedText,
         templateId: 'template-1',
@@ -237,7 +259,6 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
   };
 
   const canProceedToGenerate = () => {
-    if (createCoverLetter && !coverLetterFormat) return false;
     return true;
   };
 
@@ -415,37 +436,7 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
 
                 {createCoverLetter && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <label className="block text-sm font-semibold mb-3 text-gray-900">Cover Letter Format</label>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setCoverLetterFormat('document')}
-                        className={`flex-1 p-3 border-2 rounded-lg transition-all ${
-                          coverLetterFormat === 'document'
-                            ? 'border-blue-600 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <FileText size={20} className="mx-auto mb-1 text-gray-600" />
-                        <p className="font-medium text-xs text-gray-700">Document</p>
-                        {coverLetterFormat === 'document' && (
-                          <Check size={14} className="mx-auto mt-1 text-blue-600" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setCoverLetterFormat('email')}
-                        className={`flex-1 p-3 border-2 rounded-lg transition-all ${
-                          coverLetterFormat === 'email'
-                            ? 'border-blue-600 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <FileText size={20} className="mx-auto mb-1 text-gray-600" />
-                        <p className="font-medium text-xs text-gray-700">Email</p>
-                        {coverLetterFormat === 'email' && (
-                          <Check size={14} className="mx-auto mt-1 text-blue-600" />
-                        )}
-                      </button>
-                    </div>
+                    <p className="text-sm text-gray-600">A cover letter will be created for this job.</p>
                   </div>
                 )}
               </div>

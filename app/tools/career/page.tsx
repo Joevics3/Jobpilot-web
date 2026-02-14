@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, RefreshCw, TrendingUp, Target, Award, AlertTriangle, Lightbulb, Briefcase, DollarSign, ChevronDown } from 'lucide-react';
+import { ArrowLeft, RefreshCw, TrendingUp, Target, Award, AlertTriangle, Lightbulb, Briefcase, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { CareerCoachService, CareerCoachResult } from '@/lib/services/careerCoachService';
 import { theme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+
 type TabType = 'paths' | 'skills' | 'insights';
 
 export default function CareerPage() {
@@ -16,7 +17,6 @@ export default function CareerPage() {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [showReanalyzeWarning, setShowReanalyzeWarning] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('paths');
-  const [seoExpanded, setSeoExpanded] = useState(false);
 
   useEffect(() => {
     loadAnalysis();
@@ -28,16 +28,13 @@ export default function CareerPage() {
       if (result) {
         setAnalysis(result);
       } else {
-        console.error('No career analysis found');
-        router.push('/career-tools');
-        return;
+        console.log('No career analysis found - will show analysis option');
       }
     } catch (error) {
       console.error('Error loading career analysis:', error);
-      router.push('/career-tools');
-      return;
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleReanalyze = async () => {
@@ -45,26 +42,41 @@ export default function CareerPage() {
     setShowReanalyzeWarning(false);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('Please log in to continue');
+      // Get user ID - use localStorage or generate temp ID for non-authenticated users
+      let userId = 'anonymous_user';
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch (e) {
+        // Continue with anonymous user
       }
 
-      const { data: onboardingData, error } = await supabase
-        .from('onboarding_data')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (error || !onboardingData) {
-        throw new Error('Please complete your profile setup first');
+      // Get onboarding data if available
+      let onboardingData = null;
+      try {
+        const { data } = await supabase
+          .from('onboarding_data')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+        onboardingData = data;
+      } catch (e) {
+        // Continue without onboarding data
       }
 
-      const result = await CareerCoachService.generateAnalysis(session.user.id, onboardingData);
+      if (!onboardingData) {
+        alert('Please complete your profile setup first');
+        setReanalyzing(false);
+        return;
+      }
+
+      const result = await CareerCoachService.generateAnalysis(userId, onboardingData);
       setAnalysis(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reanalyzing career:', error);
-      alert('Failed to reanalyze. Please try again.');
+      alert(error.message || 'Failed to reanalyze. Please try again.');
     } finally {
       setReanalyzing(false);
     }
@@ -83,17 +95,77 @@ export default function CareerPage() {
 
   if (!analysis) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analysis Not Found</h2>
-          <p className="text-gray-600 mb-4">Please complete your career analysis first.</p>
-          <Link
-            href="/career-tools"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Start Career Analysis
-          </Link>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/tools"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Career Coach</h1>
+                <p className="text-sm text-gray-600">
+                  AI-powered career guidance and development plan
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* No Analysis - Show Analysis Option */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+              <Target size={64} className="mx-auto text-green-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Get Your Career Analysis</h2>
+              <p className="text-gray-600 mb-6">
+                Discover personalized career paths, identify skill gaps, and get actionable insights to accelerate your career growth.
+              </p>
+              <button
+                onClick={handleReanalyze}
+                disabled={reanalyzing}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold disabled:opacity-50"
+              >
+                {reanalyzing ? (
+                  <>
+                    <RefreshCw size={20} className="animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Lightbulb size={20} />
+                    Start Career Analysis
+                  </>
+                )}
+              </button>
+              <p className="text-sm text-gray-500 mt-4">
+                You'll need to be logged in and have completed your profile setup.
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <TrendingUp size={32} className="mx-auto text-blue-600 mb-3" />
+                <h3 className="font-bold text-gray-900 mb-2">Career Paths</h3>
+                <p className="text-sm text-gray-600">Get personalized career recommendations based on your skills</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <Award size={32} className="mx-auto text-purple-600 mb-3" />
+                <h3 className="font-bold text-gray-900 mb-2">Skill Gaps</h3>
+                <p className="text-sm text-gray-600">Identify skills you need to develop for your target role</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <Lightbulb size={32} className="mx-auto text-green-600 mb-3" />
+                <h3 className="font-bold text-gray-900 mb-2">Market Insights</h3>
+                <p className="text-sm text-gray-600">Get insights on industry trends and in-demand skills</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -107,7 +179,7 @@ export default function CareerPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
-                href="/career-tools"
+                href="/tools"
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft size={20} className="text-gray-600" />
@@ -287,6 +359,7 @@ export default function CareerPage() {
                     </div>
                   ))}
                 </div>
+                
               </div>
             )}
 
@@ -363,6 +436,7 @@ export default function CareerPage() {
                     </div>
                   </div>
                 </div>
+                
               </div>
             )}
           </div>
@@ -397,75 +471,6 @@ export default function CareerPage() {
           </div>
         </div>
       )}
-
-      {/* SEO Content Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <button
-            onClick={() => setSeoExpanded(!seoExpanded)}
-            className="w-full flex items-center justify-between p-6 text-left"
-          >
-            <h2 className="text-xl font-bold text-gray-900">Learn More About Career Coaching</h2>
-            <ChevronDown
-              size={24}
-              className={`text-gray-500 transition-transform duration-200 ${seoExpanded ? 'rotate-180' : ''}`}
-            />
-          </button>
-          
-          {seoExpanded && (
-            <div className="px-6 pb-6 pt-0">
-              <div className="prose prose-lg max-w-none text-gray-700 space-y-6">
-                <p>
-                  Welcome to JobMeter's AI-powered Career Coach, your personal career development assistant designed to help Nigerian professionals navigate their career journey with confidence. Whether you're just starting out or looking to make a significant career change, our comprehensive tool provides personalized guidance tailored to your unique skills, experience, and career aspirations.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">Why Career Coaching Matters in Nigeria</h3>
-                <p>
-                  The Nigerian job market is evolving rapidly, with new industries emerging and traditional sectors transforming. Many professionals find themselves uncertain about which career path to pursue or how to develop the skills needed to advance. Our AI Career Coach bridges this gap by providing data-driven insights and personalized recommendations based on current market trends and your individual profile.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">How Our Career Coach Works</h3>
-                <p>
-                  Our career coaching tool uses advanced artificial intelligence to analyze your profile, including your education, work experience, skills, and career goals. Based on this analysis, we generate personalized career paths, identify skill gaps, and provide actionable recommendations for career advancement. The tool considers current market trends in Nigeria and globally to ensure its recommendations are relevant and valuable.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">Key Features of Our Career Coach</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Personalized Career Paths:</strong> Discover career options that align with your skills and interests</li>
-                  <li><strong>Skill Gap Analysis:</strong> Identify missing skills and get personalized development plans</li>
-                  <li><strong>Market Insights:</strong> Stay informed about industry trends and opportunities in Nigeria</li>
-                  <li><strong>Career Readiness Score:</strong> Understand how prepared you are for your target roles</li>
-                  <li><strong>Actionable Recommendations:</strong> Get specific steps to improve your career prospects</li>
-                </ul>
-
-                <h3 className="text-xl font-semibold text-gray-900">Understanding Your Career Readiness Score</h3>
-                <p>
-                  Your career readiness score is a comprehensive evaluation of your professional profile against your target career paths. The score considers multiple factors including your technical skills, soft skills, educational background, work experience, and industry relevance. A higher score indicates you're well-positioned for your desired roles, while a lower score suggests areas for improvement.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">Identifying and Bridging Skill Gaps</h3>
-                <p>
-                  One of the most valuable features of our Career Coach is the skill gap analysis. This feature compares your current skill set against the requirements of your target career paths and identifies specific gaps. For each skill gap, we provide a detailed development plan with recommended courses, certifications, and practical steps to acquire the missing skills. This targeted approach ensures you focus your learning efforts where they matter most.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">Exploring Career Paths in Nigeria</h3>
-                <p>
-                  Nigeria offers diverse career opportunities across various sectors including technology, finance, healthcare, manufacturing, entertainment, and emerging industries like fintech and e-commerce. Our Career Coach helps you explore these options and identify roles that match your skills and interests. Whether you're interested in traditional careers or emerging opportunities in the digital economy, we provide comprehensive guidance to help you make informed decisions.
-                </p>
-
-                <h3 className="text-xl font-semibold text-gray-900">Tips for Career Advancement</h3>
-                <p>
-                  Beyond using our Career Coach tool, here are essential tips for advancing your career in Nigeria: Continuously update your skills through formal education and professional certifications, build a strong professional network both online and offline, seek mentorship from experienced professionals in your field, maintain a strong online presence through LinkedIn and professional platforms, and stay updated with industry trends and developments. Remember, career growth is a journey that requires continuous learning and adaptation.
-                </p>
-
-                <p>
-                  Start your career transformation today with JobMeter's AI Career Coach. Get personalized insights, identify growth opportunities, and take actionable steps toward achieving your professional goals.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

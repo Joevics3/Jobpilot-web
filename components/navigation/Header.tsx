@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Briefcase, Bookmark, FileText, Wrench, Settings, ChevronRight } from 'lucide-react';
+import { Menu, X, Briefcase, Bookmark, BookOpen, Wrench, Settings, ChevronRight } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 const navItems = [
   { label: 'Jobs', href: '/jobs', icon: Briefcase },
   { label: 'Saved', href: '/saved', icon: Bookmark },
-  { label: 'CV', href: '/cv', icon: FileText },
   { label: 'Tools', href: '/tools', icon: Wrench },
+  { label: 'Resources', href: '/resource', icon: BookOpen },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
