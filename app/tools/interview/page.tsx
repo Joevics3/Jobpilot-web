@@ -13,6 +13,7 @@ export default function InterviewPage() {
   const [sessionHistory, setSessionHistory] = useState<InterviewSession[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [seoExpanded, setSeoExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadSessionHistory();
@@ -29,6 +30,8 @@ export default function InterviewPage() {
       setSessionHistory(cleanedHistory);
     } catch (error) {
       console.error('Error loading session history:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,7 +184,7 @@ export default function InterviewPage() {
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);
-          loadSessionHistory(); // Reload history after modal closes
+          loadSessionHistory();
         }}
       />
 
@@ -309,9 +312,6 @@ export default function InterviewPage() {
           }}
         />
       </div>
-
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 }
-
