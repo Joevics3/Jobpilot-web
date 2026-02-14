@@ -179,7 +179,7 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
       let coverLetterContent = null;
       if (createCoverLetter && coverLetterFormat) {
         coverLetterStructuredData = await generateCoverLetter({
-          userId: user.id,
+          userId: userId,
           jobId,
           jobPastedText,
           cvPastedText: JSON.stringify(cvStructuredData), // Pass CV structured data
@@ -467,4 +467,3 @@ export default function CreateCVModal({ isOpen, onClose, onComplete }: CreateCVM
     </Dialog>
   );
 }
-
