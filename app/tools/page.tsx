@@ -42,6 +42,7 @@ export default function ToolsPage() {
     {
       id: 'cv-tools',
       title: 'CV Tools',
+      description: 'Create, optimize, and improve your CV and cover letters',
       icon: FileText,
       color: '#2563EB',
       tools: [
@@ -74,6 +75,7 @@ export default function ToolsPage() {
     {
       id: 'career-tools',
       title: 'Career Tools',
+      description: 'Get guidance and prepare for your career growth',
       icon: Briefcase,
       color: '#F59E0B',
       tools: [
@@ -106,6 +108,7 @@ export default function ToolsPage() {
     {
       id: 'safety-tools',
       title: 'Safety Tools',
+      description: 'Protect yourself from job scams and fraud',
       icon: Shield,
       color: '#EF4444',
       tools: [
@@ -130,6 +133,7 @@ export default function ToolsPage() {
     {
       id: 'salary-tools',
       title: 'Salary Tools',
+      description: 'Calculate and understand your salary and taxes',
       icon: Calculator,
       color: '#3B82F6',
       tools: [
@@ -146,6 +150,7 @@ export default function ToolsPage() {
     {
       id: 'opportunity-tools',
       title: 'Opportunity Tools',
+      description: 'Find remote jobs and opportunities',
       icon: Laptop,
       color: '#06B6D4',
       tools: [
