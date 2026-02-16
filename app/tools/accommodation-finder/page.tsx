@@ -8,7 +8,7 @@ import JobCard from '@/components/jobs/JobCard';
 import { JobUI } from '@/components/jobs/JobCard';
 import MatchBreakdownModal from '@/components/jobs/MatchBreakdownModal';
 import { MatchBreakdownModalData } from '@/components/jobs/MatchBreakdownModal';
-import { ChevronDown, Briefcase, Globe, Wifi, Search, Filter, X } from 'lucide-react';
+import { ChevronDown, Briefcase, Home, Search, Filter, X } from 'lucide-react';
 import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine';
 import { matchCacheService } from '@/lib/matching/matchCache';
 
@@ -17,9 +17,9 @@ const STORAGE_KEYS = {
   APPLIED_JOBS: 'applied_jobs',
 };
 
-const JOBS_PER_PAGE = 50;
+const JOBS_PER_PAGE = 20;
 
-export default function RemoteJobsPage() {
+export default function AccommodationFinderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -33,15 +33,13 @@ export default function RemoteJobsPage() {
   const [sortBy, setSortBy] = useState<'match' | 'date'>('date');
   const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
   
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     sector: [] as string[],
-    employmentType: [] as string[],
+    location: [] as string[],
   });
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,8 +49,11 @@ export default function RemoteJobsPage() {
     'Healthcare', 'Education', 'Engineering', 'Admin', 'Customer Service', 
     'Legal', 'HR', 'Manufacturing', 'Retail', 'Media'
   ];
-  
-  const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance'];
+
+  const locations = [
+    'Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 
+    'Benin City', 'Abuja', 'Remote'
+  ];
 
   useEffect(() => {
     checkAuth();
@@ -78,20 +79,19 @@ export default function RemoteJobsPage() {
   }, [user]);
 
   useEffect(() => {
-    // Initialize from URL params
     const searchParam = searchParams.get('search');
     const sectorParam = searchParams.get('sector');
-    const employmentTypeParam = searchParams.get('employmentType');
+    const locationParam = searchParams.get('location');
     const pageParam = searchParams.get('page');
 
     if (searchParam) setSearchQuery(searchParam);
     if (sectorParam) setFilters(prev => ({ ...prev, sector: sectorParam.split(',') }));
-    if (employmentTypeParam) setFilters(prev => ({ ...prev, employmentType: employmentTypeParam.split(',') }));
+    if (locationParam) setFilters(prev => ({ ...prev, location: locationParam.split(',') }));
     if (pageParam) setCurrentPage(parseInt(pageParam));
   }, [searchParams]);
 
   useEffect(() => {
-    fetchRemoteJobs();
+    fetchAccommodationJobs();
   }, [currentPage, filters, user, userOnboardingData]);
 
   const checkAuth = async () => {
@@ -129,7 +129,7 @@ export default function RemoteJobsPage() {
     }
   };
 
-  const fetchRemoteJobs = async () => {
+  const fetchAccommodationJobs = async () => {
     try {
       setLoading(true);
       
@@ -137,12 +137,11 @@ export default function RemoteJobsPage() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
       
-      // Build query for counting total
       let countQuery = supabase
         .from('jobs')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active')
-        .eq('location->>remote', 'true')
+        .eq('accommodation_status', 'yes')
         .gte('created_at', thirtyDaysAgoISO);
 
       if (searchQuery) {
@@ -151,8 +150,11 @@ export default function RemoteJobsPage() {
       if (filters.sector.length > 0) {
         countQuery = countQuery.in('sector', filters.sector);
       }
-      if (filters.employmentType.length > 0) {
-        countQuery = countQuery.in('employment_type', filters.employmentType);
+      if (filters.location.length > 0) {
+        const locationFilters = filters.location.map(loc => 
+          loc === 'Remote' ? 'location->>remote.eq.true' : `location->>country.ilike.%${loc}%,location->>city.ilike.%${loc}%`
+        );
+        countQuery = countQuery.or(locationFilters.join(','));
       }
 
       const { count, error: countError } = await countQuery;
@@ -161,14 +163,13 @@ export default function RemoteJobsPage() {
       
       const total = count || 0;
       setTotalJobs(total);
-      setTotalPages(Math.ceil(total / JOBS_PER_PAGE));
+      setTotalPages(total > 0 ? Math.ceil(total / JOBS_PER_PAGE) : 1);
 
-      // Fetch actual jobs for current page
       let query = supabase
         .from('jobs')
         .select('*')
         .eq('status', 'active')
-        .eq('location->>remote', 'true')
+        .eq('accommodation_status', 'yes')
         .gte('created_at', thirtyDaysAgoISO)
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * JOBS_PER_PAGE, currentPage * JOBS_PER_PAGE - 1);
@@ -179,8 +180,11 @@ export default function RemoteJobsPage() {
       if (filters.sector.length > 0) {
         query = query.in('sector', filters.sector);
       }
-      if (filters.employmentType.length > 0) {
-        query = query.in('employment_type', filters.employmentType);
+      if (filters.location.length > 0) {
+        const locationFilters = filters.location.map(loc => 
+          loc === 'Remote' ? 'location->>remote.eq.true' : `location->>country.ilike.%${loc}%,location->>city.ilike.%${loc}%`
+        );
+        query = query.or(locationFilters.join(','));
       }
 
       const { data, error } = await query;
@@ -202,7 +206,7 @@ export default function RemoteJobsPage() {
 
       setJobs(processedJobs);
     } catch (error) {
-      console.error('Error fetching remote jobs:', error);
+      console.error('Error fetching accommodation jobs:', error);
       setJobs([]);
     } finally {
       setLoading(false);
@@ -286,7 +290,17 @@ export default function RemoteJobsPage() {
     const finalMatchScore = user ? matchScore : 0;
     const finalBreakdown = user ? breakdown : null;
     
-    let locationStr = 'Remote';
+    let locationStr = 'Location not specified';
+    if (typeof job.location === 'string') {
+      locationStr = job.location;
+    } else if (job.location && typeof job.location === 'object') {
+      if (job.location.remote) {
+        locationStr = 'Remote';
+      } else {
+        const parts = [job.location.city, job.location.state, job.location.country].filter(Boolean);
+        locationStr = parts.length > 0 ? parts.join(', ') : 'Location not specified';
+      }
+    }
     
     let companyStr = 'Unknown Company';
     if (typeof job.company === 'string') {
@@ -382,15 +396,14 @@ export default function RemoteJobsPage() {
 
   const updateURL = () => {
     const params = new URLSearchParams();
-    params.set('remote', 'true');
     if (searchQuery) params.set('search', searchQuery);
     if (filters.sector.length > 0) params.set('sector', filters.sector.join(','));
-    if (filters.employmentType.length > 0) params.set('employmentType', filters.employmentType.join(','));
+    if (filters.location.length > 0) params.set('location', filters.location.join(','));
     if (currentPage > 1) params.set('page', currentPage.toString());
-    router.push(`/tools/remote-jobs-finder?${params.toString()}`);
+    router.push(`/tools/accommodation-finder?${params.toString()}`);
   };
 
-  const handleFilterChange = (filterType: 'sector' | 'employmentType', value: string) => {
+  const handleFilterChange = (filterType: 'sector' | 'location', value: string) => {
     setFilters(prev => {
       const current = prev[filterType];
       const updated = current.includes(value)
@@ -402,10 +415,10 @@ export default function RemoteJobsPage() {
   };
 
   const clearFilters = () => {
-    setFilters({ sector: [], employmentType: [] });
+    setFilters({ sector: [], location: [] });
     setSearchQuery('');
     setCurrentPage(1);
-    router.push('/tools/remote-jobs-finder?remote=true');
+    router.push('/tools/accommodation-finder');
   };
 
   const sortedJobs = [...jobs].sort((a, b) => {
@@ -417,7 +430,7 @@ export default function RemoteJobsPage() {
     return dateB - dateA;
   });
 
-  const hasFilters = searchQuery || filters.sector.length > 0 || filters.employmentType.length > 0;
+  const hasFilters = searchQuery || filters.sector.length > 0 || filters.location.length > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
@@ -431,13 +444,13 @@ export default function RemoteJobsPage() {
             ← Back to Tools
           </a>
           <div className="flex items-center gap-3 mb-2">
-            <Wifi size={32} />
+            <Home size={32} />
             <h1 className="text-2xl font-bold" style={{ color: theme.colors.text.light }}>
-              Remote Jobs
+              Jobs with Accommodation
             </h1>
           </div>
           <p className="text-sm" style={{ color: theme.colors.text.light }}>
-            Find remote job opportunities in Nigeria and worldwide
+            Find jobs that offer accommodation benefits
           </p>
         </div>
       </div>
@@ -453,7 +466,7 @@ export default function RemoteJobsPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search remote jobs (job title, company)..."
+                  placeholder="Search jobs with accommodation..."
                   className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -499,21 +512,21 @@ export default function RemoteJobsPage() {
                 </div>
               </div>
 
-              {/* Employment Type Filter */}
+              {/* Location Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                 <div className="flex flex-wrap gap-2">
-                  {employmentTypes.map(type => (
+                  {locations.map(location => (
                     <button
-                      key={type}
-                      onClick={() => handleFilterChange('employmentType', type)}
+                      key={location}
+                      onClick={() => handleFilterChange('location', location)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        filters.employmentType.includes(type)
+                        filters.location.includes(location)
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {type}
+                      {location}
                     </button>
                   ))}
                 </div>
@@ -535,7 +548,7 @@ export default function RemoteJobsPage() {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-gray-600">
-            {loading ? 'Loading...' : `${totalJobs.toLocaleString()} remote jobs found`}
+            {loading ? 'Loading...' : `${totalJobs.toLocaleString()} jobs with accommodation found`}
             {hasFilters && ` (filtered)`}
           </p>
           <div className="flex items-center gap-3">
@@ -555,16 +568,16 @@ export default function RemoteJobsPage() {
           <div className="divide-y" style={{ borderColor: theme.colors.border.DEFAULT }}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <p style={{ color: theme.colors.text.secondary }}>Loading remote jobs...</p>
+                <p style={{ color: theme.colors.text.secondary }}>Loading jobs with accommodation...</p>
               </div>
             ) : sortedJobs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
-                <Globe size={48} className="text-gray-400 mb-4" />
+                <Home size={48} className="text-gray-400 mb-4" />
                 <p className="text-base font-medium mb-2" style={{ color: theme.colors.text.primary }}>
-                  No remote jobs found
+                  No jobs with accommodation found
                 </p>
                 <p className="text-sm text-center" style={{ color: theme.colors.text.secondary }}>
-                  {hasFilters ? 'Try adjusting your filters' : 'Check back later for new remote opportunities'}
+                  {hasFilters ? 'Try adjusting your filters' : 'Check back later for new opportunities with accommodation'}
                 </p>
                 {hasFilters && (
                   <button

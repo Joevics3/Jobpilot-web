@@ -7,7 +7,10 @@ import {
   Building2, 
   Newspaper,
   MapPin,
-  ArrowRight
+  ArrowRight,
+  Laptop,
+  GraduationCap,
+  Home
 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
@@ -27,7 +30,7 @@ export default function ResourcePage() {
       description: 'Find jobs in different cities and states',
       icon: MapPin,
       color: '#10B981',
-      route: '/jobs',
+      route: '/jobs/state',
     },
     {
       id: 'blogs',
@@ -45,6 +48,30 @@ export default function ResourcePage() {
       color: '#F59E0B',
       route: '/company',
     },
+        {
+          id: 'remote-jobs',
+          title: 'Remote Jobs',
+          description: 'Find remote job opportunities in Nigeria and worldwide',
+          icon: Laptop,
+          color: '#06B6D4',
+          route: '/tools/remote-jobs-finder',
+        },
+        {
+          id: 'internship-finder',
+          title: 'Internship Finder',
+          description: 'Find internship opportunities to kickstart your career',
+          icon: GraduationCap,
+          color: '#8B5CF6',
+          route: '/tools/internship-finder',
+        },
+        {
+          id: 'accommodation-finder',
+          title: 'Jobs with Accommodation',
+          description: 'Find jobs that offer accommodation benefits',
+          icon: Home,
+          color: '#14B8A6',
+          route: '/tools/accommodation-finder',
+        },
   ];
 
   return (
