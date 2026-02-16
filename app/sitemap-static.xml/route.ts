@@ -21,6 +21,11 @@ export async function GET() {
     { url: `${siteUrl}/tools/scam-checker`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${siteUrl}/tools/paye-calculator`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${siteUrl}/tools/remote-jobs-finder`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${siteUrl}/tools/internship-finder`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${siteUrl}/tools/accommodation-finder`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${siteUrl}/jobs/intern`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${siteUrl}/jobs/accommodation`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${siteUrl}/jobs/remote`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
     { url: `${siteUrl}/cv`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${siteUrl}/cv/create`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
   ];
