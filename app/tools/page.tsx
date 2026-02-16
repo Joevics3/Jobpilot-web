@@ -8,12 +8,10 @@ import {
   Search, 
   Shield, 
   Calculator, 
-  Laptop, 
   MessageCircle, 
   GraduationCap,
   ArrowRight,
-  Briefcase,
-  Home
+  Briefcase
 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
@@ -145,39 +143,6 @@ export default function ToolsPage() {
           icon: Calculator,
           color: '#3B82F6',
           route: '/tools/paye-calculator',
-        },
-      ],
-    },
-    {
-      id: 'job-finders',
-      title: 'Job Finders',
-      description: 'Find specific types of jobs',
-      icon: Briefcase,
-      color: '#06B6D4',
-      tools: [
-        {
-          id: 'remote-jobs',
-          title: 'Remote Jobs',
-          description: 'Find remote job opportunities in Nigeria and worldwide',
-          icon: Laptop,
-          color: '#06B6D4',
-          route: '/tools/remote-jobs-finder',
-        },
-        {
-          id: 'internship-finder',
-          title: 'Internship Finder',
-          description: 'Find internship opportunities to kickstart your career',
-          icon: GraduationCap,
-          color: '#8B5CF6',
-          route: '/tools/internship-finder',
-        },
-        {
-          id: 'accommodation-finder',
-          title: 'Jobs with Accommodation',
-          description: 'Find jobs that offer accommodation benefits',
-          icon: Home,
-          color: '#14B8A6',
-          route: '/tools/accommodation-finder',
         },
       ],
     },
