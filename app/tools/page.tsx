@@ -90,6 +90,7 @@ export default function ToolsPage() {
         {
           id: 'career',
           title: 'Career Coach',
+          description: 'Get personalized career guidance and advice',
           icon: GraduationCap,
           color: '#F59E0B',
           route: '/tools/career',
