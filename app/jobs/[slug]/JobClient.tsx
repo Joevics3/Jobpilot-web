@@ -369,6 +369,15 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
             <div className="lg:col-span-2 space-y-6">
               {/* Job Header */}
               <div className="bg-white rounded-xl shadow-sm p-6">
+                {/* Job Expiry Warning */}
+                {job.deadline && new Date(job.deadline) < new Date() && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm font-medium text-red-700">
+                      This job has expired on {new Date(job.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                )}
+                
                 <h1 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: theme.colors.primary.DEFAULT }}>
                   {job.title || 'Untitled Job'}
                 </h1>

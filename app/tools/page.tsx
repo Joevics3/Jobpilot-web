@@ -42,6 +42,7 @@ export default function ToolsPage() {
     {
       id: 'cv-tools',
       title: 'CV Tools',
+      description: 'Build and optimize your CV',
       icon: FileText,
       color: '#2563EB',
       tools: [
@@ -74,6 +75,7 @@ export default function ToolsPage() {
     {
       id: 'career-tools',
       title: 'Career Tools',
+      description: 'Tools to help advance your career',
       icon: Briefcase,
       color: '#F59E0B',
       tools: [
@@ -105,6 +107,7 @@ export default function ToolsPage() {
     {
       id: 'safety-tools',
       title: 'Safety Tools',
+      description: 'Stay safe from job scams',
       icon: Shield,
       color: '#EF4444',
       tools: [
@@ -129,6 +132,7 @@ export default function ToolsPage() {
     {
       id: 'salary-tools',
       title: 'Salary Tools',
+      description: 'Calculate and compare salaries',
       icon: Calculator,
       color: '#3B82F6',
       tools: [
