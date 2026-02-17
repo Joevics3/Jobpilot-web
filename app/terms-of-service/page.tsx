@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
       <div className="px-4 sm:px-6 py-6 max-w-4xl mx-auto">
         <div className="mb-8 p-5 bg-gray-50 rounded-xl border-l-4" style={{ borderLeftColor: theme.colors.success }}>
           <p className="text-base text-gray-700 leading-relaxed mb-4">
-            Welcome to JobPilot! These Terms of Service ("Terms") govern your use of our smart job matching platform and services. By accessing or using JobPilot, you agree to be bound by these Terms.
+            Welcome to JobMeter! These Terms of Service ("Terms") govern your use of our smart job matching platform and services. By accessing or using JobMeter, you agree to be bound by these Terms.
           </p>
           <p className="text-sm text-gray-600 italic">
             Last updated: {new Date().toLocaleDateString()}
@@ -37,12 +37,12 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              By creating an account, accessing, or using JobPilot's services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these Terms, you may not use our services.
+              By creating an account, accessing, or using JobMeter's services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these Terms, you may not use our services.
             </p>
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">1.1 Eligibility</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              To use JobPilot, you must:
+              To use JobMeter, you must:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Be at least 16 years of age (or the age of majority in your jurisdiction)</li>
@@ -68,7 +68,7 @@ export default function TermsOfServicePage() {
             
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">2.1 Core Services</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              JobPilot provides a smart platform that:
+              JobMeter provides a smart platform that:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Analyzes CVs and professional profiles using advanced technology</li>
@@ -92,7 +92,7 @@ export default function TermsOfServicePage() {
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">2.3 Service Availability</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              While we strive to maintain continuous service availability, JobPilot is provided "as is" and we do not guarantee uninterrupted access. We may suspend or modify services for maintenance, updates, or other operational reasons.
+              While we strive to maintain continuous service availability, JobMeter is provided "as is" and we do not guarantee uninterrupted access. We may suspend or modify services for maintenance, updates, or other operational reasons.
             </p>
           </section>
 
@@ -101,7 +101,7 @@ export default function TermsOfServicePage() {
             
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">3.1 Acceptable Use</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              You agree to use JobPilot only for lawful purposes and in accordance with these Terms. You may not:
+              You agree to use JobMeter only for lawful purposes and in accordance with these Terms. You may not:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Violate any applicable laws, regulations, or third-party rights</li>
@@ -140,12 +140,12 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-4">4. Intellectual Property Rights</h2>
             
-            <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">4.1 JobPilot's Intellectual Property</h3>
+            <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">4.1 JobMeter's Intellectual Property</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              JobPilot and its licensors own all rights, title, and interest in and to:
+              JobMeter and its licensors own all rights, title, and interest in and to:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
-              <li>The JobPilot platform, software, and technology</li>
+              <li>The JobMeter platform, software, and technology</li>
               <li>Algorithms, data processing methods, and platform technology</li>
               <li>Trademarks, logos, and brand elements</li>
               <li>Documentation, user guides, and training materials</li>
@@ -154,7 +154,7 @@ export default function TermsOfServicePage() {
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">4.2 User Content</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              You retain ownership of your personal information and content. However, by using our services, you grant JobPilot a non-exclusive, royalty-free license to:
+              You retain ownership of your personal information and content. However, by using our services, you grant JobMeter a non-exclusive, royalty-free license to:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Use, process, and analyze your information to provide our services</li>
@@ -216,7 +216,7 @@ export default function TermsOfServicePage() {
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">6.2 No Guarantee of Employment</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              JobPilot is a job matching platform and does not guarantee:
+              JobMeter is a job matching platform and does not guarantee:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Job placement or employment opportunities</li>
@@ -242,7 +242,7 @@ export default function TermsOfServicePage() {
             
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">7.1 Free Services</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              JobPilot offers free access to basic job matching services. Premium features may be available for a fee, and any paid services will be clearly disclosed before purchase.
+              JobMeter offers free access to basic job matching services. Premium features may be available for a fee, and any paid services will be clearly disclosed before purchase.
             </p>
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">7.2 Premium Services</h3>
@@ -267,7 +267,7 @@ export default function TermsOfServicePage() {
             
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">8.1 Service Disclaimers</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              JobPilot is provided "as is" and "as available" without warranties of any kind. We disclaim all warranties, express or implied, including:
+              JobMeter is provided "as is" and "as available" without warranties of any kind. We disclaim all warranties, express or implied, including:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Warranties of merchantability and fitness for a particular purpose</li>
@@ -278,7 +278,7 @@ export default function TermsOfServicePage() {
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">8.2 Limitation of Liability</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              To the maximum extent permitted by law, JobPilot shall not be liable for:
+              To the maximum extent permitted by law, JobMeter shall not be liable for:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Indirect, incidental, special, or consequential damages</li>
@@ -297,7 +297,7 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-4">9. Indemnification</h2>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              You agree to indemnify, defend, and hold harmless JobPilot and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorneys' fees) arising from:
+              You agree to indemnify, defend, and hold harmless JobMeter and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorneys' fees) arising from:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 mb-3 ml-4">
               <li>Your use of our services</li>
@@ -321,7 +321,7 @@ export default function TermsOfServicePage() {
               <li>Ceasing to use our services</li>
             </ul>
 
-            <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">10.2 Termination by JobPilot</h3>
+            <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">10.2 Termination by JobMeter</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
               We may suspend or terminate your account if you:
             </p>
@@ -373,7 +373,7 @@ export default function TermsOfServicePage() {
             
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">12.1 Entire Agreement</h3>
             <p className="text-sm text-gray-600 leading-relaxed mb-3">
-              These Terms, together with our Privacy Policy, constitute the entire agreement between you and JobPilot regarding your use of our services.
+              These Terms, together with our Privacy Policy, constitute the entire agreement between you and JobMeter regarding your use of our services.
             </p>
 
             <h3 className="text-base font-semibold text-gray-700 mt-4 mb-2">12.2 Severability</h3>
@@ -417,7 +417,7 @@ export default function TermsOfServicePage() {
 
         <div className="mt-10 mb-8 p-5 bg-gray-50 rounded-xl text-center">
           <p className="text-xs text-gray-600 leading-relaxed">
-            These Terms of Service are effective as of {new Date().toLocaleDateString()} and apply to all users of the JobPilot platform. By continuing to use our services, you acknowledge that you have read and agree to be bound by these Terms.
+            These Terms of Service are effective as of {new Date().toLocaleDateString()} and apply to all users of the JobMeter platform. By continuing to use our services, you acknowledge that you have read and agree to be bound by these Terms.
           </p>
         </div>
       </div>
