@@ -81,7 +81,6 @@ Return ONLY valid JSON, no additional text.`;
               generationConfig: {
                 temperature: 0.3,
                 maxOutputTokens: 2048,
-                responseMimeType: 'application/json',
               }
             })
           }

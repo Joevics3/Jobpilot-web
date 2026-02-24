@@ -170,8 +170,7 @@ export default function NYSCFinderPage() {
         .from('jobs')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active')
-        .eq('role_category', 'nysc')
-        .gte('created_at', thirtyDaysAgoISO);
+        .eq('role_category', 'nysc');
 
       if (searchQuery) {
         countQuery = countQuery.or(`title.ilike.%${searchQuery}%,company->>name.ilike.%${searchQuery}%`);
@@ -188,6 +187,8 @@ export default function NYSCFinderPage() {
 
       const { count, error: countError } = await countQuery;
       
+      console.log('NYSC Count:', count, countError);
+      
       if (countError) throw countError;
       
       const total = count || 0;
@@ -199,7 +200,7 @@ export default function NYSCFinderPage() {
         .select('*')
         .eq('status', 'active')
         .eq('role_category', 'nysc')
-        .gte('created_at', thirtyDaysAgoISO)
+        .order('created_at', { ascending: false })
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * JOBS_PER_PAGE, currentPage * JOBS_PER_PAGE - 1);
 
@@ -218,6 +219,8 @@ export default function NYSCFinderPage() {
 
       const { data, error } = await query;
 
+      console.log('NYSC Jobs:', data?.length, error);
+      
       if (error) throw error;
 
       let processedJobs;
@@ -485,86 +488,27 @@ export default function NYSCFinderPage() {
       </div>
 
       <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
-        {/* Search & Filters */}
+        {/* Search */}
         <div className="bg-white rounded-2xl p-4 mb-6" style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}>
-          <form onSubmit={handleSearch} className="mb-4">
+          <form onSubmit={handleSearch}>
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search NYSC jobs (job title, company)..."
-                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search NYSC jobs..."
+                className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
               <button
                 type="submit"
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2"
+                className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center"
               >
                 <Search size={18} />
-                Search
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className={`px-4 py-3 border rounded-xl flex items-center gap-2 ${filtersOpen ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}`}
-              >
-                <Filter size={18} />
-                Filters
-                {hasFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
               </button>
             </div>
           </form>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {categories.map(cat => {
-              const Icon = cat.icon;
-              return (
-                <a
-                  key={cat.id}
-                  href={cat.url}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                >
-                  <Icon size={12} />
-                  {cat.label}
-                </a>
-              );
-            })}
-          </div>
-
-          {/* Role Quick Filters */}
-          <div className="flex flex-wrap gap-1.5">
-            {visibleRoles.map(role => (
-              <button
-                key={role}
-                onClick={() => { setSearchQuery(role); setCurrentPage(1); updateURL(); }}
-                className="px-2.5 py-1 rounded-full text-xs bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 hover:border-blue-200 transition-colors"
-              >
-                {role}
-              </button>
-            ))}
-            {!rolesExpanded && (
-              <button
-                onClick={() => setRolesExpanded(true)}
-                className="px-2.5 py-1 rounded-full text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                +{popularRoles.length - 14} more
-              </button>
-            )}
-            {rolesExpanded && (
-              <button
-                onClick={() => setRolesExpanded(false)}
-                className="px-2.5 py-1 rounded-full text-xs text-gray-500 hover:text-gray-700"
-              >
-                Show less
-              </button>
-            )}
-          </div>
-
-          {/* Filters Panel */}
+          {/* Results Summary */}
           {filtersOpen && (
             <div className="pt-4 border-t space-y-4">
               {/* Sector Filter */}
@@ -651,6 +595,7 @@ export default function NYSCFinderPage() {
                 <p className="text-base font-medium mb-2" style={{ color: theme.colors.text.primary }}>
                   No NYSC jobs found
                 </p>
+                <p className="text-xs text-gray-400 mt-2">Debug: {totalJobs} total jobs</p>
                 <p className="text-sm text-center" style={{ color: theme.colors.text.secondary }}>
                   {hasFilters ? 'Try adjusting your filters' : 'Check back later for new NYSC job opportunities'}
                 </p>

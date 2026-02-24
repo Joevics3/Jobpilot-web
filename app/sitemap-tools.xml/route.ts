@@ -14,6 +14,11 @@ const tools = [
   { slug: 'remote-jobs-finder', name: 'Remote Jobs Finder' },
   { slug: 'internship-finder', name: 'Internship Finder' },
   { slug: 'accommodation-finder', name: 'Accommodation Finder' },
+  { slug: 'nysc-finder', name: 'NYSC Job Finder' },
+  { slug: 'graduate-trainee-finder', name: 'Graduate Trainee Finder' },
+  { slug: 'entry-level-finder', name: 'Entry Level Jobs Finder' },
+  { slug: 'visa-finder', name: 'Visa Sponsorship Jobs Finder' },
+  { slug: 'quiz', name: 'Company Quiz Platform' },
 ];
 
 export async function GET() {

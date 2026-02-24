@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Target, Users, Globe, Briefcase, TrendingUp, Shield } from 'lucide-react';
+import { ArrowLeft, Globe, Shield } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 export default function AboutPage() {
@@ -28,44 +28,11 @@ export default function AboutPage() {
         <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-green-50 rounded-xl border border-blue-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to JobMeter</h2>
           <p className="text-base text-gray-700 leading-relaxed mb-3">
-            JobMeter is a comprehensive online platform designed to connect job seekers with employment opportunities across multiple industries and countries. Our mission is to simplify the job search process, making it easier for candidates to find roles that match their skills, experience, and career goals, while also helping employers reach qualified talent efficiently.
+            JobMeter was founded by Joevics, a tech expert with extensive experience helping people find their dream jobs through better tools, insights, and resources.
           </p>
-          <p className="text-sm text-gray-600 italic">
-            Your trusted partner in navigating the global job market
+          <p className="text-base text-gray-700 leading-relaxed">
+            Our goal is to make job searching faster, fairer, and more effective by providing up-to-date job listings, original career tools, and well-researched articles with practical advice.
           </p>
-        </div>
-
-        {/* Mission & Vision */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Target size={24} style={{ color: theme.colors.primary.DEFAULT }} />
-            Our Mission
-          </h2>
-          <p className="text-sm text-gray-700 leading-relaxed mb-6">
-            At JobMeter, our mission is to empower individuals to achieve their career aspirations by providing accessible, efficient, and intelligent job matching services. We believe that finding the right job shouldn't be a daunting task—it should be a seamless experience that connects talent with opportunity.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ backgroundColor: theme.colors.accent.blue + '20' }}>
-                <Users size={24} style={{ color: theme.colors.accent.blue }} />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">For Job Seekers</h3>
-              <p className="text-sm text-gray-600">
-                We provide intelligent matching, career tools, and resources to help you find opportunities that align with your skills and goals.
-              </p>
-            </div>
-
-            <div className="p-4 bg-green-50 rounded-xl border border-green-100">
-              <div className="w-12 h-12 rounded-lg mb-3 flex items-center justify-center" style={{ backgroundColor: theme.colors.success + '20' }}>
-                <Briefcase size={24} style={{ color: theme.colors.success }} />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">For Employers</h3>
-              <p className="text-sm text-gray-600">
-                We connect you with qualified candidates efficiently, helping you build strong teams with the right talent.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* What We Offer */}
@@ -77,77 +44,33 @@ export default function AboutPage() {
           
           <div className="space-y-4">
             <div className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
-              <h3 className="font-semibold text-gray-900 mb-2">Comprehensive Job Listings</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Up-to-date Job Listings</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Explore job opportunities across a wide range of sectors—from entry-level positions to specialized professional roles. Our platform provides detailed job information, including responsibilities, required skills, salary ranges, and location, empowering you to make informed decisions.
+                We curate the latest job opportunities from verified employers, helping you find positions that are actively hiring.
               </p>
             </div>
 
             <div className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
-              <h3 className="font-semibold text-gray-900 mb-2">Smart CV Creation & Analysis</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Original Career Tools</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Our advanced CV creation tools help you build professional resumes that stand out. We analyze your CV using intelligent algorithms to extract key skills, experience, and qualifications, ensuring better job matches.
+                From CV builders to ATS reviews, salary calculators to interview practice—our tools are designed to give you a competitive edge in your job search.
               </p>
             </div>
 
             <div className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
-              <h3 className="font-semibold text-gray-900 mb-2">Intelligent Job Matching</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Well-Researched Articles</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Our smart matching technology considers your skills, experience, location preferences, salary expectations, and career goals to recommend positions that truly fit your profile.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
-              <h3 className="font-semibold text-gray-900 mb-2">Career Development Tools</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Access interview preparation guides, application tracking, career advice, industry insights, and practical tips to optimize your chances of success and grow professionally.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
-              <h3 className="font-semibold text-gray-900 mb-2">Global Reach</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Whether you're looking for local opportunities or international positions, JobMeter connects you with employers across multiple countries and industries.
+                Practical career advice, salary guides, interview tips, and industry insights to help you navigate your career journey with confidence.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Why Choose JobMeter */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp size={24} style={{ color: theme.colors.primary.DEFAULT }} />
-            Why Choose JobMeter?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 text-center bg-gray-50 rounded-xl">
-              <div className="text-3xl font-bold mb-2" style={{ color: theme.colors.primary.DEFAULT }}>
-                Intuitive
-              </div>
-              <p className="text-sm text-gray-600">
-                User-friendly interface designed for seamless job searching
-              </p>
-            </div>
-
-            <div className="p-4 text-center bg-gray-50 rounded-xl">
-              <div className="text-3xl font-bold mb-2" style={{ color: theme.colors.primary.DEFAULT }}>
-                Intelligent
-              </div>
-              <p className="text-sm text-gray-600">
-                Advanced algorithms for accurate job matching
-              </p>
-            </div>
-
-            <div className="p-4 text-center bg-gray-50 rounded-xl">
-              <div className="text-3xl font-bold mb-2" style={{ color: theme.colors.primary.DEFAULT }}>
-                Accessible
-              </div>
-              <p className="text-sm text-gray-600">
-                Connect with opportunities anytime, anywhere
-              </p>
-            </div>
-          </div>
+        {/* Our Passion */}
+        <div className="mb-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
+          <p className="text-sm text-gray-700 leading-relaxed">
+            We are passionate about empowering job seekers and continuously improving the platform based on real user needs.
+          </p>
         </div>
 
         {/* Our Commitment */}
@@ -158,9 +81,6 @@ export default function AboutPage() {
           </h2>
           
           <div className="p-5 bg-blue-50 rounded-xl border border-blue-100">
-            <p className="text-sm text-gray-700 leading-relaxed mb-3">
-              At JobMeter, we are committed to maintaining the highest standards of service quality, data security, and user privacy. We continuously innovate and improve our platform to ensure:
-            </p>
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
                 <span className="font-bold" style={{ color: theme.colors.primary.DEFAULT }}>•</span>
@@ -169,10 +89,6 @@ export default function AboutPage() {
               <li className="flex items-start gap-2">
                 <span className="font-bold" style={{ color: theme.colors.primary.DEFAULT }}>•</span>
                 <span>Job listings are from verified and legitimate employers</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="font-bold" style={{ color: theme.colors.primary.DEFAULT }}>•</span>
-                <span>Our matching algorithms are fair, unbiased, and continuously improving</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-bold" style={{ color: theme.colors.primary.DEFAULT }}>•</span>

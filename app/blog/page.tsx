@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Newspaper, TrendingUp, Calendar, Eye, ArrowRight } from 'lucide-react';
+import { Newspaper, Calendar, Eye, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { BlogSchema } from '@/components/seo/StructuredData';
 
@@ -58,23 +58,11 @@ async function getBlogPosts(): Promise<BlogPost[]> {
   }
 }
 
-// Get unique categories
-function getCategories(posts: BlogPost[]): string[] {
-  const categories = posts
-    .map(p => p.category)
-    .filter((c): c is string => c !== null);
-  return Array.from(new Set(categories));
-}
-
 export const revalidate = 86400; // 24 hours - blog changes daily
 
 export default async function BlogPage() {
   const posts = await getBlogPosts();
-  const categories = getCategories(posts);
   
-  const featuredPost = posts[0];
-  const recentPosts = posts.slice(1);
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -92,14 +80,8 @@ export default async function BlogPage() {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="text-white" style={{ backgroundColor: '#2563EB' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex items-center gap-3 mb-4">
-              <Newspaper size={32} />
-              <h1 className="text-4xl font-bold">Career Blog & Articles</h1>
-            </div>
-            <p className="text-lg text-white max-w-3xl">
-              Expert insights, salary guides, and career tips to help you succeed in your job search and professional growth.
-            </p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-bold">Career Blog</h1>
           </div>
         </div>
 
@@ -124,83 +106,11 @@ export default async function BlogPage() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Featured Post */}
-              {featuredPost && (
-                <section className="mb-12">
-                  <div className="flex items-center gap-2 mb-6">
-                    <TrendingUp size={24} className="text-blue-600" />
-                    <h2 className="text-2xl font-bold text-gray-900">Featured Article</h2>
-                  </div>
-                  <Link href={`/blog/${featuredPost.slug}`}>
-                    <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-gray-200">
-                      <div className="grid md:grid-cols-2 gap-0">
-                        {featuredPost.featured_image_url && (
-                          <div className="relative h-64 md:h-auto">
-                            <Image
-                              src={featuredPost.featured_image_url}
-                              alt={featuredPost.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="p-8">
-                          {featuredPost.category && (
-                            <span className="inline-block text-xs font-semibold text-blue-600 mb-2">
-                              {featuredPost.category}
-                            </span>
-                          )}
-                          <h3 className="text-3xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
-                            {featuredPost.title}
-                          </h3>
-                          {featuredPost.excerpt && (
-                            <p className="text-gray-600 mb-4 text-lg">
-                              {featuredPost.excerpt}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={16} />
-                              <span>{formatDate(featuredPost.published_at)}</span>
-                            </div>
-                            {featuredPost.read_time_minutes && (
-                              <span>{featuredPost.read_time_minutes} min read</span>
-                            )}
-                            {featuredPost.view_count > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Eye size={16} />
-                                <span>{featuredPost.view_count}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                </section>
-              )}
-
-              {/* Categories Filter (Optional - can be added later) */}
-              {categories.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <span className="text-sm font-medium text-gray-700">Categories:</span>
-                  {categories.map((category) => (
-                    <span
-                      key={category}
-                      className="px-3 py-1 text-sm bg-white border border-gray-300 text-gray-700 rounded-full hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-colors"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Recent Posts Grid */}
-              {recentPosts.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Articles</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {recentPosts.map((post) => (
+              {/* All Posts Grid */}
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Articles</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {posts.map((post) => (
                       <article
                         key={post.id}
                         className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 flex flex-col"
@@ -219,12 +129,6 @@ export default async function BlogPage() {
                         )}
 
                         <div className="p-6 flex-1 flex flex-col">
-                          {post.category && (
-                            <span className="inline-block text-xs font-semibold text-blue-600 mb-2">
-                              {post.category}
-                            </span>
-                          )}
-
                           <Link href={`/blog/${post.slug}`}>
                             <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
                               {post.title}
@@ -235,19 +139,6 @@ export default async function BlogPage() {
                             <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
                               {post.excerpt}
                             </p>
-                          )}
-
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {post.tags.slice(0, 3).map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
                           )}
 
                           <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
@@ -276,7 +167,6 @@ export default async function BlogPage() {
                     ))}
                   </div>
                 </section>
-              )}
             </div>
           )}
         </div>

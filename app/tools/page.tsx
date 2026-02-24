@@ -11,7 +11,8 @@ import {
   MessageCircle, 
   GraduationCap,
   ArrowRight,
-  Briefcase
+  Briefcase,
+  Brain
 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useRouter } from 'next/navigation';
@@ -101,6 +102,14 @@ export default function ToolsPage() {
           icon: Search,
           color: '#06B6D4',
           route: '/tools/role-finder',
+        },
+        {
+          id: 'quiz',
+          title: 'Company Quiz',
+          description: 'Practice aptitude tests from top companies',
+          icon: Brain,
+          color: '#EC4899',
+          route: '/tools/quiz',
         },
       ],
     },

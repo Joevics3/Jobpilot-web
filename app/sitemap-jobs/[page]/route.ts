@@ -44,7 +44,6 @@ export async function GET(
     const { data: jobs, error } = await supabase
       .from('jobs')
       .select('id, slug, updated_at, created_at')
-      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .range(from, to);
 

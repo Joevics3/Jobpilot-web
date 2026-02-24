@@ -475,35 +475,22 @@ export default function AccommodationFinderPage() {
       </div>
 
       <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
-        {/* Search & Filters */}
+        {/* Search */}
         <div className="bg-white rounded-2xl p-4 mb-6" style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}>
-          <form onSubmit={handleSearch} className="mb-4">
+          <form onSubmit={handleSearch}>
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search jobs with accommodation..."
-                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search jobs with accommodation..."
+                className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
               <button
                 type="submit"
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2"
+                className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center"
               >
                 <Search size={18} />
-                Search
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className={`px-4 py-3 border rounded-xl flex items-center gap-2 ${filtersOpen ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}`}
-              >
-                <Filter size={18} />
-                Filters
-                {hasFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
               </button>
             </div>
           </form>

@@ -888,35 +888,9 @@ export default function JobList() {
           queryInput: 'required name=search_term_string',
         }}
       />
-      
+       
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
         {/* Header removed as requested */}
-
-        {!user && (
-          <div
-            className="px-6 py-3 border-b"
-            style={{
-              backgroundColor: theme.colors.primary.DEFAULT + '10',
-              borderColor: theme.colors.border.DEFAULT,
-            }}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm font-medium flex-1" style={{ color: theme.colors.primary.DEFAULT }}>
-                Sign up to get personalized match scores.
-              </span>
-              <Button
-                onClick={() => setAuthModalOpen(true)}
-                size="sm"
-                style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                className="flex-shrink-0"
-              >
-                <LogIn size={16} className="mr-2" />
-                Sign Up
-              </Button>
-            </div>
-          </div>
-        )}
-
 
 
         {/* ✅ NEW: Tabs Section */}
@@ -1081,7 +1055,7 @@ export default function JobList() {
             </div>
 
             {/* Role Quick Filters */}
-            <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+            <div className="flex flex-wrap gap-1.5 justify-center">
               {(rolesExpanded ? popularRoles : popularRoles.slice(0, 6)).map(role => (
                 <button
                   key={role}
@@ -1094,7 +1068,7 @@ export default function JobList() {
                     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
                     router.replace(newUrl);
                   }}
-                  className="px-2.5 py-1 rounded-full text-xs bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-colors"
+                  className="px-2.5 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border border-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors"
                 >
                   {role}
                 </button>

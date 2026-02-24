@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Calendar, Eye, Clock, Tag, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, Clock, Share2 } from 'lucide-react';
 import { ArticleSchema, FAQSchema } from '@/components/seo/StructuredData';
 import BlogMarkdownRenderer from '@/components/BlogMarkdownRenderer';
 
@@ -172,7 +172,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Back Button */}
           <Link
             href="/blog"
@@ -183,10 +183,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           </Link>
 
           {/* Article Header */}
-          <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <article className="bg-white rounded-lg overflow-hidden">
             {/* Featured Image */}
             {post.featured_image_url && (
-              <div className="relative w-full h-96">
+              <div className="relative w-full h-64 lg:h-80">
                 <Image
                   src={post.featured_image_url}
                   alt={post.title}
@@ -198,16 +198,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             )}
 
             {/* Content */}
-            <div className="p-8 lg:p-12">
-              {/* Category */}
-              {post.category && (
-                <span className="inline-block text-sm font-semibold text-blue-600 mb-4">
-                  {post.category}
-                </span>
-              )}
-
+            <div className="p-6 lg:p-8">
               {/* Title */}
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                 {post.h1_title}
               </h1>
 
@@ -240,21 +233,6 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                   <span>{post.view_count} views</span>
                 </div>
               </div>
-
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
-                  <Tag size={16} className="text-gray-500" />
-                  {post.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {/* Article Content */}
               <BlogMarkdownRenderer content={post.content} />
