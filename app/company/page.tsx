@@ -12,20 +12,6 @@ interface Props {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams;
   const companyName = params.name;
-  
-  if (companyName && typeof companyName === 'string') {
-    // Redirect to proper company page
-    const { data: company } = await supabase
-      .from('companies')
-      .select('slug')
-      .ilike('name', companyName)
-      .eq('is_published', true)
-      .single();
-    
-    if (company) {
-      redirect(`/company/${company.slug}`);
-    }
-  }
 
   return {
     title: 'Top Companies Hiring in Nigeria | Company Directory | JobMeter',
