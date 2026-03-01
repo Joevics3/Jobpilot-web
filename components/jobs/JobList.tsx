@@ -302,10 +302,11 @@ export default function JobList() {
       const cachedJobs = localStorage.getItem('latest_jobs_cache');
       const cachedTimestamp = localStorage.getItem('latest_jobs_cache_timestamp');
       
-      // Try to load from localStorage first (first 50 jobs)
+      // Check if cache is valid (within 1 hour)
+      let isCacheValid = false;
       if (cachedJobs && cachedTimestamp) {
         const timestamp = parseInt(cachedTimestamp, 10);
-        const isCacheValid = now - timestamp < CACHE_DURATION;
+        isCacheValid = now - timestamp < CACHE_DURATION;
         
         if (isCacheValid) {
           try {
@@ -314,11 +315,12 @@ export default function JobList() {
             console.log(`Loaded ${parsedJobs.length} jobs from cache`);
           } catch (e) {
             console.error('Error parsing cached jobs:', e);
+            isCacheValid = false;
           }
         }
       }
       
-      // Always fetch all jobs from Supabase (background fetch)
+      // Fetch from Supabase (shows 50 first, then background)
       await fetchLatestJobs();
     };
     
@@ -662,56 +664,77 @@ export default function JobList() {
         query = query.gte('posted_date', todayStr);
       }
       
-      // ✅ Get total count first
-      const { count, error: countError } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .gte('posted_date', thirtyDaysAgoStr);
+      // ✅ FIRST: Fetch first 50 jobs and display immediately
+      const { data: initialData, error: initialError } = await query.range(0, 49);
       
-      // ✅ Fetch all jobs (up to 1000)
-      let allData: any[] = [];
-      const maxFetch = Math.min(count || 1000, 1000);
-      
-      if (maxFetch <= 1000) {
-        const { data, error } = await query.range(0, maxFetch - 1);
-        if (!error && data) allData = data;
-      } else {
-        // Fetch in batches for > 1000
-        let offset = 0;
-        while (offset < maxFetch) {
-          const { data: batchData, error: batchError } = await query.range(offset, offset + 999);
-          if (!batchError && batchData) {
-            allData = [...allData, ...batchData];
-          }
-          offset += 1000;
-        }
-      }
-      
-      console.log(`Fetched ${allData.length} jobs from last 30 days`);
-      
+      if (initialError) throw initialError;
+
+      console.log(`Fetched first 50 jobs from last 30 days`);
+
       // Transform to UI format
-      const uiJobs = allData.map((job: any) => transformJobToUI(job, 0, null));
+      const initialUiJobs = (initialData || []).map((job: any) => transformJobToUI(job, 0, null));
       
-      // Set all jobs to state
-      setLatestJobs(uiJobs);
+      // Display first 50 immediately
+      setLatestJobs(initialUiJobs);
       setCurrentPage(1);
-      setAllJobsLoaded(true);
       
       // ✅ Cache only the first 50 to localStorage (safe size)
-      const first50 = uiJobs.slice(0, 50);
       try {
-        localStorage.setItem('latest_jobs_cache', JSON.stringify(first50));
+        localStorage.setItem('latest_jobs_cache', JSON.stringify(initialUiJobs));
         localStorage.setItem('latest_jobs_cache_timestamp', Date.now().toString());
         console.log(`Cached first 50 jobs to localStorage`);
       } catch (cacheError) {
         console.error('Error caching latest jobs:', cacheError);
       }
       
+      // ✅ THEN: Fetch remaining jobs in background (without blocking UI)
       setLatestJobsLoading(false);
+      setLoadingMoreJobs(true);
+      
+      // Get total count
+      const { count, error: countError } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .gte('posted_date', thirtyDaysAgoStr);
+      
+      if (!countError && count && count > 50) {
+        const remainingCount = count - 50;
+        console.log(`Fetching remaining ${remainingCount} jobs in background...`);
+        
+        let allRemainingJobs: any[] = [];
+        
+        if (remainingCount <= 950) {
+          const { data: remainingData, error: remainingError } = await query.range(50, 1000);
+          if (!remainingError && remainingData) {
+            allRemainingJobs = remainingData;
+          }
+        } else {
+          // If more than 1000 remaining, fetch in batches
+          let offset = 50;
+          while (offset < count) {
+            const { data: batchData, error: batchError } = await query.range(offset, offset + 999);
+            if (!batchError && batchData) {
+              allRemainingJobs = [...allRemainingJobs, ...batchData];
+            }
+            offset += 1000;
+          }
+        }
+        
+        if (allRemainingJobs.length > 0) {
+          const remainingUiJobs = allRemainingJobs.map((job: any) => transformJobToUI(job, 0, null));
+          const allJobs = [...initialUiJobs, ...remainingUiJobs];
+          
+          setLatestJobs(allJobs);
+          console.log(`Background fetch complete: ${allJobs.length} total jobs`);
+        }
+      }
+      
+      setLoadingMoreJobs(false);
     } catch (error) {
       console.error('Error fetching latest jobs:', error);
       setLatestJobsLoading(false);
+      setLoadingMoreJobs(false);
     }
   };
 
