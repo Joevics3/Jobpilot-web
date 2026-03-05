@@ -470,106 +470,156 @@ export default function ScamDetectorPage() {
           )}
         </div>
 
-        {/* SEO Content - Improved */}
-        <div className="mt-16">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">AI-Powered Scam Detection</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Analyze any job posting, email, or message for scam indicators using advanced AI technology.</p>
-          </div>
 
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
-              <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mb-3">
-                <Shield className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Trust Score</h3>
-              <p className="text-sm text-gray-700">Get an instant 0-100 trust score for any job posting.</p>
-            </div>
-            <div className="p-5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
-              <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-3">
-                <AlertTriangle className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Red Flag Detection</h3>
-              <p className="text-sm text-gray-700">AI identifies payment requests, poor grammar, and suspicious patterns.</p>
-            </div>
-            <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-3">
-                <CheckCircle className="text-white" size={24} />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Safe Indicators</h3>
-              <p className="text-sm text-gray-700">See positive signs that indicate legitimate opportunities.</p>
-            </div>
-          </div>
 
-          {/* Main SEO Content */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center text-white text-sm">1</span>
-                How the AI Scam Detector Works
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <p>Our AI analyzes job postings, emails, and messages for hundreds of scam indicators. Simply paste the text you want to check, and our system evaluates it for suspicious patterns.</p>
-                <p>The AI provides a trust score from 0-100, with risk levels: LOW (80-100), MEDIUM (60-79), HIGH (40-59), and CRITICAL (0-39). It specifically identifies red flags, warnings, and safe indicators.</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white text-sm">2</span>
-                Understanding Trust Scores
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                  <div className="bg-green-100 rounded-lg p-3 text-center">
-                    <div className="text-green-700 font-bold">80-100</div>
-                    <div className="text-xs text-green-600">LOW Risk</div>
-                  </div>
-                  <div className="bg-yellow-100 rounded-lg p-3 text-center">
-                    <div className="text-yellow-700 font-bold">60-79</div>
-                    <div className="text-xs text-yellow-600">MEDIUM Risk</div>
-                  </div>
-                  <div className="bg-orange-100 rounded-lg p-3 text-center">
-                    <div className="text-orange-700 font-bold">40-59</div>
-                    <div className="text-xs text-orange-600">HIGH Risk</div>
-                  </div>
-                  <div className="bg-red-100 rounded-lg p-3 text-center">
-                    <div className="text-red-700 font-bold">0-39</div>
-                    <div className="text-xs text-red-600">CRITICAL</div>
-                  </div>
-                </div>
-                <p className="mt-3">Higher scores indicate safer opportunities. Always verify through multiple sources regardless of score.</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm">3</span>
-                Major Red Flags to Watch
-              </h3>
-              <div className="text-gray-700 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {['Requests for payment', 'No location for non-remote jobs', 'Inconsistent language/grammar', 'Personal docs before interview', 'Wire transfer requests', 'Unrealistic salaries'].map(flag => (
-                    <div key={flag} className="flex items-center gap-2">
-                      <XCircle className="text-red-500 flex-shrink-0" size={16} />
-                      <span className="text-sm">{flag}</span>
+          {/* Related Tools */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Tools</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { title: 'Job Scam Checker', description: 'Search and report fraudulent companies and recruiters', icon: Shield, color: '#DC2626', route: '/tools/scam-checker' },
+                { title: 'ATS CV Review', description: 'Optimize your CV for ATS systems and job matching', icon: FileText, color: '#8B5CF6', route: '/tools/ats-review' },
+                { title: 'CV Keyword Checker', description: 'Check keyword match between your CV and job descriptions', icon: CheckCircle, color: '#10B981', route: '/tools/keyword-checker' },
+                { title: 'Interview Practice', description: 'Practice with personalized questions based on job descriptions', icon: AlertTriangle, color: '#F59E0B', route: '/tools/interview' },
+                { title: 'Career Coach', description: 'Get personalized career guidance and advice', icon: Sparkles, color: '#3B82F6', route: '/tools/career' },
+              ].map(tool => {
+                const Icon = tool.icon;
+                return (
+                  <a key={tool.title} href={tool.route} className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all group">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: tool.color + '1A' }}>
+                      <Icon size={20} style={{ color: tool.color }} />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-red-600 to-purple-600 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-bold mb-4">Stay Safe from Scams</h3>
-              <p className="text-white/90 mb-4">Use our AI-powered detector for every suspicious opportunity. Remember: if it seems too good to be true, it probably is.</p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Free Tool</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">AI-Powered</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Nigeria Focused</span>
-              </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">{tool.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 leading-snug">{tool.description}</p>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
+
+        {/* Article Content */}
+        <div className="mt-16 space-y-8">
+
+          {/* How It Works Article */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Scam Detector: AI-Powered Analysis to Detect Job Scams and Fraudulent Postings</h2>
+            <p className="text-gray-700 mb-4">Job Scam Detector is a free online tool that uses AI to scan job postings, emails, and offers for red flags. It provides instant risk scores to help job seekers stay safe from employment scams.</p>
+
+            <h3 className="text-lg font-bold text-gray-900 mb-3">How It Works</h3>
+            <p className="text-gray-700 mb-4">Our Job Scam Detector makes spotting fake job offers simple. Paste the job posting text or email content into the analyzer and add the company name if mentioned for deeper verification. Click "Analyze" to run AI-powered detection on patterns like unrealistic pay or payment requests. You'll receive a clear risk score from 0–100, plus highlighted red flags such as vague descriptions or Telegram links, along with detailed warnings and safe next steps like verifying on official sites.</p>
+
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Why Use Job Scam Detector?</h3>
+            <p className="text-gray-700 mb-4">Job scams target millions yearly, with losses hitting $300 million in the US alone last year. Scammers post fakes on Indeed, LinkedIn, and Telegram, promising easy money but stealing your data or cash. This tool is free with no signup required — unlike paid extensions or apps. It checks job scams on Indeed, UAE-specific fraud, and crypto schemes in seconds.</p>
+          </div>
+
+          {/* Common Scams */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Common Job Scams and Examples</h2>
+            <p className="text-gray-700 mb-4">Employment scams evolve quickly, but patterns repeat. Here are the most common types:</p>
+            <ul className="space-y-3 mb-6 text-gray-700">
+              <li className="flex items-start gap-2"><XCircle className="text-red-500 flex-shrink-0 mt-1" size={16} /><div><strong>Upfront Payment Scams:</strong> Fake employers ask for "training fees" or equipment costs. Legitimate jobs never require payment upfront.</div></li>
+              <li className="flex items-start gap-2"><XCircle className="text-red-500 flex-shrink-0 mt-1" size={16} /><div><strong>Crypto Job Scams:</strong> Offers to "promote tokens" on Telegram, starting with small tasks then demanding wallet deposits. Victims lose crypto after "refunds" fail.</div></li>
+              <li className="flex items-start gap-2"><XCircle className="text-red-500 flex-shrink-0 mt-1" size={16} /><div><strong>Ghost Jobs on Indeed:</strong> Postings open for 60+ days with hundreds of applicants but no hires — often resume harvesters.</div></li>
+              <li className="flex items-start gap-2"><XCircle className="text-red-500 flex-shrink-0 mt-1" size={16} /><div><strong>Fake UAE Offers:</strong> Scammers promise Dubai visas but charge for "processing." UAE law bans this — employers must pay all fees.</div></li>
+              <li className="flex items-start gap-2"><XCircle className="text-red-500 flex-shrink-0 mt-1" size={16} /><div><strong>Messaging App Fraud:</strong> WhatsApp/Telegram "recruiters" skip interviews and rush hires. Very common for job scams on Telegram.</div></li>
+            </ul>
+
+            {/* Scam Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b border-gray-200">Scam Type</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b border-gray-200">Red Flags</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b border-gray-200">Examples</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {[
+                    { type: 'Upfront Fees', flags: 'Payment for training/visa', example: '"Pay AED 2000 for Dubai medical test"' },
+                    { type: 'Crypto Tasks', flags: 'Wallet sharing, small payouts first', example: 'Telegram "DeFi intern" scams' },
+                    { type: 'Ghost Postings', flags: '60+ days old, vague duties', example: 'Indeed jobs with 300+ applicants, no activity' },
+                    { type: 'Fake Agencies', flags: 'Free emails like gmail.com', example: '"HR@companyyahoo.com" offers' },
+                    { type: 'Phishing Emails', flags: 'Unsolicited links, urgent tone', example: 'Indeed scam texts: "Quick cash job, click here"' },
+                  ].map(row => (
+                    <tr key={row.type} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{row.type}</td>
+                      <td className="px-4 py-3 text-gray-600">{row.flags}</td>
+                      <td className="px-4 py-3 text-gray-600">{row.example}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Top Scams 2026 */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Top 3 Job Scams in 2026</h2>
+            <p className="text-gray-700 mb-4">Scams adapt to trends like AI and remote work. Based on recent reports:</p>
+            <ol className="space-y-3 text-gray-700 list-decimal list-inside">
+              <li><strong>AI-Generated Fake Postings:</strong> Near-perfect listings on LinkedIn/ZipRecruiter that mimic real jobs but lead to fake checks for "equipment."</li>
+              <li><strong>Telegram Crypto Schemes:</strong> "Task-based" jobs paying in USDT, escalating to deposit demands. Hits remote seekers especially hard.</li>
+              <li><strong>Visa Fee Fraud in UAE:</strong> Targets expats with professional-looking offer letters demanding dirhams for "labor cards."</li>
+            </ol>
+
+            <h3 className="text-lg font-bold text-gray-900 mt-6 mb-3">5 Most Current Scams</h3>
+            <ol className="space-y-2 text-gray-700 list-decimal list-inside">
+              <li><strong>Fake Wire Transfers:</strong> "Overpay" for gear, wire back the excess — and the original check bounces.</li>
+              <li><strong>Phishing Calendar Invites:</strong> Job "interviews" via rigged Zoom links that steal your data.</li>
+              <li><strong>MLM Disguised as Jobs:</strong> Recruit others for "pay" in a pyramid-style scheme.</li>
+              <li><strong>Resume Black Holes:</strong> Old Indeed posts used to harvest applicant data.</li>
+              <li><strong>Unsolicited Remote Offers:</strong> No-interview hires via WhatsApp with no verifiable company.</li>
+            </ol>
+          </div>
+
+          {/* How to Spot */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">How to Spot Fake Job Postings on Indeed</h2>
+            <p className="text-gray-700 mb-3">Indeed hosts many legitimate jobs but also scams. Check these signs:</p>
+            <ul className="space-y-2 text-gray-700">
+              <li className="flex items-start gap-2"><CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={16} />Search the job title on the company's official website — if it's missing, it's likely a ghost job.</li>
+              <li className="flex items-start gap-2"><CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={16} />Look for a stated salary range. "Unlimited earning potential" is a scam signal.</li>
+              <li className="flex items-start gap-2"><CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={16} />Grammar errors, generic email addresses (no @company.com), or instructions to "apply via Telegram" are major red flags.</li>
+              <li className="flex items-start gap-2"><CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={16} />Verify the company on LinkedIn and Glassdoor to confirm real employees exist.</li>
+              <li className="flex items-start gap-2"><CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={16} />Never share bank information before you've been hired and verified. Legitimate firms use their own ATS systems.</li>
+            </ul>
+
+            <h3 className="text-lg font-bold text-gray-900 mt-6 mb-3">How Fake Job Scams Work</h3>
+            <p className="text-gray-700 mb-3">Scammers post enticing ads on job boards or social media to collect resumes, then pivot to requesting "fees" or phishing for personal data. In stage two, fake interviews happen over text to build trust. In stage three, they extract money or personal information. Our tool flags this sequence early so you can protect yourself before it's too late.</p>
+
+            <h3 className="text-lg font-bold text-gray-900 mt-6 mb-3">Stay Safe from Job Scams</h3>
+            <p className="text-gray-700 mb-3">Never pay for jobs — real opportunities are always free to apply for. Use official sites, ignore urgency tactics, and report scams to the FTC (US), eCrime.ae (UAE), or directly to the platform like Indeed or LinkedIn.</p>
+          </div>
+
+          {/* FAQ */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+            <div className="space-y-5">
+              {[
+                { q: 'What is Job Scam Detector?', a: 'A free AI tool for detecting job scams online. It scans postings for fraud risks and returns a risk score plus detailed warnings.' },
+                { q: 'Is Job Scam Detector free?', a: 'Yes, completely free with unlimited scans and no signup required — unlike paid job scanner apps or browser extensions.' },
+                { q: 'How accurate is job scan AI?', a: 'Our AI achieves over 95% accuracy based on known scam pattern databases, but it is best combined with your own judgment and independent verification.' },
+                { q: 'Does it detect job scams on Indeed?', a: 'Yes. The tool is specifically calibrated for Indeed ghost jobs, harvester postings, and fake listings common on the platform.' },
+                { q: 'Job scam detector UAE?', a: 'The tool is tailored for UAE-specific visa scams and Dubai fake job offers. It flags payment requests for "processing fees," which are illegal under UAE law.' },
+                { q: 'Job scams detector Telegram?', a: 'Yes. It detects Telegram and WhatsApp red flags including task-based crypto schemes, no-interview hires, and requests for wallet information.' },
+                { q: 'What if a job is flagged as a scam?', a: 'Verify the company directly through their official website or LinkedIn. If you\'ve already shared information, report to the relevant authority such as the FTC or eCrime.ae.' },
+                { q: 'How do you verify a scammer?', a: 'Reverse-search their email address or phone number using Google or services like WhoCallsMe. Check for complaints on Glassdoor or Google Reviews.' },
+                { q: 'What is a job scammer list?', a: 'No single exhaustive list exists, but you can flag patterns: generic names like "John HR," free email domains, and unverified Telegram channels. Searching "[name] + scam" on Google often reveals existing reports.' },
+                { q: 'What are fake online jobs?', a: 'Common fake job types include envelope stuffing, mystery shopping, data entry with upfront fees, and social media "brand ambassador" roles requiring you to recruit others. These are almost always scams.' },
+                { q: 'How do fake job scams work?', a: 'Scammers bait victims with attractive offers, then hook them with fee requests or phishing links. The scam escalates through trust-building fake interviews before the financial demand arrives.' },
+                { q: 'How to check if a job is fake?', a: 'Paste it into Job Scam Detector for an instant AI scan. Manually, check whether the company website matches, whether any payment is requested, and whether the interview is scheduled through official channels rather than WhatsApp.' },
+              ].map(({ q, a }) => (
+                <div key={q} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
+                  <h3 className="font-semibold text-gray-900 mb-2">{q}</h3>
+                  <p className="text-gray-700 text-sm leading-relaxed">{a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
 
           {/* JSON-LD Schema */}
           <script

@@ -536,14 +536,230 @@ export default function PAYECalculatorPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-bold mb-4">Calculate Your Net Salary</h3>
-              <p className="text-white/90 mb-4">Use our free PAYE calculator to estimate your take-home pay under the new 2026 tax rules.</p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Free Tool</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">2026 Rates</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Instant Results</span>
+          </div>
+
+          {/* Article Section */}
+          <div className="mt-10 space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Nigerian PAYE Calculator 2026: Complete Guide</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">Everything you need to know about calculating your monthly PAYE tax under the new Nigeria Tax Act 2025 — including LIRS rules, rent relief, deductions, and worked examples.</p>
+            </div>
+
+            {/* What is PAYE */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">What is PAYE in Nigeria?</h3>
+              <p className="text-gray-700 mb-3">
+                PAYE — Pay As You Earn — is the system by which employers deduct personal income tax directly from employees' salaries each month and remit the amounts to state revenue authorities such as the Lagos Internal Revenue Service (LIRS). Updated for 2026 under the <strong>Nigeria Tax Act 2025</strong>, the system now features a ₦800,000 annual tax-free threshold, progressive rates up to 25%, and a new rent relief deduction replacing the old Consolidated Relief Allowance (CRA).
+              </p>
+              <p className="text-gray-700">
+                The new law simplifies tax deductions significantly. Low earners — those with annual income below ₦800,000 after deductions — pay zero PAYE. Employers must remit deducted taxes to the relevant state IRS by the <strong>10th of the following month</strong>.
+              </p>
+            </div>
+
+            {/* How the Calculator Works */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">How Our Nigeria PAYE Calculator Works</h3>
+              <p className="text-gray-700 mb-4">
+                Our free monthly PAYE tax calculator for Nigeria automates the entire computation process in line with FIRS (now Nigeria Revenue Service) and LIRS guidelines. Enter your salary components and it instantly outputs your PAYE tax, net take-home pay, and a full deduction breakdown.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: 'Gross Income', desc: 'Basic salary + housing + transport + other allowances' },
+                  { label: 'Pension Deduction', desc: '8–18% of qualifying emoluments (basic + housing + transport)' },
+                  { label: 'NHF (Optional)', desc: '2.5% of basic salary for National Housing Fund contributors' },
+                  { label: 'Rent Relief', desc: 'Lesser of ₦500,000 or 20% of annual rent paid' },
+                ].map((item, i) => (
+                  <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                    <p className="font-semibold text-gray-800 text-sm">{item.label}</p>
+                    <p className="text-sm text-gray-600 mt-0.5">{item.desc}</p>
+                  </div>
+                ))}
               </div>
+              <p className="text-gray-700 mt-4 text-sm">
+                The tool annualises your income, subtracts the ₦800,000 threshold plus eligible reliefs, applies the progressive tax bands, then divides by 12 to give your monthly PAYE figure.
+              </p>
+            </div>
+
+            {/* Step-by-step */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Step-by-Step PAYE Calculation Nigeria 2026</h3>
+              <p className="text-gray-700 mb-4">Here's how to manually calculate your PAYE — exactly what the calculator does under the hood:</p>
+              <div className="space-y-3">
+                {[
+                  { step: 1, color: 'blue', title: 'Calculate Gross Annual Income', desc: 'Add all monthly salary components and multiply by 12. Include any annual bonuses. Example: ₦250,000/month × 12 + ₦500,000 bonus = ₦3,500,000.' },
+                  { step: 2, color: 'green', title: 'Subtract Statutory Deductions', desc: 'Deduct pension (8% of qualifying emoluments), NHF if applicable (2.5% of basic), and rent relief (lesser of ₦500,000 or 20% of annual rent).' },
+                  { step: 3, color: 'purple', title: 'Subtract the ₦800,000 Threshold', desc: 'The first ₦800,000 of chargeable income is completely tax-free under the new law. If your chargeable income is below this, you pay zero PAYE.' },
+                  { step: 4, color: 'orange', title: 'Apply Progressive Tax Bands', desc: 'Tax only the portion of income falling within each band. E.g., ₦2,200,000 at 15% = ₦330,000. Add up tax across all applicable bands.' },
+                  { step: 5, color: 'red', title: 'Divide by 12 for Monthly PAYE', desc: 'Annual tax ÷ 12 = monthly PAYE deduction. E.g., ₦376,800 annual tax = ₦31,400/month deducted by your employer.' },
+                ].map(({ step, color, title, desc }) => (
+                  <div key={step} className="flex gap-4 items-start">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 bg-${color}-500`}>{step}</div>
+                    <div>
+                      <p className="font-semibold text-gray-800">{title}</p>
+                      <p className="text-sm text-gray-600 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Worked Examples */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Worked Examples: Nigeria PAYE 2026</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Low Income', salary: '₦80,000/month', annual: '₦960,000', chargeable: '₦160,000', monthlyTax: '₦2,000', net: '₦78,000/month', color: 'green' },
+                  { label: 'Mid Income', salary: '₦400,000/month', annual: '₦4.8M', chargeable: '₦3,700,000', monthlyTax: '₦50,000', net: '₦350,000/month', color: 'blue' },
+                  { label: 'High Income', salary: '₦1.5M/month', annual: '₦18M', chargeable: '₦17,200,000', monthlyTax: '₦258,750', net: '₦1,241,250/month', color: 'purple' },
+                ].map(({ label, salary, annual, chargeable, monthlyTax, net, color }) => (
+                  <div key={label} className={`bg-${color}-50 border border-${color}-200 rounded-xl p-4`}>
+                    <p className={`font-bold text-${color}-800 mb-2`}>{label}</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between"><span className="text-gray-600">Gross</span><span className="font-medium">{salary}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Annual</span><span className="font-medium">{annual}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Chargeable</span><span className="font-medium">{chargeable}</span></div>
+                      <div className="flex justify-between border-t border-gray-200 pt-1 mt-1"><span className="text-gray-600">Monthly Tax</span><span className={`font-bold text-${color}-700`}>{monthlyTax}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Take Home</span><span className="font-bold text-green-700">{net}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key Changes 2026 */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Key Changes: New Tax Law in Nigeria 2026</h3>
+              <p className="text-gray-700 mb-4">
+                The Nigeria Tax Act 2025, signed mid-2025 and effective from 1 January 2026, is the most significant overhaul of Nigeria's personal income tax system in years. Here's what changed:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { icon: '🎯', title: 'Higher Tax-Free Threshold', desc: '₦800,000 annual exemption, up from ~₦300,000 under the old CRA system.' },
+                  { icon: '🏠', title: 'New Rent Relief', desc: 'Claim 20% of annual rent (capped at ₦500,000) — submit Form A to your employer by 31 January.' },
+                  { icon: '📉', title: 'CRA Abolished', desc: 'The old Consolidated Relief Allowance is gone. The system is now simpler and fairer for middle earners.' },
+                  { icon: '💰', title: 'Progressive Bands Lowered', desc: 'Mid-income earners face reduced marginal rates compared to the previous regime.' },
+                  { icon: '📱', title: 'Digitised Filings', desc: 'FIRS/NRS is pushing digital remittance, with penalties for late submission after the 10th of each month.' },
+                  { icon: '✅', title: 'Minimum Wage Exempt', desc: 'Workers earning up to ~₦70,000/month are effectively fully exempt under the new threshold.' },
+                ].map(({ icon, title, desc }) => (
+                  <div key={title} className="flex gap-3 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <span className="text-2xl">{icon}</span>
+                    <div>
+                      <p className="font-semibold text-gray-800 text-sm">{title}</p>
+                      <p className="text-xs text-gray-600 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FAQs */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+              <div className="space-y-4">
+                {[
+                  { q: 'What is the PAYE tax rate in Nigeria in 2026?', a: 'Nigeria uses a progressive system: 0% on the first ₦800,000, then 15%, 18%, 21%, 23%, and 25% on higher brackets. Most employees fall in the 0–18% range.' },
+                  { q: 'Who pays zero PAYE under the new law?', a: 'Any employee whose annual chargeable income (after pension, NHF, and rent relief deductions) is ₦800,000 or below pays zero PAYE. This covers most minimum wage earners.' },
+                  { q: 'What is LIRS and how does it differ from FIRS?', a: 'LIRS (Lagos Internal Revenue Service) handles PAYE remittances for Lagos-based employees. FIRS (now Nigeria Revenue Service) oversees federal taxes. PAYE is a state-level tax, so Lagos employers remit to LIRS.' },
+                  { q: 'How do I claim rent relief under the 2026 rules?', a: 'Submit Form A to your employer before 31 January each year with proof of your tenancy agreement or rent receipts. Your employer will then apply the relief in your monthly PAYE calculation.' },
+                  { q: 'Is this calculator accurate for LIRS PAYE?', a: 'Yes. Our tool applies the same progressive bands and relief rules used by LIRS and mirrors the FIRS/NRS framework. For complex situations (multiple income streams, foreign income), consult a tax professional.' },
+                  { q: 'When must employers remit PAYE?', a: 'Employers must remit deducted PAYE to the relevant state IRS by the 10th of the following month. Late remittance attracts penalties.' },
+                ].map(({ q, a }, i) => (
+                  <div key={i} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <p className="font-semibold text-gray-800 mb-1">{q}</p>
+                    <p className="text-sm text-gray-600">{a}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex gap-3">
+              <Info className="text-blue-500 flex-shrink-0 mt-0.5" size={20} />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">Disclaimer</p>
+                <p>This PAYE calculator is for informational purposes only and provides estimates based on publicly available 2026 Nigeria Tax Act rates. It does not constitute tax advice. For exact calculations, consult a qualified tax professional or your state's Internal Revenue Service.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Other Tools Section */}
+          <div className="mt-12">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Other Career Tools</h2>
+              <p className="text-gray-600 mt-1">More free tools to help you navigate your career in Nigeria</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  title: 'CV Builder',
+                  desc: 'Create a professional CV tailored for Nigerian and international employers in minutes.',
+                  icon: '📄',
+                  color: '#2563EB',
+                  bg: '#EFF6FF',
+                  border: '#BFDBFE',
+                  route: '/cv',
+                },
+                {
+                  title: 'ATS CV Review',
+                  desc: 'Check if your CV will pass Applicant Tracking Systems used by top Nigerian companies.',
+                  icon: '✅',
+                  color: '#7C3AED',
+                  bg: '#F5F3FF',
+                  border: '#DDD6FE',
+                  route: '/tools/ats-review',
+                },
+                {
+                  title: 'CV Keyword Checker',
+                  desc: 'Match your CV keywords against a job description to improve your chances of getting shortlisted.',
+                  icon: '🔍',
+                  color: '#059669',
+                  bg: '#ECFDF5',
+                  border: '#A7F3D0',
+                  route: '/tools/keyword-checker',
+                },
+                {
+                  title: 'Interview Practice',
+                  desc: 'Practice common Nigerian job interview questions with AI-powered feedback.',
+                  icon: '🎙️',
+                  color: '#7C3AED',
+                  bg: '#F5F3FF',
+                  border: '#DDD6FE',
+                  route: '/tools/interview',
+                },
+                {
+                  title: 'Career Coach',
+                  desc: 'Get personalised career guidance, job search strategies, and advice for the Nigerian market.',
+                  icon: '🎓',
+                  color: '#D97706',
+                  bg: '#FFFBEB',
+                  border: '#FDE68A',
+                  route: '/tools/career',
+                },
+                {
+                  title: 'Job Scam Checker',
+                  desc: 'Protect yourself from fraudulent job offers — search and report scam companies and recruiters.',
+                  icon: '🛡️',
+                  color: '#DC2626',
+                  bg: '#FEF2F2',
+                  border: '#FECACA',
+                  route: '/tools/scam-checker',
+                },
+              ].map((tool) => (
+                <a
+                  key={tool.title}
+                  href={tool.route}
+                  className="group block rounded-xl p-5 border transition-all hover:shadow-md hover:-translate-y-0.5"
+                  style={{ backgroundColor: tool.bg, borderColor: tool.border }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">{tool.icon}</span>
+                    <div>
+                      <h3 className="font-bold text-gray-900 group-hover:underline" style={{ color: tool.color }}>{tool.title}</h3>
+                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">{tool.desc}</p>
+                    </div>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
 
