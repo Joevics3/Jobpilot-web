@@ -56,7 +56,7 @@ export async function GET() {
           priority: page.job_count > 20 ? 0.9 : 0.7,
         });
       });
-      console.log(`📄 Category sitemap: ${routes.length} pages total (${REMOTE_CATEGORY_ROUTES.length} remote + ${categoryPages.length} Nigerian)`);
+      console.log(`📄 Category sitemap: ${routes.length} pages total (${categoryPages.length} Nigerian category pages)`);
     }
   } catch (error) {
     console.error('Error generating category sitemap:', error);
