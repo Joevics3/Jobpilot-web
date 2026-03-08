@@ -81,6 +81,8 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     country: '',
     roleCategory: '',
     jobType: '',
+    state: '',
+    town: '',
   });
   const [detectedCountry, setDetectedCountry] = useState<string | null>(null);
 
@@ -1112,6 +1114,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       remote: false,
       country: '',
       roleCategory: '',
+      jobType: '',
+      state: '',
+      town: '',
     };
     setFilters(clearedFilters);
     setSearchQuery('');
