@@ -20,6 +20,7 @@ export default function CompanyQuizClient({ company, companyData }: { company: s
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
+  const [useTimer, setUseTimer] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 300);
@@ -27,11 +28,18 @@ export default function CompanyQuizClient({ company, companyData }: { company: s
   }, [company]);
 
   const handleObjectiveStart = () => {
-    router.push(`/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective`);
+    const url = useTimer 
+      ? `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective?timer=1`
+      : `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective`;
+    router.push(url);
   };
 
   const handleTheoryStart = () => {
+    const url = useTimer 
+      ? `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/theory?timer=1`
+      : `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/theory`;
     setSelectedType('theory');
+    router.push(url);
   };
 
   const verifyPassword = async () => {
@@ -151,6 +159,19 @@ export default function CompanyQuizClient({ company, companyData }: { company: s
           </div>
           <h1 className="text-xl font-bold text-gray-900">{company}</h1>
           <p className="text-sm text-gray-600">Aptitude test practice</p>
+        </div>
+
+        <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+          <input
+            type="checkbox"
+            id="useTimer"
+            checked={useTimer}
+            onChange={(e) => setUseTimer(e.target.checked)}
+            className="w-4 h-4 text-blue-600"
+          />
+          <label htmlFor="useTimer" className="text-sm text-gray-700">
+            Track time spent
+          </label>
         </div>
 
         <div className="space-y-3">

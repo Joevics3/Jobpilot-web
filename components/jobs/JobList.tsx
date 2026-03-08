@@ -33,9 +33,11 @@ interface JobListProps {
   initialCountry?: string;
   initialRoleCategory?: string;
   initialJobType?: string;
+  initialState?: string;
+  initialTown?: string;
 }
 
-export default function JobList({ initialCountry, initialRoleCategory, initialJobType }: JobListProps) {
+export default function JobList({ initialCountry, initialRoleCategory, initialJobType, initialState, initialTown }: JobListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -210,6 +212,14 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       setFilters(prev => ({ ...prev, jobType: initialJobType }));
     }
   }, [initialJobType]);
+
+  useEffect(() => {
+    if (initialState) setFilters(prev => ({ ...prev, state: initialState }));
+  }, [initialState]);
+
+  useEffect(() => {
+    if (initialTown) setFilters(prev => ({ ...prev, town: initialTown }));
+  }, [initialTown]);
 
   // Geo-detection: auto-detect country on first visit only
   // ✅ SKIP entirely on country-specific pages — initialCountry locks the filter, no localStorage interference
@@ -665,7 +675,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       company: companyStr,
       location: locationStr,
       rawLocation: job.location, // ✅ preserve raw location object for filtering
-      country: job.country || '', // ✅ dedicated country column
+      country: job.country || [], // ✅ dedicated country column (text[])
       salary: salaryStr,
       match: finalMatchScore,
       calculatedTotal: finalMatchScore,
@@ -678,112 +688,58 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     };
   };
 
-  // ✅ NEW: Fetch first 50 latest jobs, then load remaining in background
+  // ✅ Fetch jobs via cached API route — browser never hits Supabase directly
   const fetchLatestJobs = async () => {
     try {
       setLatestJobsLoading(true);
-      
-      // Calculate 30 days ago date
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-      
-      let query = supabase
-        .from('jobs')
-        .select('id, slug, title, company, location, country, salary_range, employment_type, posted_date, created_at, sector, role_category, description')
-        .eq('status', 'active')
-        .gte('posted_date', thirtyDaysAgoStr)
-        .order('posted_date', { ascending: false })
-        .order('created_at', { ascending: false });
 
-      // ✅ Server-side country filter — only applies on country-specific pages
-      if (initialCountry) {
-        query = query.eq('country', initialCountry);
-      }
-
-      // ✅ Server-side job type filter — only applies on job-type pages (e.g. /jobs/remote)
-      if (initialJobType) {
-        query = query.eq('job_type', initialJobType);
-      }
-      
-      // Filter for today's jobs if posted=today (overrides 30-day filter)
+      // Build API params
+      const params = new URLSearchParams();
+      if (initialCountry) params.set('country', initialCountry);
+      if (initialJobType)  params.set('jobType', initialJobType);
+      if (initialState)    params.set('state', initialState);
+      if (initialTown)     params.set('town', initialTown);
       const postedParam = searchParams.get('posted');
-      if (postedParam === 'today') {
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        query = query.gte('posted_date', todayStr);
-      }
-      
+      if (postedParam === 'today') params.set('posted', 'today');
+
       // ✅ FIRST: Fetch first 50 jobs and display immediately
-      const { data: initialData, error: initialError } = await query.range(0, 49);
-      
-      if (initialError) throw initialError;
+      params.set('from', '0');
+      params.set('to', '49');
 
-      console.log(`Fetched first 50 jobs from last 30 days`);
+      const firstRes = await fetch(`/api/jobs?${params.toString()}`);
+      if (!firstRes.ok) throw new Error('Failed to fetch jobs');
+      const { jobs: initialData, total } = await firstRes.json();
 
-      // Transform to UI format
       const initialUiJobs = (initialData || []).map((job: any) => transformJobToUI(job, 0, null));
-      
-      // Display first 50 immediately
       setLatestJobs(initialUiJobs);
       setCurrentPage(1);
-      
-      // ✅ Cache only the first 50 to localStorage (safe size)
+      setLatestJobsLoading(false);
+
+      // ✅ Cache first 50 to localStorage
       try {
         localStorage.setItem('latest_jobs_cache', JSON.stringify(initialUiJobs));
         localStorage.setItem('latest_jobs_cache_timestamp', Date.now().toString());
-        console.log(`Cached first 50 jobs to localStorage`);
       } catch (cacheError) {
         console.error('Error caching latest jobs:', cacheError);
       }
-      
-      // ✅ THEN: Fetch remaining jobs in background (without blocking UI)
-      setLatestJobsLoading(false);
-      setLoadingMoreJobs(true);
-      
-      // Get total count
-      let countQuery = supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .gte('posted_date', thirtyDaysAgoStr);
-      if (initialCountry) countQuery = countQuery.eq('country', initialCountry);
-      if (initialJobType) countQuery = countQuery.eq('job_type', initialJobType);
-      const { count, error: countError } = await countQuery;
-      
-      if (!countError && count && count > 50) {
-        const remainingCount = count - 50;
-        console.log(`Fetching remaining ${remainingCount} jobs in background...`);
-        
-        let allRemainingJobs: any[] = [];
-        
-        if (remainingCount <= 950) {
-          const { data: remainingData, error: remainingError } = await query.range(50, 1000);
-          if (!remainingError && remainingData) {
-            allRemainingJobs = remainingData;
-          }
-        } else {
-          // If more than 1000 remaining, fetch in batches
-          let offset = 50;
-          while (offset < count) {
-            const { data: batchData, error: batchError } = await query.range(offset, offset + 999);
-            if (!batchError && batchData) {
-              allRemainingJobs = [...allRemainingJobs, ...batchData];
-            }
-            offset += 1000;
+
+      // ✅ THEN: Fetch remaining in background if more exist
+      if (total > 50) {
+        setLoadingMoreJobs(true);
+        params.set('from', '50');
+        params.set('to', '1999');
+
+        const restRes = await fetch(`/api/jobs?${params.toString()}`);
+        if (restRes.ok) {
+          const { jobs: remainingData } = await restRes.json();
+          if (remainingData && remainingData.length > 0) {
+            const remainingUiJobs = remainingData.map((job: any) => transformJobToUI(job, 0, null));
+            setLatestJobs([...initialUiJobs, ...remainingUiJobs]);
+            console.log(`Background fetch complete: ${initialUiJobs.length + remainingUiJobs.length} total jobs`);
           }
         }
-        
-        if (allRemainingJobs.length > 0) {
-          const remainingUiJobs = allRemainingJobs.map((job: any) => transformJobToUI(job, 0, null));
-          const allJobs = [...initialUiJobs, ...remainingUiJobs];
-          
-          setLatestJobs(allJobs);
-          console.log(`Background fetch complete: ${allJobs.length} total jobs`);
-        }
+        setLoadingMoreJobs(false);
       }
-      
-      setLoadingMoreJobs(false);
     } catch (error) {
       console.error('Error fetching latest jobs:', error);
       setLatestJobsLoading(false);
@@ -992,11 +948,14 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         if (!locationMatch) return false;
       }
       
-      // ✅ Country filter — uses the dedicated country column (set server-side on country pages,
-      // or via geo-detection on /jobs). Simple string match, no JSON parsing needed.
+      // ✅ Country filter — country is text[]; Global jobs show on all country pages
       if (filters.country) {
-        const jobCountry = String((job as any).country || '').toLowerCase();
-        if (!jobCountry || jobCountry !== filters.country.toLowerCase()) return false;
+        const jobCountries: string[] = (job as any).country || [];
+        const match = jobCountries.some(c =>
+          c.toLowerCase() === filters.country.toLowerCase() ||
+          c.toLowerCase() === 'global'
+        );
+        if (!match) return false;
       }
       
       // Remote filter
@@ -1153,7 +1112,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       remote: false,
       country: '',
       roleCategory: '',
-      jobType: '',
     };
     setFilters(clearedFilters);
     setSearchQuery('');

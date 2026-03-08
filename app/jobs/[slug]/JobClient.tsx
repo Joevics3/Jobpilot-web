@@ -13,6 +13,7 @@ import {
   ExternalLink, 
   ArrowLeft, 
   Clock, 
+  Home,
   Building, 
   Target, 
   Award, 
@@ -364,6 +365,28 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     return '';
   };
 
+  // Derive breadcrumb country from job.country array or location object
+  const getBreadcrumbCountry = (): { name: string; slug: string } | null => {
+    // From new country[] column
+    const countryArr: string[] = Array.isArray(job.country) ? job.country : [];
+    const first = countryArr.find(c => c.toLowerCase() !== 'global');
+    if (first) {
+      const slug = first.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      return { name: first, slug };
+    }
+    // Fallback: location object
+    if (job.location && typeof job.location === 'object') {
+      const c = job.location.country || (job.location.countries?.[0]);
+      if (c && c.toLowerCase() !== 'global') {
+        const slug = c.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        return { name: c, slug };
+      }
+    }
+    return null;
+  };
+
+  const breadcrumbCountry = getBreadcrumbCountry();
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
@@ -400,6 +423,33 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 </button>
               </form>
             </div>
+          </div>
+        </div>
+
+        {/* Breadcrumb */}
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <nav className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap" aria-label="Breadcrumb">
+              <a href="/" className="flex items-center gap-1 hover:text-gray-700 transition-colors">
+                <Home size={11} />
+                <span>Home</span>
+              </a>
+              <span className="text-gray-300">/</span>
+              <a href="/jobs" className="hover:text-gray-700 transition-colors">Jobs</a>
+              {breadcrumbCountry && (
+                <>
+                  <span className="text-gray-300">/</span>
+                  <a
+                    href={`/jobs/${breadcrumbCountry.slug}`}
+                    className="hover:text-gray-700 transition-colors capitalize"
+                  >
+                    {breadcrumbCountry.name}
+                  </a>
+                </>
+              )}
+              <span className="text-gray-300">/</span>
+              <span className="text-gray-700 truncate max-w-[200px] sm:max-w-xs">{job.title}</span>
+            </nav>
           </div>
         </div>
 

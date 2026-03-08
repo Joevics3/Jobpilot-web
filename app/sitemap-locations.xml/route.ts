@@ -1,148 +1,92 @@
 import { createClient } from '@supabase/supabase-js';
-import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 
-/**
- * Location sitemap - generates state and town pages
- * Place at: app/sitemap-locations/route.ts
- */
+export const revalidate = 3600;
+
 export async function GET() {
-  // ✅ Static country folder pages — add new countries here as you create their folders
-  const countryRoutes: MetadataRoute.Sitemap = [
-    { url: `${siteUrl}/jobs/us`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/remote`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/uk`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/uae`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/united-kingdom`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/germany`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/spain`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/france`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/new-zealand`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/australia`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/canada`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${siteUrl}/jobs/usa`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return new Response('Missing Supabase credentials', { status: 500 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+  const urls: Array<{ url: string; lastmod: string; changefreq: string; priority: number }> = [
+    // Country pages
+    { url: `${siteUrl}/jobs/nigeria`,        lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/usa`,            lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/united-kingdom`, lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/uk`,             lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/uae`,            lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/canada`,         lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/australia`,      lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/germany`,        lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/new-zealand`,    lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/france`,         lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/spain`,          lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    { url: `${siteUrl}/jobs/remote`,         lastmod: new Date().toISOString(), changefreq: 'hourly', priority: 0.9 },
+    // State listing page
+    { url: `${siteUrl}/jobs/state`,          lastmod: new Date().toISOString(), changefreq: 'daily',  priority: 0.8 },
   ];
 
-  const routes: MetadataRoute.Sitemap = [...countryRoutes];
-
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // State pages — only is_active = true
+    const { data: statePages, error: stateError } = await supabase
+      .from('location_state_pages')
+      .select('full_path, updated_at')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Supabase credentials not found');
-      return new Response('Missing Supabase credentials', { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    // Fetch all job locations. Range overrides Supabase's default 1000-row cap.
-    const { data: jobs, error } = await supabase
-      .from('jobs')
-      .select('location')
-      .range(0, 9999);
-
-    if (error) {
-      console.error('Error fetching jobs for locations:', JSON.stringify(error));
-      return new Response(`Error fetching jobs: ${error.message}`, { status: 500 });
-    }
-
-    if (!jobs || jobs.length === 0) {
-      console.warn('No jobs found for location sitemap');
+    if (stateError) {
+      console.error('Error fetching state pages for sitemap:', stateError);
     } else {
-      const states = new Set<string>();
-      const stateTowns: { [key: string]: Set<string> } = {};
-
-      for (const job of jobs) {
-        try {
-          // Skip null/undefined locations
-          if (!job.location) continue;
-
-          let state = '';
-          let town = '';
-
-          if (typeof job.location === 'string') {
-            // Handle "City, State" string format
-            const parts = job.location.split(',').map((p: string) => p.trim());
-            if (parts.length >= 2) {
-              town = parts[0];
-              state = parts[1];
-            } else if (parts.length === 1) {
-              state = parts[0];
-            }
-          } else if (typeof job.location === 'object' && job.location !== null) {
-            // Handle { state, city } object format
-            state = String(job.location.state || '').trim();
-            town = String(job.location.city || job.location.town || '').trim();
-          }
-
-          state = state.trim();
-          town = town.trim();
-
-          if (!state) continue;
-
-          states.add(state);
-          if (!stateTowns[state]) stateTowns[state] = new Set();
-          if (town) stateTowns[state].add(town);
-
-        } catch (parseErr) {
-          // Skip individual bad location entries without crashing the whole sitemap
-          console.warn('Skipping unparseable location:', job.location, parseErr);
-          continue;
-        }
-      }
-
-      // Add state pages
-      states.forEach(state => {
-        const formattedState = state.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        if (!formattedState) return;
-        routes.push({
-          url: `${siteUrl}/jobs/state/${formattedState}`,
-          lastModified: new Date(),
-          changeFrequency: 'daily',
+      for (const row of statePages || []) {
+        urls.push({
+          url: `${siteUrl}/jobs/Location/${row.full_path}`,
+          lastmod: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+          changefreq: 'daily',
           priority: 0.8,
         });
-      });
-
-      // Add town pages
-      Object.keys(stateTowns).forEach(state => {
-        const formattedState = state.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        if (!formattedState) return;
-
-        stateTowns[state].forEach(town => {
-          const formattedTown = town.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-          if (!formattedTown) return;
-          routes.push({
-            url: `${siteUrl}/jobs/state/${formattedState}/${formattedTown}`,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 0.7,
-          });
-        });
-      });
-
-      const totalTowns = Object.values(stateTowns).reduce((acc, t) => acc + t.size, 0);
-      console.log(`📄 Location sitemap: ${states.size} states, ${totalTowns} towns`);
+      }
     }
+
+    // Town pages — only is_active = true
+    const { data: townPages, error: townError } = await supabase
+      .from('location_town_pages')
+      .select('full_path, updated_at')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (townError) {
+      console.error('Error fetching town pages for sitemap:', townError);
+    } else {
+      for (const row of townPages || []) {
+        urls.push({
+          url: `${siteUrl}/jobs/Location/${row.full_path}`,
+          lastmod: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+          changefreq: 'daily',
+          priority: 0.7,
+        });
+      }
+    }
+
+    console.log(`📄 Location sitemap: ${urls.length} total URLs (${statePages?.length || 0} states, ${townPages?.length || 0} towns)`);
 
   } catch (error) {
     console.error('Error generating location sitemap:', error);
-    return new Response(`Error generating sitemap: ${error instanceof Error ? error.message : String(error)}`, { status: 500 });
   }
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes
-  .map(
-    (route) => `  <url>
-    <loc>${route.url}</loc>
-    <lastmod>${new Date(route.lastModified || new Date()).toISOString()}</lastmod>
-    <changefreq>${route.changeFrequency}</changefreq>
-    <priority>${route.priority}</priority>
-  </url>`
-  )
-  .join('\n')}
+${urls.map(({ url, lastmod, changefreq, priority }) => `  <url>
+    <loc>${url}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`).join('\n')}
 </urlset>`;
 
   return new Response(sitemap, {
@@ -152,5 +96,3 @@ ${routes
     },
   });
 }
-
-export const revalidate = 3600;

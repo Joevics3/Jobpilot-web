@@ -118,8 +118,8 @@ export interface JobUI {
   description?: string;
   /** Raw location object from DB — used for country filtering */
   rawLocation?: any;
-  /** Dedicated country column — used for server-side and client-side country filtering */
-  country?: string;
+  /** Dedicated country column — text[] array, used for server-side and client-side country filtering */
+  country?: string[];
 }
 
 

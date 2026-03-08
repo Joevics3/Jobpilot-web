@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
@@ -24,6 +24,7 @@ interface GradingResult {
 
 export default function TheoryQuizClient({ company }: { company: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [questions, setQuestions] = useState<TheoryQuestion[]>([]);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,33 @@ export default function TheoryQuizClient({ company }: { company: string }) {
   const [results, setResults] = useState<GradingResult[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [debug, setDebug] = useState('');
+  const [useTimer, setUseTimer] = useState(false);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [timerStarted, setTimerStarted] = useState(false);
+
+  useEffect(() => {
+    const timerParam = searchParams.get('timer');
+    if (timerParam === '1') {
+      setUseTimer(true);
+      setTimerStarted(true);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (useTimer && timerStarted && !showResults) {
+      interval = setInterval(() => {
+        setTimeSpent(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [useTimer, timerStarted, showResults]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     fetchQuestions();
@@ -171,6 +199,7 @@ export default function TheoryQuizClient({ company }: { company: string }) {
               </span>
             </div>
             <p className="text-gray-600 text-sm">{passed}/{results.length} passed (75% threshold)</p>
+            {useTimer && <p className="text-gray-500 text-sm mt-1">Time: {formatTime(timeSpent)}</p>}
           </div>
 
           <div className="space-y-3 mb-4">
@@ -245,6 +274,9 @@ export default function TheoryQuizClient({ company }: { company: string }) {
             Exit
           </Link>
           <span className="text-white text-sm font-medium">{answeredCount}/{questions.length}</span>
+          {useTimer && timerStarted && (
+            <span className="text-white text-sm font-medium bg-white/20 px-2 py-1 rounded">{formatTime(timeSpent)}</span>
+          )}
         </div>
       </div>
 

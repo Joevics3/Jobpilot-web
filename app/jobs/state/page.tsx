@@ -1,5 +1,12 @@
 import { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 import Link from 'next/link';
 import { MapPin, Briefcase } from 'lucide-react';
 
@@ -35,41 +42,30 @@ interface StateJobCount {
 
 async function getJobCountsByState(): Promise<StateJobCount[]> {
   try {
-    // Fetch ALL active jobs at once
+    const supabase = getSupabase();
+
+    // Fetch counts using the new state[] column — one query per state is too slow,
+    // so fetch all active jobs' state arrays and count in JS
     const { data: allJobs, error } = await supabase
       .from('jobs')
-      .select('id, location')
-      .eq('status', 'active');
+      .select('state')
+      .eq('status', 'active')
+      .not('state', 'is', null);
 
     if (error) {
       console.error('Error fetching jobs:', error);
       return NIGERIAN_STATES.map(state => ({ state, count: 0 }));
     }
 
-    // Count jobs for each state in JavaScript
-    const counts = NIGERIAN_STATES.map((state) => {
+    // Count jobs for each state using the text[] column
+    const counts = NIGERIAN_STATES.map((stateName) => {
       const count = (allJobs || []).filter((job) => {
-        // Handle string location format
-        if (typeof job.location === 'string') {
-          return job.location.toLowerCase().includes(state.toLowerCase());
-        }
-        
-        // Handle object location format
-        if (job.location && typeof job.location === 'object') {
-          const locState = job.location.state || '';
-          return locState.toLowerCase() === state.toLowerCase();
-        }
-        
-        return false;
+        const stateArr: string[] = job.state || [];
+        return stateArr.some(s => s.toLowerCase() === stateName.toLowerCase());
       }).length;
-
-      return {
-        state,
-        count,
-      };
+      return { state: stateName, count };
     });
 
-    // Sort by count descending
     return counts.sort((a, b) => b.count - a.count);
   } catch (error) {
     console.error('Error in getJobCountsByState:', error);
@@ -121,7 +117,7 @@ export default async function AllStatesPage() {
             {stateCounts.slice(0, 6).map((state) => (
               <Link
                 key={state.state}
-                href={`/jobs/state/${state.state.toLowerCase()}`}
+                href={`/jobs/Location/nigeria/${state.state.toLowerCase().replace(/\s+/g, '-')}`}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all group"
               >
                 <div className="flex items-center gap-4">
@@ -151,7 +147,7 @@ export default async function AllStatesPage() {
               {stateCounts.map((state) => (
                 <Link
                   key={state.state}
-                  href={`/jobs/state/${state.state.toLowerCase()}`}
+                  href={`/jobs/Location/nigeria/${state.state.toLowerCase().replace(/\s+/g, '-')}`}
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
                   <span className="text-gray-900 group-hover:text-blue-600 font-medium">
