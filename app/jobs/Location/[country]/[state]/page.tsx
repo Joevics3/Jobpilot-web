@@ -93,7 +93,7 @@ export default async function StateJobsPage({ params }: { params: PageParams }) 
     { name: page.state, url: `${siteUrl}/jobs/Location/${page.full_path}` },
   ];
 
-  const towns: Array<{ name: string; country: string; is_active: boolean }> = page.towns || [];
+  const towns: Array<{ name: string; slug: string; is_active: boolean }> = page.towns || [];
   const relatedStates: Array<{ name: string; country: string; country_slug: string }> = page.related_states || [];
   const topRoles: Array<{ role: string; avg_salary: string; demand: string }> = page.top_roles || [];
   const majorEmployers: Array<{ name: string; sector: string; area?: string }> = page.major_employers || [];
