@@ -17,20 +17,51 @@ export default function CompanyQuizClient({ company, companyData }: { company: s
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<'objective' | 'theory' | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [sections, setSections] = useState<string[]>([]);
+  const [loadingSections, setLoadingSections] = useState(false);
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [useTimer, setUseTimer] = useState(false);
 
   useEffect(() => {
+    fetchSections();
     const timer = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(timer);
   }, [company]);
 
-  const handleObjectiveStart = () => {
-    const url = useTimer 
-      ? `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective?timer=1`
-      : `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective`;
+  const fetchSections = async () => {
+    try {
+      const { data } = await supabase
+        .from('objective_questions')
+        .select('section')
+        .ilike('company', company);
+      
+      if (data) {
+        const uniqueSections = [...new Set(data.map(q => q.section).filter(Boolean))];
+        setSections(uniqueSections);
+      }
+    } catch (err) {
+      console.error('Error fetching sections:', err);
+    }
+  };
+
+  const handleObjectiveClick = () => {
+    if (sections.length > 0) {
+      setSelectedType('objective');
+    } else {
+      handleObjectiveStart('general');
+    }
+  };
+
+  const handleSectionSelect = (section: string) => {
+    setSelectedSection(section);
+    handleObjectiveStart(section);
+  };
+
+  const handleObjectiveStart = (section: string) => {
+    const url = `/tools/quiz/${company.toLowerCase().replace(/\s+/g, '-')}/objective?timer=${useTimer ? '1' : '0'}&section=${encodeURIComponent(section)}`;
     router.push(url);
   };
 
@@ -175,19 +206,48 @@ export default function CompanyQuizClient({ company, companyData }: { company: s
         </div>
 
         <div className="space-y-3">
-          <button
-            onClick={handleObjectiveStart}
-            className="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left flex items-center gap-3"
-            style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}
-          >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15` }}>
-              <ClipboardList size={20} style={{ color: theme.colors.primary.DEFAULT }} />
+          {selectedType === 'objective' && sections.length > 0 ? (
+            <div className="bg-white rounded-xl p-4" style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}>
+              <p className="text-sm font-medium text-gray-700 mb-3">Select a section:</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleSectionSelect('general')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  General
+                </button>
+                {sections.map((section) => (
+                  <button
+                    key={section}
+                    onClick={() => handleSectionSelect(section)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  >
+                    {section}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setSelectedType(null)}
+                className="text-sm text-gray-500 mt-3 hover:text-gray-700"
+              >
+                ← Back
+              </button>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 text-sm">Objective</h3>
-              <p className="text-xs text-gray-500">20 questions</p>
-            </div>
-          </button>
+          ) : (
+            <button
+              onClick={handleObjectiveClick}
+              className="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left flex items-center gap-3"
+              style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15` }}>
+                <ClipboardList size={20} style={{ color: theme.colors.primary.DEFAULT }} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 text-sm">Objective</h3>
+                <p className="text-xs text-gray-500">20 questions</p>
+              </div>
+            </button>
+          )}
 
           <button
             onClick={handleTheoryStart}

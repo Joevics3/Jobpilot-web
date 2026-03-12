@@ -1,9 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { unstable_cache } from 'next/cache';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Redis } from '@upstash/redis';
 
 const FIELDS = 'id, slug, title, company, location, country, salary_range, employment_type, posted_date, created_at, sector, role_category, job_type, role, related_roles, ai_enhanced_roles, skills_required, ai_enhanced_skills, experience_level';
-const REVALIDATE_SECONDS = 1800; // 30 minutes
+const CACHE_TTL = 1800;      // 30 minutes
+const CACHE_KEY = 'jobs:all'; // single key — one cache entry for all 2000 jobs
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 function getSupabase() {
   return createClient(
@@ -12,93 +18,64 @@ function getSupabase() {
   );
 }
 
-// ─── Cached fetcher — one Supabase call per unique param combination ──────────
-// Cache key includes country + jobType + posted so each page variant is cached separately
-function makeCachedFetcher(country: string, jobType: string, postedToday: boolean, state: string = '', town: string = '') {
-  const cacheKey = `jobs-${country || 'all'}-${jobType || 'all'}-${state || 'all'}-${town || 'all'}-${postedToday ? 'today' : '30d'}`;
-
-  return unstable_cache(
-    async () => {
-      const supabase = getSupabase();
-
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      let query = supabase
-        .from('jobs')
-        .select(FIELDS)
-        .eq('status', 'active')
-        .gte('posted_date', postedToday ? todayStr : thirtyDaysAgoStr)
-        .order('posted_date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .range(0, 1999); // up to 2000 jobs
-
-      if (country) {
-        // Specific country page: show that country's jobs + Global jobs
-        query = query.or(`country.cs.{"${country}"},country.cs.{"Global"}`);
-      }
-      // No country filter = fetch ALL jobs (used by /jobs global page)
-
-      if (jobType) {
-        query = query.eq('job_type', jobType);
-      }
-
-      // ✅ State and town array-contains filters
-      if (state) {
-        query = query.contains('state', [state]);
-      }
-
-      if (town) {
-        query = query.contains('town', [town]);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Jobs API cache fetch error:', error);
-        return [];
-      }
-
-      console.log(`[jobs-cache] Fetched ${data?.length || 0} jobs (key: ${cacheKey})`);
-      return data || [];
-    },
-    [cacheKey],
-    { revalidate: REVALIDATE_SECONDS }
-  );
-}
-
-// ─── Route handler ─────────────────────────────────────────────────────────────
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const country   = searchParams.get('country')   || '';
-    const jobType   = searchParams.get('jobType')   || '';
-    const state     = searchParams.get('state')     || '';
-    const town      = searchParams.get('town')      || '';
-    const postedToday = searchParams.get('posted') === 'today';
-    const from      = parseInt(searchParams.get('from') || '0');
-    const to        = parseInt(searchParams.get('to')   || '49');
+    // ── 1. Check Redis cache ───────────────────────────────────────────────
+    const cached = await redis.get<any[]>(CACHE_KEY);
 
-    const fetchJobs = makeCachedFetcher(country, jobType, postedToday, state, town);
-    const allJobs   = await fetchJobs();
+    if (cached) {
+      console.log(`[jobs-api] Cache HIT — ${cached.length} jobs from Redis`);
+      return NextResponse.json(
+        { jobs: cached, total: cached.length, source: 'cache' },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=120',
+            'Vary': 'Accept-Encoding',
+          },
+        }
+      );
+    }
 
-    // Slice server-side so the browser only downloads what it needs per page
-    const slice = allJobs.slice(from, to + 1);
-    const total = allJobs.length;
+    // ── 2. Cache miss — fetch from Supabase ───────────────────────────────
+    console.log('[jobs-api] Cache MISS — fetching from Supabase');
+
+    const supabase = getSupabase();
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('jobs')
+      .select(FIELDS)
+      .eq('status', 'active')
+      .gte('posted_date', thirtyDaysAgoStr)
+      .order('posted_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(0, 1999);
+
+    if (error) {
+      console.error('[jobs-api] Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
+    }
+
+    const jobs = data || [];
+
+    // ── 3. Store in Redis for 30 minutes ──────────────────────────────────
+    await redis.set(CACHE_KEY, jobs, { ex: CACHE_TTL });
+    console.log(`[jobs-api] Cached ${jobs.length} jobs in Redis (TTL: ${CACHE_TTL}s)`);
 
     return NextResponse.json(
-      { jobs: slice, total },
+      { jobs, total: jobs.length, source: 'supabase' },
       {
         headers: {
-          // Also tell the browser/CDN to cache — stale-while-revalidate keeps it snappy
-          'Cache-Control': `public, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=60`,
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=120',
+          'Vary': 'Accept-Encoding',
         },
       }
     );
   } catch (error) {
-    console.error('Jobs API error:', error);
+    console.error('[jobs-api] Unexpected error:', error);
     return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
   }
 }

@@ -37,10 +37,15 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
   const [useTimer, setUseTimer] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<string>('general');
 
   useEffect(() => {
+    const sectionParam = searchParams.get('section');
+    if (sectionParam) {
+      setSelectedSection(decodeURIComponent(sectionParam));
+    }
     fetchQuestions();
-  }, [company]);
+  }, [company, selectedSection]);
 
   // Timer effect
   useEffect(() => {
@@ -85,10 +90,40 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
         .ilike('company', company);
 
       console.log('Questions:', data?.length, error);
-      setDebug(`Found ${data?.length || 0} questions for ${company}`);
       
       if (error) throw error;
-      setQuestions(shuffleArray(data || []).slice(0, 20));
+      
+      let filteredQuestions = data || [];
+      
+      // Filter by section or distribute equally for 'general'
+      if (selectedSection && selectedSection !== 'general') {
+        // Specific section - filter only that section
+        filteredQuestions = filteredQuestions.filter(q => q.section === selectedSection);
+      } else if (selectedSection === 'general') {
+        // General - distribute equally from all sections
+        const sections = [...new Set(filteredQuestions.map(q => q.section).filter(Boolean))];
+        const targetCount = 20;
+        
+        if (sections.length > 0) {
+          const basePerSection = Math.floor(targetCount / sections.length);
+          const remainder = targetCount % sections.length;
+          
+          const distributedQuestions: typeof data = [];
+          
+          sections.forEach((section, idx) => {
+            const sectionQuestions = filteredQuestions.filter(q => q.section === section);
+            // First 'remainder' sections get +1
+            const countForThisSection = basePerSection + (idx < remainder ? 1 : 0);
+            const shuffled = shuffleArray(sectionQuestions);
+            distributedQuestions.push(...shuffled.slice(0, countForThisSection));
+          });
+          
+          filteredQuestions = shuffleArray(distributedQuestions);
+        }
+      }
+      
+      setQuestions(filteredQuestions.slice(0, 20));
+      setDebug(`Found ${filteredQuestions.length} questions for ${company} (${selectedSection})`);
     } catch (error: any) {
       console.error('Error:', error);
       setDebug(`Error: ${error.message}`);

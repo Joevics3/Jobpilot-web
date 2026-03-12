@@ -138,9 +138,6 @@ export default function NotificationManager() {
 
           <div className="p-5">
             <div className="text-center mb-4">
-              <p className="text-sm text-gray-600 mb-1">
-                You're browsing from <span className="font-bold text-gray-900">{countryName || 'United States'}</span>
-              </p>
               <h3 className="font-bold text-blue-600">
                 Get Daily Remote and Global Job Updates.
               </h3>

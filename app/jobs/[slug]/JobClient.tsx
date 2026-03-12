@@ -888,7 +888,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                             </svg>
                             Apply via WhatsApp / Phone
                           </span>
-                          <span className="text-green-600 text-xs font-medium">{showPhone ? 'Hide ▲' : 'Tap to reveal ▼'}</span>
+                          <span className="text-green-600 text-xs font-medium">{showPhone ? ' ▲' : ' ▼'}</span>
                         </button>
                         {showPhone && (
                           <div className="mt-2 p-4 bg-green-50 rounded-xl border border-green-200 space-y-3">
@@ -928,7 +928,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                             <Mail size={16} />
                             Apply via Email
                           </span>
-                          <span className="text-xs font-medium opacity-70">{showEmail ? 'Hide ▲' : 'Tap to reveal ▼'}</span>
+                          <span className="text-xs font-medium opacity-70">{showEmail ? '▲' : '▼'}</span>
                         </button>
                         {showEmail && (
                           <div className="mt-2 p-4 rounded-xl border border-gray-200 space-y-3" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}05` }}>

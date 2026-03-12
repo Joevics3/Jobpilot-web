@@ -1,31 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { Redis } from '@upstash/redis';
 
-// In-memory rate limiter
-// ⚠️  NOTE: This works for long-running servers (Railway, Render, VPS).
-//     On Vercel serverless, each Lambda is stateless so this map resets per
-//     cold-start. Upgrade to @upstash/ratelimit for persistent rate limiting on Vercel.
-const ipRequests = new Map<string, { count: number; resetTime: number; blocked: boolean }>();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
-const LIMITS = {
-  normalUser: { requests: 30, window: 60000 },   // 30 req/min
-  blocked:    { requests: 0,  window: 300000 },   // 5 min ban
-};
+// Countries blocked from /jobs/* — no real users, only bots
+const BLOCKED_COUNTRIES = new Set(['SG']);
 
-// Countries to block entirely from /jobs/* routes (bot hotspots with no real users)
-const BLOCKED_COUNTRIES = ['SG'];
+// Rate limit: 30 req/min, then 5 min ban
+const RATE_LIMIT   = 30;
+const WINDOW_MS    = 60;   // seconds
+const BAN_DURATION = 300;  // seconds
 
-// Clean up expired entries periodically
-function cleanup() {
-  const now = Date.now();
-  for (const [ip, data] of ipRequests.entries()) {
-    if (now > data.resetTime) ipRequests.delete(ip);
-  }
-}
+// Detect bots by user agent
+const BOT_PATTERNS = [
+  'bot', 'crawl', 'spider', 'scraper', 'python-requests',
+  'curl', 'wget', 'jobbot', 'jobspider', 'scrapy', 'axios', 'node-fetch',
+];
 
-export function middleware(request: NextRequest) {
-  // Cleanup ~1% of requests to avoid memory bloat
-  if (Math.random() < 0.01) cleanup();
+export async function middleware(request: NextRequest) {
+  const pathname  = request.nextUrl.pathname;
+  const country   = request.geo?.country || 'unknown';
+  const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
 
   const ip =
     request.ip ||
@@ -33,72 +32,66 @@ export function middleware(request: NextRequest) {
     request.headers.get('x-real-ip') ||
     'unknown';
 
-  const country  = request.geo?.country || 'unknown';
-  const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
-  const pathname  = request.nextUrl.pathname;
-
-  // ── 1. Skip static assets ────────────────────────────────────────────────
+  // ── 1. Skip static assets ──────────────────────────────────────────────
   if (pathname.match(/\.(jpg|jpeg|png|gif|css|js|ico|svg|woff|woff2)$/)) {
     return NextResponse.next();
   }
 
-  // ── 2. Hard country block on /jobs/* ─────────────────────────────────────
-  //    Bots from these countries were hammering job pages. Real users from SG
-  //    are collateral but the jobs themselves have been deleted from the DB.
-  if (BLOCKED_COUNTRIES.includes(country) && pathname.startsWith('/jobs/')) {
-    console.log(`Blocked country ${country}: ${ip} → ${pathname}`);
+  // ── 2. Hard country block on /jobs/* ──────────────────────────────────
+  if (BLOCKED_COUNTRIES.has(country) && pathname.startsWith('/jobs/')) {
+    console.log(`[middleware] Blocked country ${country}: ${ip} → ${pathname}`);
     return new NextResponse('Access restricted in your region.', { status: 403 });
   }
 
-  // ── 3. Bot user-agent detection ──────────────────────────────────────────
-  const botPatterns = [
-    'bot', 'crawl', 'spider', 'scraper', 'python-requests', 'curl',
-    'wget', 'jobbot', 'jobspider', 'scrapy', 'axios', 'node-fetch',
-  ];
-  const isBot = botPatterns.some(pattern => userAgent.includes(pattern));
-
+  // ── 3. Bot user-agent block ────────────────────────────────────────────
+  const isBot = BOT_PATTERNS.some(p => userAgent.includes(p));
   if (isBot && !userAgent.includes('googlebot') && !userAgent.includes('bingbot')) {
-    console.log(`Blocked bot UA: ${userAgent.substring(0, 50)} from ${ip}`);
+    console.log(`[middleware] Blocked bot: ${userAgent.substring(0, 50)} from ${ip}`);
     return new NextResponse('Forbidden - Bot detected', { status: 403 });
   }
 
-  // ── 4. IP rate limiting ──────────────────────────────────────────────────
-  const now    = Date.now();
-  const ipData = ipRequests.get(ip);
+  // ── 4. Redis-backed rate limiting (works across all serverless instances) ──
+  // Skip rate limiting for unknown IPs to avoid Redis noise
+  if (ip === 'unknown') return NextResponse.next();
 
-  // Still within an active ban?
-  if (ipData?.blocked && now < ipData.resetTime) {
-    console.log(`Banned IP attempted access: ${ip}`);
-    return new NextResponse('Too Many Requests - You are temporarily blocked.', {
-      status: 429,
-      headers: { 'Retry-After': '300' },
-    });
-  }
+  try {
+    const banKey   = `ban:${ip}`;
+    const countKey = `rate:${ip}`;
 
-  const limit = LIMITS.normalUser;
+    // Check if IP is currently banned
+    const banned = await redis.get(banKey);
+    if (banned) {
+      console.log(`[middleware] Banned IP: ${ip}`);
+      return new NextResponse('Too Many Requests - You are temporarily blocked.', {
+        status: 429,
+        headers: { 'Retry-After': '300' },
+      });
+    }
 
-  // Start a fresh window
-  if (!ipData || now > ipData.resetTime) {
-    ipRequests.set(ip, { count: 1, resetTime: now + limit.window, blocked: false });
-    return NextResponse.next();
-  }
+    // Increment request count with a 60s sliding window
+    const count = await redis.incr(countKey);
+    if (count === 1) {
+      // First request in this window — set expiry
+      await redis.expire(countKey, WINDOW_MS);
+    }
 
-  ipData.count++;
-
-  if (ipData.count > limit.requests) {
-    ipData.blocked   = true;
-    ipData.resetTime = now + LIMITS.blocked.window;
-
-    console.log(`Rate limit exceeded — banned: ${ip} (${country}), count: ${ipData.count}, path: ${pathname}`);
-
-    return new NextResponse('Too Many Requests - You have been temporarily blocked.', {
-      status: 429,
-      headers: {
-        'Retry-After':        '300',
-        'X-RateLimit-Limit':  String(limit.requests),
-        'X-RateLimit-Remaining': '0',
-      },
-    });
+    if (count > RATE_LIMIT) {
+      // Ban this IP for 5 minutes
+      await redis.set(banKey, '1', { ex: BAN_DURATION });
+      await redis.del(countKey);
+      console.log(`[middleware] Rate limit exceeded — banned ${ip} (${country}), count: ${count}, path: ${pathname}`);
+      return new NextResponse('Too Many Requests - You have been temporarily blocked.', {
+        status: 429,
+        headers: {
+          'Retry-After': '300',
+          'X-RateLimit-Limit': String(RATE_LIMIT),
+          'X-RateLimit-Remaining': '0',
+        },
+      });
+    }
+  } catch (err) {
+    // If Redis is down, fail open — don't block real users
+    console.error('[middleware] Redis error:', err);
   }
 
   return NextResponse.next();
