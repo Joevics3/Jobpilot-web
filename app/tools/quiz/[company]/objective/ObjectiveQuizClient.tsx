@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { quizSupabase } from '@/lib/quizSupabase';
 import { theme } from '@/lib/theme';
 import { ArrowLeft, Check, X, Loader2, Send, RotateCcw } from 'lucide-react';
 
@@ -38,14 +38,19 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
   const [timeSpent, setTimeSpent] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string>('general');
+  const [questionCount, setQuestionCount] = useState(20);
 
   useEffect(() => {
     const sectionParam = searchParams.get('section');
+    const countParam = searchParams.get('count');
     if (sectionParam) {
       setSelectedSection(decodeURIComponent(sectionParam));
     }
+    if (countParam) {
+      setQuestionCount(parseInt(countParam) || 20);
+    }
     fetchQuestions();
-  }, [company, selectedSection]);
+  }, [company, selectedSection, questionCount]);
 
   // Timer effect
   useEffect(() => {
@@ -84,7 +89,7 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
 
   const fetchQuestions = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await quizSupabase
         .from('objective_questions')
         .select('*')
         .ilike('company', company);
@@ -102,7 +107,7 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
       } else if (selectedSection === 'general') {
         // General - distribute equally from all sections
         const sections = [...new Set(filteredQuestions.map(q => q.section).filter(Boolean))];
-        const targetCount = 20;
+        const targetCount = questionCount;
         
         if (sections.length > 0) {
           const basePerSection = Math.floor(targetCount / sections.length);
@@ -122,7 +127,7 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
         }
       }
       
-      setQuestions(filteredQuestions.slice(0, 20));
+      setQuestions(filteredQuestions.slice(0, questionCount));
       setDebug(`Found ${filteredQuestions.length} questions for ${company} (${selectedSection})`);
     } catch (error: any) {
       console.error('Error:', error);

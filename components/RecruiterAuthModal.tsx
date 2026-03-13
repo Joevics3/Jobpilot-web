@@ -20,8 +20,7 @@ import {
   Loader2, 
   CheckCircle, 
   AlertCircle,
-  Briefcase,
-  Chrome
+  Briefcase
 } from 'lucide-react';
 
 interface RecruiterAuthModalProps {
@@ -119,6 +118,7 @@ export default function RecruiterAuthModal({ open, onOpenChange }: RecruiterAuth
           } else {
             showMessage(error.message, 'error');
           }
+          setIsLoading(false);
           return;
         }
 
@@ -137,9 +137,7 @@ export default function RecruiterAuthModal({ open, onOpenChange }: RecruiterAuth
 
           if (!data.session) {
             showMessage('Account created! Please check your email to confirm your account.', 'success');
-            setTimeout(() => {
-              setMode('signin');
-            }, 2000);
+            setTimeout(() => setMode('signin'), 2000);
           } else {
             handleClose();
             router.push('/submit');
@@ -149,7 +147,6 @@ export default function RecruiterAuthModal({ open, onOpenChange }: RecruiterAuth
         showMessage(error.message || 'Failed to create account', 'error');
       }
     } else {
-      // Sign in
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email.trim(),
@@ -162,6 +159,7 @@ export default function RecruiterAuthModal({ open, onOpenChange }: RecruiterAuth
           } else {
             showMessage(error.message, 'error');
           }
+          setIsLoading(false);
           return;
         }
 
@@ -337,25 +335,6 @@ export default function RecruiterAuthModal({ open, onOpenChange }: RecruiterAuth
             )}
           </div>
         </form>
-
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-gray-500">Or</span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-11"
-          disabled
-        >
-          <Chrome className="mr-2 h-4 w-4" />
-          Continue with Google (Coming Soon)
-        </Button>
       </DialogContent>
     </Dialog>
   );

@@ -340,8 +340,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
   }, [user]);
 
   // Fetch latest jobs on mount.
-  // fetchLatestJobs handles stale-while-revalidate internally:
-  // shows localStorage instantly then swaps with fresh Redis data.
+  // fetchLatestJobs handles session caching internally.
   useEffect(() => {
     if (!authChecked) return;
     if (activeTab !== 'latest') return;
@@ -663,43 +662,44 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     };
   };
 
-  // Stale-while-revalidate:
-  // 1. Show localStorage instantly (if available) so user sees jobs immediately
-  // 2. Fetch fresh from Redis in background and swap when ready
+  // Cache strategy:
+  // - sessionStorage: clears on tab close, used for back-navigation within same session
+  // - Fresh tab/site open: no sessionStorage → always fetches from Redis (up to date)
+  // - Back-navigation: sessionStorage has full list → shows instantly, no fetch needed
   const fetchLatestJobs = async () => {
     try {
-      // Step 1: Show localStorage immediately — zero wait for returning users
-      const cached = localStorage.getItem('latest_jobs_cache');
-      if (cached) {
+      // Back-navigation within same session — show instantly from sessionStorage
+      const sessionCached = sessionStorage.getItem('latest_jobs_cache');
+      if (sessionCached) {
         try {
-          const parsedJobs = JSON.parse(cached);
+          const parsedJobs = JSON.parse(sessionCached);
           setLatestJobs(parsedJobs);
-          setLatestJobsLoading(false); // hide spinner, show stale jobs now
-          console.log(`Showing ${parsedJobs.length} jobs from localStorage while refreshing...`);
+          setLatestJobsLoading(false);
+          console.log(`Back-nav: restored ${parsedJobs.length} jobs from sessionStorage`);
+          return; // no fetch needed — same session, Redis hasn't changed
         } catch (e) {
-          // corrupt cache — spinner stays until Redis responds
+          // corrupt — fall through to Redis fetch
         }
-      } else {
-        setLatestJobsLoading(true);
       }
 
-      // Step 2: Fetch fresh from Redis in background
+      // Fresh site open — always fetch from Redis
+      setLatestJobsLoading(true);
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
       const { jobs: allData } = await res.json();
 
       const allUiJobs = (allData || []).map((job: any) => transformJobToUI(job, 0, null));
-      setLatestJobs(allUiJobs); // swap stale with fresh
+      setLatestJobs(allUiJobs);
       setCurrentPage(1);
 
-      // Update localStorage with latest full list
+      // Save to sessionStorage for back-navigation
       try {
-        localStorage.setItem('latest_jobs_cache', JSON.stringify(allUiJobs));
+        sessionStorage.setItem('latest_jobs_cache', JSON.stringify(allUiJobs));
       } catch (cacheError) {
-        console.error('Error saving to localStorage:', cacheError);
+        console.error('Error saving to sessionStorage:', cacheError);
       }
 
-      console.log(`Refreshed ${allUiJobs.length} jobs from Redis`);
+      console.log(`Fetched ${allUiJobs.length} jobs from Redis`);
     } catch (error) {
       console.error('Error fetching latest jobs:', error);
     } finally {

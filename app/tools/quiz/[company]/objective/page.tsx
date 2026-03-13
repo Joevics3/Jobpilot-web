@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import ObjectiveQuizClient from './ObjectiveQuizClient';
-import { supabase } from '@/lib/supabase';
+import { quizSupabase } from '@/lib/quizSupabase';
 
 interface Props {
   params: Promise<{ company: string }>;
