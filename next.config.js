@@ -28,73 +28,14 @@ const nextConfig = {
     ],
   },
 
-  // ── HTTP Headers ────────────────────────────────────────────────────────────
-  async headers() {
-    return [
-      // Static assets — cache aggressively at CDN edge (1 year)
-      {
-        source: '/:path*.(ico|png|jpg|jpeg|svg|gif|webp|avif|woff|woff2|ttf|otf|eot)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      // Service worker & manifest — short cache so updates propagate
-      {
-        source: '/sw.js',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
-          { key: 'Service-Worker-Allowed', value: '/' },
-        ],
-      },
-      {
-        source: '/manifest.webmanifest',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400' },
-        ],
-      },
-      // robots.txt — cache at CDN for 24 hrs so bots stop hammering it
-      {
-        source: '/robots.txt',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400' },
-        ],
-      },
-      // API routes — never cache, no indexing
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache' },
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
-        ],
-      },
-      // Pages — serve stale while revalidating (CDN caches, Vercel not re-invoked)
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=3600, stale-while-revalidate=86400',
-          },
-          // Security headers
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-        ],
-      },
-    ];
-  },
-
-  // ── Redirects — fix the 404 /companies bot loop ──────────────────────────
+  // Fix 404 bot loops seen in Vercel logs
   async redirects() {
     return [
-      // Bots keep hitting /companies (404). Redirect to jobs so they stop retrying.
       {
         source: '/companies',
         destination: '/jobs',
         permanent: true,
       },
-      // Redirect /offline.html 404s — bots shouldn't be hitting this
       {
         source: '/offline.html',
         destination: '/',
