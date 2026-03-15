@@ -1,7 +1,8 @@
 // 📁 app/tools/quiz/page.tsx
 import React from 'react';
 import Link from 'next/link';
-import { COMPANIES, companyToSlug } from '@/lib/quizCompanies';
+import { COMPANIES } from '@/lib/quizCompanies';
+import CompanyCard from './CompanyCard';
 import { theme } from '@/lib/theme';
 
 const faqSchema = {
@@ -145,16 +146,9 @@ export default function QuizPage() {
           <h2 className="text-lg font-bold text-gray-900">Select a Company</h2>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {COMPANIES.map((company) => (
-              <Link
-                key={company}
-                href={`/tools/quiz/${companyToSlug(company)}`}
-                className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-all text-center"
-                style={{ border: `1px solid ${theme.colors.border.DEFAULT}` }}
-              >
-                <span className="font-medium text-gray-900 text-sm">{company}</span>
-              </Link>
+              <CompanyCard key={company} company={company} />
             ))}
           </div>
 

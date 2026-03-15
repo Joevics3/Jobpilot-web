@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Redis } from '@upstash/redis';
 
 const FIELDS = 'id, slug, title, company, location, country, salary_range, employment_type, posted_date, created_at, sector, role_category, job_type, role, related_roles, ai_enhanced_roles, skills_required, ai_enhanced_skills, experience_level';
-const CACHE_TTL = 1800;      // 30 minutes
-const CACHE_KEY = 'jobs:all'; // single key — one cache entry for all 2000 jobs
+const CACHE_TTL = 1800;      // 30 minutes — unchanged
+const CACHE_KEY = 'jobs:all';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -20,19 +20,16 @@ function getSupabase() {
 
 export async function GET() {
   try {
-    // ── 1. Check Redis cache ───────────────────────────────────────────────
-    const cached = await redis.get<any[]>(CACHE_KEY);
+    // ── 1. Check Redis cache ──────────────────────────────────────────────
+    const raw = await redis.get(CACHE_KEY);
 
-    if (cached) {
-      console.log(`[jobs-api] Cache HIT — ${cached.length} jobs from Redis`);
+    if (raw) {
+      // ✅ FIX: manually parse — avoids Upstash auto-serialization mismatch
+      const jobs = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      console.log(`[jobs-api] Cache HIT — ${jobs.length} jobs`);
       return NextResponse.json(
-        { jobs: cached, total: cached.length, source: 'cache' },
-        {
-          headers: {
-            'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=120',
-            'Vary': 'Accept-Encoding',
-          },
-        }
+        { jobs, total: jobs.length, source: 'cache' },
+        { headers: { 'Cache-Control': 'no-store' } }
       );
     }
 
@@ -61,18 +58,13 @@ export async function GET() {
 
     const jobs = data || [];
 
-    // ── 3. Store in Redis for 30 minutes ──────────────────────────────────
-    await redis.set(CACHE_KEY, jobs, { ex: CACHE_TTL });
-    console.log(`[jobs-api] Cached ${jobs.length} jobs in Redis (TTL: ${CACHE_TTL}s)`);
+    // ✅ FIX: manually stringify before writing — guarantees data is stored correctly
+    await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(jobs));
+    console.log(`[jobs-api] Cached ${jobs.length} jobs in Redis for ${CACHE_TTL}s`);
 
     return NextResponse.json(
       { jobs, total: jobs.length, source: 'supabase' },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=120',
-          'Vary': 'Accept-Encoding',
-        },
-      }
+      { headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (error) {
     console.error('[jobs-api] Unexpected error:', error);

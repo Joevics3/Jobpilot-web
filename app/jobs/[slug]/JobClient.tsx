@@ -29,6 +29,15 @@ import { theme } from '@/lib/theme';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import AdUnit from '@/components/ads/AdUnit';
+
+// ─── Ad slot IDs ───────────────────────────────────────────────────────────────
+const AD_SLOTS = {
+  BANNER: '8152297343',      // jobpilot-banner-responsive
+  IN_ARTICLE: '6958270213',  // jobpilot-inarticle
+  SIDEBAR: '8096457028',     // jobpilot-sidebar-rectangle
+} as const;
+// ───────────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -100,13 +109,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
         });
       } catch (error: any) {
         if (error.name !== 'AbortError') {
-          // Fallback to copying URL
           await navigator.clipboard.writeText(shareUrl);
           toast({ title: 'Link copied!', description: 'Job link copied to clipboard' });
         }
       }
     } else {
-      // Fallback for browsers that don't support Web Share API
       await navigator.clipboard.writeText(shareUrl);
       toast({ title: 'Link copied!', description: 'Job link copied to clipboard' });
     }
@@ -119,7 +126,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     loadCompanies();
     loadCompanyJobs();
     
-    // Detect user country
     const detectUserCountry = async () => {
       try {
         const response = await fetch('https://ipapi.co/json/');
@@ -178,14 +184,10 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
 
   const loadSimilarJobs = async () => {
     try {
-      // Wait for user country to be detected
       if (!userCountry) return;
       
-      // Use user's detected country, fallback to job's country
       const jobLocation = typeof job.location === 'object' ? job.location : null;
       const jobCountry = jobLocation?.country || 'Nigeria';
-      
-      // Use userCountry if available, otherwise use job country
       const filterCountry = userCountry || jobCountry;
 
       let query = supabase
@@ -206,12 +208,10 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
         return;
       }
 
-      // Filter by user's country (include remote jobs)
       let filteredJobs = (categoryJobs || []).filter(j => {
         const jLoc = typeof j.location === 'object' ? j.location : null;
         const jCountry = jLoc?.country || '';
         const jRemote = jLoc?.remote || false;
-        // Include: user's country OR remote jobs
         return jCountry.toLowerCase() === filterCountry.toLowerCase() || jRemote;
       });
 
@@ -228,7 +228,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
           .eq('is_published', true)
           .limit(remainingCount);
 
-        // Apply country filter for sector jobs too
         const finalSectorJobs = (sectorJobs || []).filter(j => {
           const jLoc = typeof j.location === 'object' ? j.location : null;
           const jCountry = jLoc?.country || '';
@@ -245,8 +244,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     }
   };
 
-
-
   const loadSavedStatus = () => {
     if (typeof window === 'undefined') return;
     const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
@@ -254,30 +251,20 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
       try {
         const savedArray = JSON.parse(saved);
         setSaved(savedArray.includes(jobId));
-      } catch (e) {
-        console.error('Error loading saved status:', e);
-      }
+      } catch (e) {}
     }
   };
 
   const handleSave = () => {
     if (typeof window === 'undefined') return;
-    
     const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
     let savedArray: string[] = [];
-    
     if (saved) {
-      try {
-        savedArray = JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing saved jobs:', e);
-      }
+      try { savedArray = JSON.parse(saved); } catch (e) {}
     }
-
     const newSaved = savedArray.includes(jobId)
       ? savedArray.filter(id => id !== jobId)
       : [...savedArray, jobId];
-    
     localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
     setSaved(newSaved.includes(jobId));
   };
@@ -289,9 +276,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
       try {
         const appliedArray = JSON.parse(applied);
         setApplied(appliedArray.includes(jobId));
-      } catch (e) {
-        console.error('Error loading applied status:', e);
-      }
+      } catch (e) {}
     }
   };
 
@@ -314,61 +299,38 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
 
   const getSalaryString = () => {
     if (!job.salary && !job.salary_range) return null;
-
     if (typeof job.salary === 'string') {
-      // Hide zero salaries
-      if (job.salary === '0' || job.salary === '₦0' || job.salary === '0.00' || job.salary.includes('₦0')) {
-        return null;
-      }
+      if (job.salary === '0' || job.salary === '₦0' || job.salary === '0.00' || job.salary.includes('₦0')) return null;
       return job.salary;
     }
-
     if (job.salary_range && typeof job.salary_range === 'object') {
       const { min, max, currency, period } = job.salary_range;
-
       if (min != null && currency && min > 0) {
-        if (!max || min === max) {
-          return `${currency} ${min.toLocaleString()} ${period || ''}`.trim();
-        }
-
+        if (!max || min === max) return `${currency} ${min.toLocaleString()} ${period || ''}`.trim();
         return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()} ${period || ''}`.trim();
       }
     }
-
     return null;
   };
 
   const getExperienceLevelWithYears = (level: string) => {
     const normalizedLevel = level.trim();
-    
     const experienceMap: Record<string, string> = {
-      'Entry Level': 'Entry Level (0-2 years)',
-      'entry level': 'Entry Level (0-2 years)',
-      'entry-level': 'Entry Level (0-2 years)',
-      'Junior': 'Junior (1-3 years)',
-      'junior': 'Junior (1-3 years)',
-      'Mid-level': 'Mid-level (3-5 years)',
-      'mid-level': 'Mid-level (3-5 years)',
-      'Mid level': 'Mid-level (3-5 years)',
-      'mid level': 'Mid-level (3-5 years)',
-      'Senior': 'Senior (5-8 years)',
-      'senior': 'Senior (5-8 years)',
-      'Lead': 'Lead (8-12 years)',
-      'lead': 'Lead (8-12 years)',
-      'Executive': 'Executive (12+ years)',
-      'executive': 'Executive (12+ years)',
+      'Entry Level': 'Entry Level (0-2 years)', 'entry level': 'Entry Level (0-2 years)',
+      'entry-level': 'Entry Level (0-2 years)', 'Junior': 'Junior (1-3 years)',
+      'junior': 'Junior (1-3 years)', 'Mid-level': 'Mid-level (3-5 years)',
+      'mid-level': 'Mid-level (3-5 years)', 'Mid level': 'Mid-level (3-5 years)',
+      'mid level': 'Mid-level (3-5 years)', 'Senior': 'Senior (5-8 years)',
+      'senior': 'Senior (5-8 years)', 'Lead': 'Lead (8-12 years)', 'lead': 'Lead (8-12 years)',
+      'Executive': 'Executive (12+ years)', 'executive': 'Executive (12+ years)',
     };
-    
     return experienceMap[normalizedLevel] || level;
   };
 
   const getJobTypeDisplay = (jobType: string) => {
     const jobTypeMap: Record<string, string> = {
-      'remote': 'Remote',
-      'on-site': 'On-site',
-      'hybrid': 'Hybrid',
-      'onsite': 'On-site',
-      'full-remote': 'Fully Remote',
+      'remote': 'Remote', 'on-site': 'On-site', 'hybrid': 'Hybrid',
+      'onsite': 'On-site', 'full-remote': 'Fully Remote',
     };
     return jobTypeMap[jobType?.toLowerCase()] || jobType;
   };
@@ -384,16 +346,13 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
     return '';
   };
 
-  // Derive breadcrumb country from job.country array or location object
   const getBreadcrumbCountry = (): { name: string; slug: string } | null => {
-    // From new country[] column
     const countryArr: string[] = Array.isArray(job.country) ? job.country : [];
     const first = countryArr.find(c => c.toLowerCase() !== 'global');
     if (first) {
       const slug = first.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       return { name: first, slug };
     }
-    // Fallback: location object
     if (job.location && typeof job.location === 'object') {
       const c = job.location.country || (job.location.countries?.[0]);
       if (c && c.toLowerCase() !== 'global') {
@@ -405,11 +364,12 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
   };
 
   const breadcrumbCountry = getBreadcrumbCountry();
+  const isExpired = job.status === 'expired' || (job.deadline && new Date(job.deadline) < new Date());
 
   return (
     <>
       <div className="min-h-screen bg-gray-50">
-        {/* Fixed 2-row header — hides on scroll down, reappears on scroll up */}
+        {/* Fixed 2-row header */}
         <div
           className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-transform duration-300"
           style={{ transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
@@ -441,7 +401,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
             </div>
           </div>
 
-          {/* Row 2 — All Jobs + actions */}
+          {/* Row 2 — Actions */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
             <div className="flex items-center justify-between gap-3">
               <button
@@ -454,7 +414,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               </button>
 
               <div className="flex items-center gap-2">
-                {/* Save */}
                 <button
                   onClick={handleSave}
                   title={saved ? 'Saved' : 'Save job'}
@@ -468,7 +427,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
                 </button>
 
-                {/* Share */}
                 <button
                   onClick={handleShare}
                   title="Share job"
@@ -478,7 +436,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   <span className="hidden sm:inline">Share</span>
                 </button>
 
-                {/* Apply Now */}
                 <button
                   onClick={() => {
                     const section = document.getElementById('how-to-apply');
@@ -497,12 +454,16 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
           </div>
         </div>
 
-        {/* Main Content — pt offsets the fixed header (breadcrumb row ~36px + actions row ~52px) */}
+        {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-[96px]">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Main Job Details */}
+
+            {/* ═══════════════════════════════════════════════
+                LEFT COLUMN — Main Job Details
+            ═══════════════════════════════════════════════ */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Job Header */}
+
+              {/* Job Header Card */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h1 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: theme.colors.primary.DEFAULT }}>
                   {job.title || 'Untitled Job'}
@@ -511,7 +472,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   {(() => {
                     const companyName = getCompanyName();
                     const isConfidential = companyName === 'Confidential employer';
-                    
                     if (isConfidential) {
                       return (
                         <>
@@ -520,11 +480,10 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                         </>
                       );
                     }
-                    
                     return (
                       <>
                         {companies.some(c => c.name === companyName) ? (
-                          <a 
+                          <a
                             href={`/companies?name=${encodeURIComponent(companyName)}`}
                             className="hover:underline transition-colors"
                             style={{ color: theme.colors.primary.DEFAULT }}
@@ -539,76 +498,40 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   })()}
                 </p>
 
-                {/* Quick Links - Only show for non-expired jobs */}
-                {!(job.status === 'expired' || (job.deadline && new Date(job.deadline) < new Date())) && (
+                {/* Quick Links — live jobs only */}
+                {!isExpired && (
                   <div className="flex flex-wrap gap-2 mb-6">
-                    {/* Nigeria: Show 4 buttons */}
                     {userCountry === 'Nigeria' && (
                       <>
-                        <a
-                          href={`/jobs?posted=today`}
-                          className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                          style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                        >
+                        <a href="/jobs?posted=today" className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                           Today&apos;s jobs
                         </a>
-                        
                         {job.category && (
-                          <a
-                            href={`/jobs?category=${job.category}`}
-                            className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                            style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                          >
+                          <a href={`/jobs?category=${job.category}`} className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                             {job.category.replace(/-/g, ' ')} Jobs
                           </a>
                         )}
-                        
                         {typeof job.location === 'object' && job.location?.state && !job.location?.remote && (
-                          <a
-                            href={`/jobs/state/${job.location.state.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                            style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                          >
+                          <a href={`/jobs/state/${job.location.state.toLowerCase().replace(/\s+/g, '-')}`} className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                             {job.location.state} Jobs
                           </a>
                         )}
-                        
-                        <a
-                          href="/jobs/remote"
-                          className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                          style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                        >
+                        <a href="/jobs/remote" className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                           Remote Jobs
                         </a>
                       </>
                     )}
-                    
-                    {/* Other countries: Show 2 buttons */}
                     {userCountry && userCountry !== 'Nigeria' && (
                       <>
                         {job.category && (
-                          <a
-                            href={`/jobs?sector=${encodeURIComponent(job.sector || '')}&sort=match`}
-                            className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                            style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                          >
+                          <a href={`/jobs?sector=${encodeURIComponent(job.sector || '')}&sort=match`} className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                             Similar Jobs
                           </a>
                         )}
-                        
-                        <a
-                          href={`/jobs?country=${encodeURIComponent(userCountry)}`}
-                          className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                          style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                        >
+                        <a href={`/jobs?country=${encodeURIComponent(userCountry)}`} className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                           {userCountry} Jobs
                         </a>
-                        
-                        <a
-                          href="/jobs/remote"
-                          className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
-                          style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}
-                        >
+                        <a href="/jobs/remote" className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}15`, color: theme.colors.primary.DEFAULT }}>
                           Remote Jobs
                         </a>
                       </>
@@ -616,25 +539,17 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </div>
                 )}
 
-                {/* Find Similar Jobs - Shown when job is expired */}
-                {(job.status === 'expired' || (job.deadline && new Date(job.deadline) < new Date())) && similarJobs && similarJobs.length > 0 && (
+                {/* Expired — similar jobs inline */}
+                {isExpired && similarJobs && similarJobs.length > 0 && (
                   <div className="mb-6 -mt-2 p-4 bg-white border border-gray-200 rounded-lg">
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
                       <p className="text-red-600 font-medium text-center">This job listing has expired</p>
                     </div>
-                    <p className="text-lg font-bold text-gray-900 mb-3">
-                      Find similar jobs instead:
-                    </p>
+                    <p className="text-lg font-bold text-gray-900 mb-3">Find similar jobs instead:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {similarJobs.slice(0, 10).map((similarJob) => (
-                        <a
-                          key={similarJob.id}
-                          href={`/jobs/${similarJob.slug || similarJob.id}`}
-                          className="block p-3 bg-white hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <p className="text-base font-medium text-blue-600 line-clamp-1">
-                            {similarJob.title}
-                          </p>
+                        <a key={similarJob.id} href={`/jobs/${similarJob.slug || similarJob.id}`} className="block p-3 bg-white hover:bg-blue-50 rounded-lg transition-colors">
+                          <p className="text-base font-medium text-blue-600 line-clamp-1">{similarJob.title}</p>
                           <p className="text-xs text-gray-900 mt-0.5">
                             {typeof similarJob.company === 'string' ? similarJob.company : similarJob.company?.name || 'Company'}
                           </p>
@@ -642,22 +557,17 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                       ))}
                     </div>
                     {similarJobs.length > 10 && (
-                      <a
-                        href="/jobs"
-                        className="inline-block mt-3 text-sm font-medium text-blue-600 underline hover:text-blue-800"
-                      >
+                      <a href="/jobs" className="inline-block mt-3 text-sm font-medium text-blue-600 underline hover:text-blue-800">
                         View all similar jobs →
                       </a>
                     )}
                   </div>
                 )}
 
-                {/* Job Overview Section */}
+                {/* Job Overview */}
                 <div className="mt-6 pt-6 border-t border-gray-100">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">Job Overview</h2>
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Primary Details */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         <MapPin size={20} className="text-gray-400 flex-shrink-0" />
@@ -666,7 +576,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                           <p className="text-sm font-medium text-gray-900">{getLocationString()}</p>
                         </div>
                       </div>
-
                       {getSalaryString() && (
                         <div className="flex items-center gap-3">
                           <DollarSign size={20} className="text-gray-400 flex-shrink-0" />
@@ -677,8 +586,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                         </div>
                       )}
                     </div>
-
-                    {/* Secondary Details */}
                     <div className="space-y-4">
                       {(job.employment_type || job.type) && (
                         <div className="flex items-center gap-3">
@@ -689,7 +596,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                           </div>
                         </div>
                       )}
-
                       {job.job_type && (
                         <div className="flex items-center gap-3">
                           <Briefcase size={20} className="text-gray-400 flex-shrink-0" />
@@ -703,7 +609,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </div>
                 </div>
 
-                {/* Additional Details - Only show if they exist */}
                 {(job.sector || job.experience_level || job.deadline) && (
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -716,7 +621,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                           </div>
                         </div>
                       )}
-
                       {job.experience_level && (
                         <div className="flex items-center gap-3">
                           <Target size={20} className="text-gray-400 flex-shrink-0" />
@@ -726,18 +630,13 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                           </div>
                         </div>
                       )}
-
-                      {job.deadline && !(job.status === 'expired' || new Date(job.deadline) < new Date()) && (
+                      {job.deadline && !isExpired && (
                         <div className="flex items-center gap-3">
                           <Calendar size={20} className="text-gray-400 flex-shrink-0" />
                           <div>
                             <p className="text-xs text-gray-500">Application Deadline</p>
                             <p className="text-sm font-medium text-gray-900">
-                              {new Date(job.deadline).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
+                              {new Date(job.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                             </p>
                           </div>
                         </div>
@@ -747,14 +646,19 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 )}
               </div>
 
+              {/* ── AD #1: Responsive banner after job header ── */}
+              <div className="w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+              </div>
+
               {/* About Company */}
               {job.about_company && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">About the Company</h2>
-                   <div
-                     className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
-                     dangerouslySetInnerHTML={{ __html: typeof job.about_company === 'string' ? job.about_company : '' }}
-                   />
+                  <div
+                    className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: typeof job.about_company === 'string' ? job.about_company : '' }}
+                  />
                 </div>
               )}
 
@@ -762,24 +666,26 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               {job.description && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">Job Description</h2>
-                   <div
-                     className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
-                     dangerouslySetInnerHTML={{ __html: typeof job.description === 'string' ? job.description : '' }}
-                   />
+                  <div
+                    className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: typeof job.description === 'string' ? job.description : '' }}
+                  />
                 </div>
               )}
 
-              {/* Skills */}
+              {/* ── AD #2: In-article after description, before requirements ── */}
+              <div className="w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" />
+              </div>
+
+              {/* Required Skills */}
               {((job.skills_required && Array.isArray(job.skills_required) && job.skills_required.length > 0) ||
                 (job.skills && Array.isArray(job.skills) && job.skills.length > 0)) && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">Required Skills</h2>
                   <div className="flex flex-wrap gap-2">
                     {(job.skills_required || job.skills || []).map((skill: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200"
-                      >
+                      <span key={index} className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200">
                         {skill}
                       </span>
                     ))}
@@ -787,22 +693,21 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 </div>
               )}
 
-              {/* Responsibilities */}
+              {/* Key Responsibilities */}
               {(() => {
                 const responsibilities = job.responsibilities || [];
                 const responsibilitiesArray = Array.isArray(responsibilities) ? responsibilities : [];
-                
                 if (responsibilitiesArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h2 className="text-xl font-semibold mb-4 text-gray-900">Key Responsibilities</h2>
                       <ul className="space-y-5">
-                         {responsibilitiesArray.map((responsibility: string, index: number) => (
-                           <li key={index} className="flex items-start gap-3 text-base text-gray-700">
-                             <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
-                             <span>{responsibility}</span>
-                           </li>
-                         ))}
+                        {responsibilitiesArray.map((responsibility: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                            <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
+                            <span>{responsibility}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   );
@@ -814,18 +719,17 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               {(() => {
                 const qualifications = job.qualifications || [];
                 const qualificationsArray = Array.isArray(qualifications) ? qualifications : [];
-                
                 if (qualificationsArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h2 className="text-xl font-semibold mb-4 text-gray-900">Qualifications</h2>
                       <ul className="space-y-5">
-{qualificationsArray.map((qualification: string, index: number) => (
-                           <li key={index} className="flex items-start gap-3 text-base text-gray-700">
-                             <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
-                             <span>{qualification}</span>
-                           </li>
-                         ))}
+                        {qualificationsArray.map((qualification: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                            <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
+                            <span>{qualification}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   );
@@ -837,18 +741,17 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               {(() => {
                 const benefits = job.benefits || [];
                 const benefitsArray = Array.isArray(benefits) ? benefits : [];
-                
                 if (benefitsArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900">Benefits & Perks</h2>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900">Benefits &amp; Perks</h2>
                       <ul className="space-y-5">
-{benefitsArray.map((benefit: string, index: number) => (
-                           <li key={index} className="flex items-start gap-3 text-base text-gray-700">
-                             <Award size={20} className="flex-shrink-0 mt-0.5" style={{ color: theme.colors.primary.DEFAULT }} />
-                             <span>{benefit}</span>
-                           </li>
-                         ))}
+                        {benefitsArray.map((benefit: string, index: number) => (
+                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                            <Award size={20} className="flex-shrink-0 mt-0.5" style={{ color: theme.colors.primary.DEFAULT }} />
+                            <span>{benefit}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   );
@@ -856,8 +759,13 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 return null;
               })()}
 
-              {/* How to Apply - Show message when job is expired */}
-              {(job.status === 'expired' || (job.deadline && new Date(job.deadline) < new Date())) ? (
+              {/* ── AD #3: In-article just before "How to Apply" — highest intent slot ── */}
+              <div className="w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" />
+              </div>
+
+              {/* How to Apply */}
+              {isExpired ? (
                 <div id="how-to-apply" className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">How to Apply</h2>
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -867,7 +775,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               ) : (job.application?.email || job.application_email || job.application?.phone || job.application_phone || job.application?.link || job.application?.url || job.application_url) && (
                 <div id="how-to-apply" className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">How to Apply</h2>
-                  
                   {job.apply_instruction && (
                     <p className="text-base text-gray-600 mb-6 whitespace-pre-wrap" style={{ marginTop: '8px' }}>
                       {job.apply_instruction}
@@ -875,7 +782,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   )}
                   
                   <div className="space-y-3">
-                    {/* Phone — reveal button */}
+                    {/* Phone */}
                     {(job.application?.phone || job.application_phone) && (
                       <div>
                         <button
@@ -888,7 +795,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                             </svg>
                             Apply via WhatsApp / Phone
                           </span>
-                          <span className="text-green-600 text-xs font-medium">{showPhone ? ' ▲' : ' ▼'}</span>
+                          <span className="text-green-600 text-xs font-medium">{showPhone ? '▲' : '▼'}</span>
                         </button>
                         {showPhone && (
                           <div className="mt-2 p-4 bg-green-50 rounded-xl border border-green-200 space-y-3">
@@ -898,8 +805,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                             <div className="flex items-center gap-2">
                               <a
                                 href={`https://wa.me/${(job.application?.phone || job.application_phone || '').replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                target="_blank" rel="noopener noreferrer"
                                 className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
                               >
                                 WhatsApp
@@ -916,7 +822,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                       </div>
                     )}
 
-                    {/* Email — reveal button */}
+                    {/* Email */}
                     {(job.application?.email || job.application_email) && (
                       <div>
                         <button
@@ -955,7 +861,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                       </div>
                     )}
 
-                    {/* URL — reveal button */}
+                    {/* URL */}
                     {(job.application?.link || job.application?.url || job.application_url) && (
                       <div>
                         <button
@@ -976,8 +882,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                             <div className="flex items-center gap-2">
                               <a
                                 href={job.application?.link || job.application?.url || job.application_url || ''}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                target="_blank" rel="noopener noreferrer"
                                 className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors font-medium"
                               >
                                 Open Link
@@ -1001,11 +906,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Join Our Communities</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* WhatsApp Channel Button */}
-                  <a 
+                  <a
                     href="https://whatsapp.com/channel/0029VbC3NrUKLaHp8JAt7v3y"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"
                   >
                     <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
@@ -1013,12 +916,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                     </svg>
                     <span className="text-base font-medium text-gray-700">Join WhatsApp Channel</span>
                   </a>
-
-                  {/* Telegram Group Button */}
-                  <a 
+                  <a
                     href="https://t.me/+1YYoQJdLzzkwNDI0"
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
                   >
                     <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
@@ -1029,15 +929,20 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 </div>
               </div>
 
+              {/* ── AD #4: In-article after communities ── */}
+              <div className="w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" />
+              </div>
+
               {/* Additional Info Accordion */}
-              {((job.about_role && job.about_role.trim()) || 
-                (job.who_apply && job.who_apply.trim()) || 
+              {((job.about_role && job.about_role.trim()) ||
+                (job.who_apply && job.who_apply.trim()) ||
                 (job.standout && job.standout.trim())) && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <Accordion type="multiple" className="w-full" style={{ marginTop: '8px' }}>
                     {job.about_role && job.about_role.trim() && (
                       <AccordionItem value="about-role" className="border-b border-gray-200">
-                         <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
+                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
                           About This Role
                         </AccordionTrigger>
                         <AccordionContent>
@@ -1047,10 +952,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                         </AccordionContent>
                       </AccordionItem>
                     )}
-
                     {job.who_apply && job.who_apply.trim() && (
                       <AccordionItem value="who-apply" className="border-b border-gray-200">
-                         <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
+                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
                           Who Should Apply
                         </AccordionTrigger>
                         <AccordionContent>
@@ -1060,10 +964,9 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                         </AccordionContent>
                       </AccordionItem>
                     )}
-
                     {job.standout && job.standout.trim() && (
                       <AccordionItem value="standout" className="border-b-0">
-                         <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
+                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
                           <div className="flex items-center gap-2">
                             <Sparkles size={18} className="text-yellow-500" />
                             <span>How to Stand Out When Applying</span>
@@ -1084,39 +987,29 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               {(job.posted_date || job.created_at) && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-3 text-gray-900">Posted Date</h2>
-                   <p className="text-sm text-gray-700 mb-2">
-                     {(() => {
-                       const dateStr = job.posted_date || job.created_at;
-                       const date = new Date(dateStr);
-                       
-                       if (isNaN(date.getTime())) {
-                         return 'Date not available';
-                       }
-                       
-                       return date.toLocaleDateString('en-US', {
-                         year: 'numeric',
-                         month: 'long',
-                         day: 'numeric',
-                         timeZone: 'UTC'
-                       });
-                     })()}
-                   </p>
+                  <p className="text-sm text-gray-700 mb-2">
+                    {(() => {
+                      const dateStr = job.posted_date || job.created_at;
+                      const date = new Date(dateStr);
+                      if (isNaN(date.getTime())) return 'Date not available';
+                      return date.toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+                      });
+                    })()}
+                  </p>
                   {(job.views || 0) > 0 && (
-                    <p className="text-sm text-gray-500">
-                      {job.views?.toLocaleString()} people viewed this job
-                    </p>
+                    <p className="text-sm text-gray-500">{job.views?.toLocaleString()} people viewed this job</p>
                   )}
                 </div>
               )}
 
-              {/* Application Link - Hide when job is expired */}
-              {!(job.status === 'expired' || (job.deadline && new Date(job.deadline) < new Date())) && (job.application_url || (job.application && (job.application.url || job.application.link))) && (
+              {/* Application Link */}
+              {!isExpired && (job.application_url || (job.application && (job.application.url || job.application.link))) && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <a
                     href={job.application_url || job.application?.url || job.application?.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                     className="flex items-center gap-2 text-sm font-medium hover:underline"
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-medium hover:underline"
                     style={{ color: theme.colors.primary.DEFAULT }}
                   >
                     <ExternalLink size={18} />
@@ -1124,11 +1017,20 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </a>
                 </div>
               )}
+
+              {/* ── AD #5: Banner at the end of main content ── */}
+              <div className="w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+              </div>
+
             </div>
 
-            {/* Right Column - Company Jobs & Similar Jobs (Desktop Sidebar) */}
+            {/* ═══════════════════════════════════════════════
+                RIGHT COLUMN — Sidebar
+            ═══════════════════════════════════════════════ */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Jobs from Same Company */}
+
+              {/* More Jobs from Same Company */}
               {companyJobs && companyJobs.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden sticky top-24">
                   <div className="px-5 py-4 text-white font-semibold text-lg" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
@@ -1137,17 +1039,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   <div className="px-5 py-4">
                     <div className="space-y-4">
                       {companyJobs.map((companyJob) => (
-                        <a
-                          key={companyJob.id}
-                          href={`/jobs/${companyJob.slug || companyJob.id}`}
-                          className="block group"
-                        >
+                        <a key={companyJob.id} href={`/jobs/${companyJob.slug || companyJob.id}`} className="block group">
                           <div className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors">
                             <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full mt-2 group-hover:scale-150 transition-transform" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-semibold text-gray-900 group-hover:underline line-clamp-2 mb-1">
-                                {companyJob.title}
-                              </h3>
+                              <h3 className="text-sm font-semibold text-gray-900 group-hover:underline line-clamp-2 mb-1">{companyJob.title}</h3>
                               <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 {companyJob.category && (
                                   <span className="flex items-center gap-1">
@@ -1171,6 +1067,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                 </div>
               )}
 
+              {/* ── Sidebar AD: 300×250 between company jobs and similar jobs ── */}
+              <div className="hidden lg:block w-full overflow-hidden rounded-lg">
+                <AdUnit slot={AD_SLOTS.SIDEBAR} format="auto" />
+              </div>
+
               {/* Similar Jobs */}
               {similarJobs && similarJobs.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -1180,17 +1081,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   <div className="px-5 py-4">
                     <div className="space-y-4">
                       {similarJobs.map((similarJob) => (
-                        <a
-                          key={similarJob.id}
-                          href={`/jobs/${similarJob.slug || similarJob.id}`}
-                          className="block group"
-                        >
+                        <a key={similarJob.id} href={`/jobs/${similarJob.slug || similarJob.id}`} className="block group">
                           <div className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors">
                             <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full mt-2 group-hover:scale-150 transition-transform" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-semibold text-gray-900 group-hover:underline line-clamp-2 mb-1">
-                                {similarJob.title}
-                              </h3>
+                              <h3 className="text-base font-semibold text-gray-900 group-hover:underline line-clamp-2 mb-1">{similarJob.title}</h3>
                               <p className="text-sm text-gray-600 mb-1">
                                 {typeof similarJob.company === 'string' ? similarJob.company : similarJob.company?.name || 'Company'}
                               </p>
@@ -1213,7 +1108,6 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                         </a>
                       ))}
                     </div>
-                    
                     <div className="mt-5 pt-4 border-t border-gray-200">
                       <a
                         href="/jobs"
@@ -1227,16 +1121,10 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </div>
                 </div>
               )}
+
             </div>
           </div>
-
-
         </div>
-
-        {/* Bottom Action Bar - Mobile Fixed */}
-        {/* Desktop Action Bar */}
-
-
       </div>
 
       {/* Upgrade Modal */}

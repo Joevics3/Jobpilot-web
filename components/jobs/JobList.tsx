@@ -17,6 +17,7 @@ import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine
 import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
+import AdUnit from '@/components/ads/AdUnit';
 
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
 
@@ -28,6 +29,14 @@ const STORAGE_KEYS = {
 // ✅ OPTIMIZATION: Pagination constants
 const JOBS_PER_PAGE_DISPLAY = 50; // Jobs per page for display
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+
+// ─── Ad slot IDs ───────────────────────────────────────────────────────────────
+const AD_SLOTS = {
+  BANNER: '8152297343',          // jobpilot-banner-responsive  (top + above pagination)
+  IN_FEED: '2040985457',         // jobpilot-infeed-native      (every 5 jobs)
+  IN_FEED_LAYOUT_KEY: '-g4-2b+f-5v+o7',
+} as const;
+// ───────────────────────────────────────────────────────────────────────────────
 
 interface JobListProps {
   initialCountry?: string;
@@ -175,9 +184,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     loadSavedJobs();
     loadAppliedJobs();
     
-    // Note: Default tab is 'latest', no restoration from localStorage on initial load
-    // This ensures Latest Jobs loads immediately and Matches only fetches when clicked
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setUser(session.user);
@@ -191,7 +197,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     return () => subscription.unsubscribe();
   }, []);
 
-  // Set initial country from page prop (for country-specific pages like /jobs/us)
   useEffect(() => {
     if (initialCountry) {
       setFilters(prev => ({ ...prev, country: initialCountry }));
@@ -201,14 +206,12 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     }
   }, [initialCountry]);
 
-  // Set initial role category from page prop (for remote category pages)
   useEffect(() => {
     if (initialRoleCategory) {
       setFilters(prev => ({ ...prev, roleCategory: initialRoleCategory }));
     }
   }, [initialRoleCategory]);
 
-  // Set initial job type from page prop (e.g. /jobs/remote)
   useEffect(() => {
     if (initialJobType) {
       setFilters(prev => ({ ...prev, jobType: initialJobType }));
@@ -223,8 +226,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     if (initialTown) setFilters(prev => ({ ...prev, town: initialTown }));
   }, [initialTown]);
 
-  // Geo-detection: auto-detect country on first visit only
-  // ✅ SKIP entirely on country-specific pages — initialCountry locks the filter, no localStorage interference
   useEffect(() => {
     if (initialCountry) return;
 
@@ -232,7 +233,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       const hasVisitedBefore = localStorage.getItem('has_visited_jobs');
       const userChangedCountry = localStorage.getItem('user_changed_country');
       
-      // Only auto-detect if user hasn't manually selected a country
       if (userChangedCountry === 'true') {
         const savedCountry = localStorage.getItem('user_country');
         if (savedCountry) {
@@ -243,7 +243,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       }
       
       if (!hasVisitedBefore) {
-        // First visit - auto-detect using Vercel geo headers (reliable, no external API)
         try {
           const response = await fetch('/api/geo');
           const data = await response.json();
@@ -258,7 +257,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
           localStorage.setItem('has_visited_jobs', 'true');
         }
       } else {
-        // Returning visit - load saved country
         const savedCountry = localStorage.getItem('user_country');
         if (savedCountry) {
           setDetectedCountry(savedCountry);
@@ -270,7 +268,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     detectCountry();
   }, []);
 
-  // Track desktop/mobile
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
     checkDesktop();
@@ -278,7 +275,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  // Initialize search query and filters from URL parameters
   useEffect(() => {
     const searchParam = searchParams.get('search');
     const locationParam = searchParams.get('location');
@@ -294,25 +290,20 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       setSearchQuery(searchParam);
       setFilters(prev => ({ ...prev, search: searchParam }));
     }
-
     if (locationParam) {
       setFilters(prev => ({ ...prev, location: locationParam.split(',') }));
     }
-
     if (countryParam) {
       setFilters(prev => ({ ...prev, country: countryParam }));
       localStorage.setItem('user_country', countryParam);
       localStorage.setItem('user_changed_country', 'true');
     }
-
     if (sectorParam) {
       setFilters(prev => ({ ...prev, sector: sectorParam.split(',') }));
     }
-
     if (employmentTypeParam) {
       setFilters(prev => ({ ...prev, employmentType: employmentTypeParam.split(',') }));
     }
-
     if (salaryMinParam || salaryMaxParam) {
       setFilters(prev => ({
         ...prev,
@@ -322,11 +313,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         }
       }));
     }
-
     if (remoteParam === 'true') {
       setFilters(prev => ({ ...prev, remote: true }));
     }
-
     if (sortParam === 'latest' || sortParam === 'salary') {
       setSortBy(sortParam);
     }
@@ -339,21 +328,16 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     }
   }, [user]);
 
-  // Fetch latest jobs on mount.
-  // fetchLatestJobs handles session caching internally.
   useEffect(() => {
     if (!authChecked) return;
     if (activeTab !== 'latest') return;
     fetchLatestJobs();
   }, [authChecked, activeTab]);
 
-  // ✅ MODIFIED: Only fetch matches when user switches to Matches tab
   useEffect(() => {
     if (!authChecked || activeTab !== 'matches') {
       return;
     }
-
-    // Check if matches are already loaded
     if (jobs.length > 0) {
       return;
     }
@@ -367,7 +351,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
       const cachedUserId = localStorage.getItem(cacheUserIdKey);
       
-      // ✅ Check if cache is valid
       if (cachedJobs && cacheTimestamp) {
         const timestamp = parseInt(cacheTimestamp, 10);
         const now = Date.now();
@@ -379,37 +362,29 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
             const parsedJobs = JSON.parse(cachedJobs);
             setJobs(parsedJobs);
             setLoading(false);
-            
-            // ✅ CRITICAL FIX: Don't re-process matches for cached jobs!
-            // The cached jobs already have match scores calculated
             return;
           } catch (error) {
             console.error('Error parsing cached jobs:', error);
           }
         }
       }
+
+      if (user && userOnboardingData !== null) {
+        fetchJobs();
+      } else if (user && userOnboardingData === null) {
+        return;
+      } else {
+        fetchJobs();
+      }
     } catch (error) {
       console.error('Error checking job cache:', error);
     }
-
-    // ✅ Only fetch if cache was invalid or missing
-    if (user && userOnboardingData !== null) {
-      fetchJobs();
-    } else if (user && userOnboardingData === null) {
-      return;
-    } else {
-      fetchJobs();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, activeTab, user, userOnboardingData]);
 
-  // ✅ MODIFIED: Only fetch matches when user switches to Matches tab
   useEffect(() => {
     if (!authChecked || activeTab !== 'matches') {
       return;
     }
-
-    // Check if matches are already loaded
     if (jobs.length > 0) {
       return;
     }
@@ -423,7 +398,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
       const cachedUserId = localStorage.getItem(cacheUserIdKey);
       
-      // ✅ Check if cache is valid
       if (cachedJobs && cacheTimestamp) {
         const timestamp = parseInt(cacheTimestamp, 10);
         const now = Date.now();
@@ -433,12 +407,10 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         if (isCacheValid && isUserMatching) {
           const parsedCachedJobs = JSON.parse(cachedJobs);
           setJobs(parsedCachedJobs);
-          console.log(`Loaded ${parsedCachedJobs.length} jobs from cache for user ${user?.id || 'anonymous'}`);
           return;
         }
       }
 
-      // ✅ If no valid cache, fetch fresh data
       fetchJobs();
     } catch (error) {
       console.error('Error loading cached jobs:', error);
@@ -492,7 +464,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     }
   };
 
-  // ✅ OPTIMIZATION: Improved processJobsWithMatching - removed unnecessary localStorage operations
   const processJobsWithMatching = useCallback(async (jobRows: any[]): Promise<JobUI[]> => {
     if (!userOnboardingData || !user) {
       return jobRows.map((job: any) => transformJobToUI(job, 0, null));
@@ -502,8 +473,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     let cacheNeedsUpdate = false;
     const updatedCache = { ...matchCache };
 
-    // ✅ OPTIMIZATION: Process in batches to avoid blocking
-    const batchSize = 20; // Increased batch size for better performance
+    const batchSize = 20;
     const processedJobs: JobUI[] = [];
 
     for (let i = 0; i < jobRows.length; i += batchSize) {
@@ -567,7 +537,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
 
       processedJobs.push(...batchResults);
 
-      // ✅ Yield to main thread between batches
       if (i + batchSize < jobRows.length) {
         await new Promise(resolve => setTimeout(resolve, 0));
       }
@@ -616,14 +585,12 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
 
     const getRelativeTime = (dateString: string | null): string | undefined => {
       if (!dateString) return undefined;
-      
       try {
         const date = new Date(dateString);
         const now = new Date();
         const diffInMs = now.getTime() - date.getTime();
         const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
         const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-        
         if (diffInHours < 24) return 'Today';
         if (diffInDays === 1) return '1 day ago';
         if (diffInDays < 7) return `${diffInDays} days ago`;
@@ -648,8 +615,8 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       title: job.title || 'Untitled Job',
       company: companyStr,
       location: locationStr,
-      rawLocation: job.location, // ✅ preserve raw location object for filtering
-      country: job.country || [], // ✅ dedicated country column (text[])
+      rawLocation: job.location,
+      country: job.country || [],
       salary: salaryStr,
       match: finalMatchScore,
       calculatedTotal: finalMatchScore,
@@ -662,27 +629,20 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     };
   };
 
-  // Cache strategy:
-  // - sessionStorage: clears on tab close, used for back-navigation within same session
-  // - Fresh tab/site open: no sessionStorage → always fetches from Redis (up to date)
-  // - Back-navigation: sessionStorage has full list → shows instantly, no fetch needed
   const fetchLatestJobs = async () => {
     try {
-      // Back-navigation within same session — show instantly from sessionStorage
       const sessionCached = sessionStorage.getItem('latest_jobs_cache');
       if (sessionCached) {
         try {
           const parsedJobs = JSON.parse(sessionCached);
           setLatestJobs(parsedJobs);
           setLatestJobsLoading(false);
-          console.log(`Back-nav: restored ${parsedJobs.length} jobs from sessionStorage`);
-          return; // no fetch needed — same session, Redis hasn't changed
+          return;
         } catch (e) {
-          // corrupt — fall through to Redis fetch
+          // corrupt — fall through to fetch
         }
       }
 
-      // Fresh site open — always fetch from Redis
       setLatestJobsLoading(true);
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
@@ -692,14 +652,11 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       setLatestJobs(allUiJobs);
       setCurrentPage(1);
 
-      // Save to sessionStorage for back-navigation
       try {
         sessionStorage.setItem('latest_jobs_cache', JSON.stringify(allUiJobs));
       } catch (cacheError) {
         console.error('Error saving to sessionStorage:', cacheError);
       }
-
-      console.log(`Fetched ${allUiJobs.length} jobs from Redis`);
     } catch (error) {
       console.error('Error fetching latest jobs:', error);
     } finally {
@@ -708,7 +665,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     }
   };
 
-  // ✅ OPTIMIZATION: Fetch only 100 latest jobs per page
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -721,20 +677,13 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       if (!res.ok) throw new Error('Failed to fetch jobs');
       const { jobs: data } = await res.json();
 
-      console.log(`Fetched ${data?.length || 0} latest active jobs`);
-
       const processedJobs = await processJobsWithMatching(data || []);
-      
-      // ✅ Sort by match score (default sorting)
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
 
-      // ✅ OPTIMIZATION: Cache with user ID to prevent wrong cache usage
       try {
         localStorage.setItem('jobs_cache', JSON.stringify(processedJobs));
         localStorage.setItem('jobs_cache_timestamp', Date.now().toString());
         localStorage.setItem('jobs_cache_user_id', user?.id || '');
-        
-        console.log(`Cached ${processedJobs.length} jobs for user ${user?.id || 'anonymous'}`);
       } catch (cacheError) {
         console.error('Error caching jobs:', cacheError);
       }
@@ -751,11 +700,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     if (typeof window === 'undefined') return;
     const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
     if (saved) {
-      try {
-        setSavedJobs(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error loading saved jobs:', e);
-      }
+      try { setSavedJobs(JSON.parse(saved)); } catch (e) {}
     }
   };
 
@@ -763,11 +708,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     if (typeof window === 'undefined') return;
     const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
     if (applied) {
-      try {
-        setAppliedJobs(JSON.parse(applied));
-      } catch (e) {
-        console.error('Error loading applied jobs:', e);
-      }
+      try { setAppliedJobs(JSON.parse(applied)); } catch (e) {}
     }
   };
 
@@ -775,7 +716,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     const newSaved = savedJobs.includes(jobId)
       ? savedJobs.filter(id => id !== jobId)
       : [...savedJobs, jobId];
-
     setSavedJobs(newSaved);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.SAVED_JOBS, JSON.stringify(newSaved));
@@ -786,36 +726,25 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     const newApplied = appliedJobs.includes(jobId)
       ? appliedJobs.filter(id => id !== jobId)
       : [...appliedJobs, jobId];
-
     setAppliedJobs(newApplied);
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.APPLIED_JOBS, JSON.stringify(newApplied));
     }
   };
 
-
-
   const handleRefreshMatches = async () => {
     setRefreshingMatches(true);
-    
     try {
-      // Clear all cached data
       localStorage.removeItem('jobs_cache');
       localStorage.removeItem('jobs_cache_timestamp');
       localStorage.removeItem('jobs_cache_user_id');
       localStorage.removeItem('latest_jobs_cache');
       localStorage.removeItem('latest_jobs_cache_timestamp');
-      
-      // Clear match cache if user is logged in
       if (user) {
         matchCacheService.clearMatchCache(user.id);
       }
-      
-      // Reset states
       setCurrentPage(1);
       setJobs([]);
-      
-      // Fetch fresh data based on active tab
       if (activeTab === 'latest') {
         setLatestJobs([]);
         await fetchLatestJobs();
@@ -831,18 +760,10 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
 
   const handleShowBreakdown = (job: JobUI) => {
     const breakdown = job.breakdown || {
-      rolesScore: 0,
-      rolesReason: '',
-      skillsScore: 0,
-      skillsReason: '',
-      sectorScore: 0,
-      sectorReason: '',
-      locationScore: 0,
-      experienceScore: 0,
-      salaryScore: 0,
-      typeScore: 0,
+      rolesScore: 0, rolesReason: '', skillsScore: 0, skillsReason: '',
+      sectorScore: 0, sectorReason: '', locationScore: 0,
+      experienceScore: 0, salaryScore: 0, typeScore: 0,
     };
-
     setMatchModalData({
       breakdown,
       totalScore: job.calculatedTotal || job.match || 0,
@@ -852,26 +773,19 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     setMatchModalOpen(true);
   };
 
-  // ✅ MODIFIED: Filter only applies to Latest Jobs tab
   const filteredJobs = useMemo(() => {
-    // Only filter for Latest tab
     if (activeTab !== 'latest') return [];
     if (latestJobsLoading && latestJobs.length === 0) return [];
     
     return latestJobs.filter(job => {
-      // Skip applied jobs
       if (appliedJobs.includes(job.id)) return false;
-      
       const jobTypeLower = job.type?.toLowerCase() || '';
       
-      // Search filter
       const query = filters.search?.toLowerCase();
       if (query) {
         const titleMatch = job.title.toLowerCase().includes(query);
         const companyMatch = job.company.toLowerCase().includes(query);
         const descriptionMatch = job.description?.toLowerCase().includes(query) || false;
-        
-        // Check location (city, state, country)
         let locationMatch = false;
         const jobLoc = job.location;
         if (typeof jobLoc === 'string') {
@@ -883,19 +797,14 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
           const country = String(loc.country || '').toLowerCase();
           locationMatch = city.includes(query) || state.includes(query) || country.includes(query);
         }
-        
         if (!titleMatch && !companyMatch && !descriptionMatch && !locationMatch) return false;
       }
       
-      // Location filter (for Nigerian states)
       if (filters.location && filters.location.length > 0) {
         const jobLoc = job.location;
         let locationMatch = false;
-        
         if (typeof jobLoc === 'string') {
-          locationMatch = filters.location.some((loc: string) => 
-            jobLoc.toLowerCase().includes(loc.toLowerCase())
-          );
+          locationMatch = filters.location.some((loc: string) => jobLoc.toLowerCase().includes(loc.toLowerCase()));
         } else if (jobLoc && typeof jobLoc === 'object') {
           const loc = jobLoc as Record<string, unknown>;
           locationMatch = filters.location.some((locName: string) => {
@@ -904,14 +813,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
             return state.includes(locName.toLowerCase()) || city.includes(locName.toLowerCase());
           });
         }
-        
         if (!locationMatch) return false;
       }
       
-      // ✅ Country filter
-      // - On /jobs (no initialCountry): show all jobs including all remote/global
-      // - On /jobs/usa etc (initialCountry set): only show jobs explicitly listing that country
-      //   (remote "global" jobs are excluded — only remote jobs tagged with that country appear)
       if (filters.country) {
         const jobCountries: string[] = (job as any).country || [];
         const isRemoteJob = (() => {
@@ -922,13 +826,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         })();
 
         if (initialCountry) {
-          // Country-specific page: job must explicitly list this country (remote "global" jobs excluded)
-          const match = jobCountries.some(c =>
-            c.toLowerCase() === filters.country.toLowerCase()
-          );
+          const match = jobCountries.some(c => c.toLowerCase() === filters.country.toLowerCase());
           if (!match) return false;
         } else {
-          // /jobs page: show jobs matching country OR global jobs
           const match = jobCountries.some(c =>
             c.toLowerCase() === filters.country.toLowerCase() ||
             c.toLowerCase() === 'global'
@@ -937,11 +837,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         }
       }
       
-      // Remote filter
       if (filters.remote) {
         const jobLoc = job.location;
         let isRemote = false;
-        
         if (typeof jobLoc === 'string') {
           isRemote = jobLoc.toLowerCase().includes('remote');
         } else if (jobLoc && typeof jobLoc === 'object') {
@@ -950,16 +848,12 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         if (!isRemote) return false;
       }
       
-      // Employment type filter
       if (filters.employmentType && filters.employmentType.length > 0) {
         const jobLoc = job.location;
         const typeMatch = filters.employmentType.some((type: string) => {
           if (type.toLowerCase() === 'remote') {
-            if (typeof jobLoc === 'string') {
-              return jobLoc.toLowerCase().includes('remote');
-            } else if (jobLoc && typeof jobLoc === 'object') {
-              return Boolean((jobLoc as Record<string, unknown>).remote);
-            }
+            if (typeof jobLoc === 'string') return jobLoc.toLowerCase().includes('remote');
+            else if (jobLoc && typeof jobLoc === 'object') return Boolean((jobLoc as Record<string, unknown>).remote);
             return false;
           }
           return jobTypeLower.includes(type.toLowerCase()) || type.toLowerCase().includes(jobTypeLower);
@@ -967,7 +861,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
         if (!typeMatch) return false;
       }
       
-      // Salary filter
       if (filters.salaryRange) {
         const getSalaryNumber = (salary: string) => {
           if (!salary) return 0;
@@ -975,49 +868,33 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
           return match ? parseInt(match[0].replace(/,/g, '')) : 0;
         };
         const jobSalary = getSalaryNumber(job.salary || '');
-        
-        if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) {
-          return false;
-        }
-        if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) {
-          return false;
-        }
+        if (filters.salaryRange.min > 0 && jobSalary < filters.salaryRange.min) return false;
+        if (filters.salaryRange.max > 0 && jobSalary > filters.salaryRange.max) return false;
       }
       
-      // Sector filter
       if (filters.sector && filters.sector.length > 0) {
         const jobSector = job.sector?.toLowerCase() || '';
-        const sectorMatch = filters.sector.some((sector: string) => 
+        const sectorMatch = filters.sector.some((sector: string) =>
           jobSector.includes(sector.toLowerCase()) || sector.toLowerCase().includes(jobSector)
         );
         if (!sectorMatch) return false;
       }
       
-      // Role category filter (for remote categories)
       if (filters.roleCategory) {
         const jobRoleCat = job.role_category?.toLowerCase() || '';
         if (!jobRoleCat.includes(filters.roleCategory.toLowerCase()) && 
-            !filters.roleCategory.toLowerCase().includes(jobRoleCat)) {
-          return false;
-        }
+            !filters.roleCategory.toLowerCase().includes(jobRoleCat)) return false;
       }
       
       return true;
     });
   }, [latestJobs, filters, appliedJobs, latestJobsLoading, activeTab]);
 
-  
-
-  // ✅ MODIFIED: Sort only applies to Latest Jobs tab
   const sortedJobs = useMemo(() => {
     if (activeTab !== 'latest') return [];
     if (latestJobsLoading && filteredJobs.length === 0) return [];
-    
     return [...filteredJobs].sort((a, b) => {
-      if (sortBy === 'latest') {
-        // Already sorted by latest from DB, but respect user choice
-        return 0;
-      } else if (sortBy === 'salary') {
+      if (sortBy === 'salary') {
         const getSalaryNumber = (salary: string) => {
           if (!salary) return 0;
           const match = salary.match(/[\d,]+/);
@@ -1029,7 +906,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     });
   }, [filteredJobs, sortBy, latestJobsLoading, activeTab]);
 
-  // ✅ NEW: Pagination logic for filtered jobs
   const paginatedJobs = useMemo(() => {
     const startIndex = (currentPage - 1) * JOBS_PER_PAGE_DISPLAY;
     const endIndex = startIndex + JOBS_PER_PAGE_DISPLAY;
@@ -1038,17 +914,12 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
 
   const totalPages = Math.ceil(sortedJobs.length / JOBS_PER_PAGE_DISPLAY);
 
-  // ✅ NEW: Get jobs for Matches tab (already sorted by match score)
   const matchedJobs = useMemo(() => {
     if (activeTab !== 'matches') return [];
     return jobs.filter(job => !appliedJobs.includes(job.id));
   }, [jobs, appliedJobs, activeTab]);
 
-
-
-  // ✅ NEW: Handle tab change
   const handleTabChange = (tab: 'latest' | 'matches') => {
-    // Check if user is trying to access matches tab without being signed in
     if (tab === 'matches' && !user) {
       setAuthModalOpen(true);
       return;
@@ -1057,7 +928,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     localStorage.setItem('active_jobs_tab', tab);
   };
 
-  // ✅ NEW: Helper functions for enhanced filter UX
   const hasActiveFilters = () => {
     return (
       (filters.location && filters.location.length > 0) ||
@@ -1098,12 +968,8 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
     setFilters(clearedFilters);
     setSearchQuery('');
     localStorage.setItem('user_changed_country', 'false');
-    
-    // Clear URL parameters
     const params = new URLSearchParams();
-    if (sortBy !== 'latest') {
-      params.set('sort', sortBy);
-    }
+    if (sortBy !== 'latest') params.set('sort', sortBy);
     const queryString = params.toString();
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
     router.replace(newUrl);
@@ -1120,10 +986,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
       />
        
       <div className="min-h-screen" style={{ backgroundColor: theme.colors.background.muted }}>
-        {/* Header removed as requested */}
 
-
-        {/* ✅ NEW: Tabs Section */}
         {/* Header Section */}
         <div className="px-6 pt-6 pb-2">
           <div className="mb-6">
@@ -1180,13 +1043,8 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                   setSearchQuery(newSearch);
                   setFilteredSuggestions(getSuggestions(newSearch));
                   setShowSuggestions(newSearch.length > 0);
-                  
                   const params = new URLSearchParams(searchParams.toString());
-                  if (newSearch) {
-                    params.set('search', newSearch);
-                  } else {
-                    params.delete('search');
-                  }
+                  if (newSearch) { params.set('search', newSearch); } else { params.delete('search'); }
                   const queryString = params.toString();
                   const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
                   router.replace(newUrl);
@@ -1262,7 +1120,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
 
             {/* Country Filter Row */}
             <div className="flex flex-row items-center gap-2">
-              {/* Country Quick Filter */}
               <div className="flex-1 relative flex items-center gap-2">
                 <Globe size={16} className="shrink-0" style={{ color: theme.colors.text.secondary }} />
                 <select
@@ -1336,63 +1193,38 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                   <option value="South Korea">South Korea</option>
                   <option value="Egypt">Egypt</option>
                   <option value="Argentina">Argentina</option>
-                  <option value="Austria">Austria</option>
                   <option value="Bangladesh">Bangladesh</option>
-                  <option value="Belgium">Belgium</option>
                   <option value="Colombia">Colombia</option>
                   <option value="Czech Republic">Czech Republic</option>
                   <option value="Chile">Chile</option>
-                  <option value="Denmark">Denmark</option>
                   <option value="Ecuador">Ecuador</option>
                   <option value="Ethiopia">Ethiopia</option>
-                  <option value="Finland">Finland</option>
                   <option value="Greece">Greece</option>
                   <option value="Hong Kong">Hong Kong</option>
                   <option value="Hungary">Hungary</option>
                   <option value="Iraq">Iraq</option>
-                  <option value="Italy">Italy</option>
                   <option value="Jordan">Jordan</option>
-                  <option value="Kenya">Kenya</option>
                   <option value="Kuwait">Kuwait</option>
                   <option value="Lebanon">Lebanon</option>
-                  <option value="Malaysia">Malaysia</option>
-                  <option value="Mexico">Mexico</option>
                   <option value="Morocco">Morocco</option>
-                  <option value="Netherlands">Netherlands</option>
-                  <option value="New Zealand">New Zealand</option>
-                  <option value="Norway">Norway</option>
                   <option value="Oman">Oman</option>
                   <option value="Pakistan">Pakistan</option>
                   <option value="Peru">Peru</option>
-                  <option value="Philippines">Philippines</option>
-                  <option value="Poland">Poland</option>
-                  <option value="Portugal">Portugal</option>
                   <option value="Qatar">Qatar</option>
                   <option value="Romania">Romania</option>
                   <option value="Russia">Russia</option>
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="Singapore">Singapore</option>
-                  <option value="South Africa">South Africa</option>
-                  <option value="Spain">Spain</option>
                   <option value="Sri Lanka">Sri Lanka</option>
-                  <option value="Sweden">Sweden</option>
-                  <option value="Switzerland">Switzerland</option>
                   <option value="Taiwan">Taiwan</option>
                   <option value="Tanzania">Tanzania</option>
-                  <option value="Thailand">Thailand</option>
                   <option value="Turkey">Turkey</option>
                   <option value="Ukraine">Ukraine</option>
-                  <option value="United Arab Emirates">United Arab Emirates</option>
-                  <option value="United Kingdom">United Kingdom</option>
-                  <option value="United States">United States</option>
                   <option value="Venezuela">Venezuela</option>
-                  <option value="Vietnam">Vietnam</option>
                   <option value="Zimbabwe">Zimbabwe</option>
                 </select>
               </div>
             </div>
 
-            {/* Loading Indicator - Visible without scrolling */}
+            {/* Loading Indicator */}
             {latestJobsLoading && latestJobs.length === 0 && (
               <div className="flex items-center justify-center gap-2 py-2">
                 <div className="w-5 h-5 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -1400,7 +1232,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
               </div>
             )}
 
-            {/* Background Loading Indicator */}
             {loadingMoreJobs && !latestJobsLoading && (
               <div className="flex items-center justify-center gap-2 py-2">
                 <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -1408,7 +1239,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
               </div>
             )}
 
-            {/* Category Filters - Horizontal scroll on mobile, centered on desktop */}
+            {/* Category Filters */}
             <div className="flex gap-2 overflow-x-auto pb-2 md:flex-wrap md:overflow-visible md:justify-center scrollbar-hide">
               {categories.filter(cat => {
                 if (cat.id === 'nysc' || cat.id === 'accommodation') {
@@ -1430,7 +1261,7 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
               })}
             </div>
 
-            {/* Results Count, Clear Filters, and Refresh */}
+            {/* Results Count + Sort + Refresh */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {!latestJobsLoading && (
@@ -1455,7 +1286,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                     {loadingMoreJobs ? 'Loading more...' : 'Refreshing...'}
                   </div>
                 )}
-                {/* Sort button */}
                 {activeTab === 'latest' && !latestJobsLoading && (
                   <button
                     onClick={() => {
@@ -1477,7 +1307,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                     {sortBy === 'latest' ? 'Newest' : sortBy === 'salary' ? 'Salary' : 'Match'}
                   </button>
                 )}
-                {/* Refresh button for Latest Jobs tab */}
                 {activeTab === 'latest' && !latestJobsLoading && !loadingMoreJobs && (
                   <button
                     onClick={handleRefreshMatches}
@@ -1494,76 +1323,40 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
               </div>
             </div>
 
-        {/* Filters Modal */}
-        <JobFilters
-          filters={filters}
-          onFiltersChange={(newFilters: any) => {
-            // Track user manual country change
-            if (newFilters.country && newFilters.country !== filters.country) {
-              localStorage.setItem('user_country', newFilters.country);
-              localStorage.setItem('user_changed_country', 'true');
-            }
-            
-            setFilters(newFilters);
-            
-            const params = new URLSearchParams();
-            
-            if (newFilters.search) {
-              params.set('search', newFilters.search);
-            }
-            
-            if (newFilters.sector) {
-              params.set('sector', newFilters.sector);
-            }
-            
-            if (newFilters.country) {
-              params.set('country', newFilters.country);
-            }
-            
-            if (newFilters.role) {
-              params.set('role', newFilters.role);
-            }
-            
-            if (newFilters.state) {
-              params.set('state', newFilters.state);
-            }
-            
-            if (newFilters.town) {
-              params.set('town', newFilters.town);
-            }
-            
-            if (newFilters.jobType && newFilters.jobType.length > 0) {
-              params.set('jobType', newFilters.jobType.join(','));
-            }
-            
-            if (newFilters.workMode && newFilters.workMode.length > 0) {
-              params.set('workMode', newFilters.workMode.join(','));
-            }
-            
-            if (newFilters.salaryRange && newFilters.salaryRange.enabled) {
-              if (newFilters.salaryRange.min > 0) {
-                params.set('salaryMin', newFilters.salaryRange.min.toString());
-              }
-              if (newFilters.salaryRange.max > 0) {
-                params.set('salaryMax', newFilters.salaryRange.max.toString());
-              }
-            }
-            
-            if (sortBy !== 'latest') {
-              params.set('sort', sortBy);
-            }
-            
-            const queryString = params.toString();
-            const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-            router.replace(newUrl);
-          }}
-          isOpen={filtersOpen}
-          onToggle={() => setFiltersOpen(!filtersOpen)}
-        />
+            {/* Filters Modal */}
+            <JobFilters
+              filters={filters}
+              onFiltersChange={(newFilters: any) => {
+                if (newFilters.country && newFilters.country !== filters.country) {
+                  localStorage.setItem('user_country', newFilters.country);
+                  localStorage.setItem('user_changed_country', 'true');
+                }
+                setFilters(newFilters);
+                const params = new URLSearchParams();
+                if (newFilters.search) params.set('search', newFilters.search);
+                if (newFilters.sector) params.set('sector', newFilters.sector);
+                if (newFilters.country) params.set('country', newFilters.country);
+                if (newFilters.role) params.set('role', newFilters.role);
+                if (newFilters.state) params.set('state', newFilters.state);
+                if (newFilters.town) params.set('town', newFilters.town);
+                if (newFilters.jobType && newFilters.jobType.length > 0) params.set('jobType', newFilters.jobType.join(','));
+                if (newFilters.workMode && newFilters.workMode.length > 0) params.set('workMode', newFilters.workMode.join(','));
+                if (newFilters.salaryRange && newFilters.salaryRange.enabled) {
+                  if (newFilters.salaryRange.min > 0) params.set('salaryMin', newFilters.salaryRange.min.toString());
+                  if (newFilters.salaryRange.max > 0) params.set('salaryMax', newFilters.salaryRange.max.toString());
+                }
+                if (sortBy !== 'latest') params.set('sort', sortBy);
+                const queryString = params.toString();
+                const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+                router.replace(newUrl);
+              }}
+              isOpen={filtersOpen}
+              onToggle={() => setFiltersOpen(!filtersOpen)}
+            />
           </div>
         )}
 
-        {/* ✅ ENHANCED: Matches Tab Header */}
+        {/* Matches Tab Header */}
         {activeTab === 'matches' && (
           <div className="px-6 py-6">
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-green-100">
@@ -1605,8 +1398,9 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
           </div>
         )}
 
-        {/* ✅ NEW: Job List - Conditional rendering based on active tab */}
+        {/* ─── Job List ─── */}
         <div className="px-6 py-4">
+
           {/* Latest Jobs Tab */}
           {activeTab === 'latest' && (
             <>
@@ -1615,20 +1409,13 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <Search size={24} style={{ color: theme.colors.text.muted }} />
                   </div>
-                  <h3 
-                    className="text-lg font-semibold mb-2"
-                    style={{ color: theme.colors.text.primary }}
-                  >
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.text.primary }}>
                     {filters.search ? 'No matching jobs found' : 'No jobs available'}
                   </h3>
-                  <p 
-                    className="text-sm mb-4"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    {filters.search 
+                  <p className="text-sm mb-4" style={{ color: theme.colors.text.secondary }}>
+                    {filters.search
                       ? 'Try adjusting your search terms or filters to find more opportunities'
-                      : 'Check back later for new job postings'
-                    }
+                      : 'Check back later for new job postings'}
                   </p>
                   {hasActiveFilters() && (
                     <button
@@ -1641,8 +1428,16 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                 </div>
               ) : (
                 <>
-                  {paginatedJobs.map((job) => (
+                  {paginatedJobs.map((job, index) => (
                     <React.Fragment key={job.id}>
+
+                      {/* ── AD #1: Banner before the very first job card ── */}
+                      {index === 0 && (
+                        <div className="mb-4 w-full overflow-hidden rounded-lg">
+                          <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+                        </div>
+                      )}
+
                       <JobCard
                         job={job}
                         savedJobs={savedJobs}
@@ -1652,8 +1447,23 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                         onShowBreakdown={handleShowBreakdown}
                         showMatch={false}
                       />
+
+                      {/* ── AD #2+: In-feed native after every 5th job card ── 
+                          Skips the very last job so the ad never appears at the bottom
+                          of an empty-feeling page. */}
+                      {(index + 1) % 5 === 0 && index !== paginatedJobs.length - 1 && (
+                        <div className="my-3 w-full overflow-hidden rounded-lg">
+                          <AdUnit
+                            slot={AD_SLOTS.IN_FEED}
+                            format="fluid"
+                            layoutKey={AD_SLOTS.IN_FEED_LAYOUT_KEY}
+                          />
+                        </div>
+                      )}
+
                     </React.Fragment>
                   ))}
+
                   {latestJobsLoading && paginatedJobs.length === 0 && (
                     <div className="flex items-center justify-center py-6">
                       <p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p>
@@ -1662,7 +1472,14 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                 </>
               )}
 
-              {/* ✅ NEW: Pagination Controls */}
+              {/* ── AD #4: Banner above pagination ── */}
+              {totalPages > 1 && !latestJobsLoading && sortedJobs.length > 0 && (
+                <div className="mt-6 mb-2 w-full overflow-hidden rounded-lg">
+                  <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+                </div>
+              )}
+
+              {/* Pagination Controls */}
               {totalPages > 1 && !latestJobsLoading && (
                 <div className="flex items-center justify-center py-6 space-x-2">
                   <button
@@ -1678,28 +1495,22 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                     Previous
                   </button>
 
-                  {/* Page Numbers */}
                   <div className="flex items-center space-x-1">
                     {(() => {
                       const pages = [];
                       const maxVisiblePages = 5;
-                      
                       let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                       let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-                      
                       if (endPage - startPage + 1 < maxVisiblePages) {
                         startPage = Math.max(1, endPage - maxVisiblePages + 1);
                       }
-
                       for (let i = startPage; i <= endPage; i++) {
                         pages.push(
                           <button
                             key={i}
                             onClick={() => setCurrentPage(i)}
                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                              currentPage === i
-                                ? 'text-white'
-                                : 'text-gray-700 hover:bg-gray-100'
+                              currentPage === i ? 'text-white' : 'text-gray-700 hover:bg-gray-100'
                             }`}
                             style={{
                               backgroundColor: currentPage === i ? theme.colors.primary.DEFAULT : 'transparent'
@@ -1709,7 +1520,6 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                           </button>
                         );
                       }
-                      
                       return pages;
                     })()}
                   </div>
@@ -1744,20 +1554,13 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                   <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
                     <Search size={24} style={{ color: theme.colors.warning }} />
                   </div>
-                  <h3 
-                    className="text-lg font-semibold mb-2"
-                    style={{ color: theme.colors.text.primary }}
-                  >
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.text.primary }}>
                     No matches found yet
                   </h3>
-                  <p 
-                    className="text-sm mb-4"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    {user 
+                  <p className="text-sm mb-4" style={{ color: theme.colors.text.secondary }}>
+                    {user
                       ? 'Update your profile to improve matching or check back later for new opportunities'
-                      : 'Create an account to get personalized job matches based on your profile'
-                    }
+                      : 'Create an account to get personalized job matches based on your profile'}
                   </p>
                   {user ? (
                     <button
