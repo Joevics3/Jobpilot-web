@@ -368,7 +368,7 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-16 lg:pb-0">
         {/* Fixed 2-row header */}
         <div
           className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-transform duration-300"
@@ -1125,6 +1125,15 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Anchor Ad — mobile only, sticky bottom bar ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center items-center bg-white border-t border-gray-200 lg:hidden" style={{ minHeight: '50px' }}>
+        <AdUnit
+          slot={AD_SLOTS.BANNER}
+          format="auto"
+          style={{ width: '320px', height: '50px', display: 'block' }}
+        />
       </div>
 
       {/* Upgrade Modal */}

@@ -36,16 +36,11 @@ export default function AdUnit({
   className,
 }: AdUnitProps) {
   const adRef = useRef<HTMLModElement>(null);
-  const pushed = useRef(false);
 
   useEffect(() => {
-    // Guard: only push once per mount, and only in the browser
-    if (pushed.current) return;
     if (typeof window === 'undefined') return;
-
     try {
       ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-      pushed.current = true;
     } catch (e) {
       // adsbygoogle not yet loaded — safe to swallow
     }
