@@ -4,7 +4,9 @@ import { Redis } from '@upstash/redis';
 
 const FIELDS = 'id, slug, title, company, location, country, salary_range, employment_type, posted_date, created_at, sector, role_category, job_type, role, related_roles, ai_enhanced_roles, skills_required, ai_enhanced_skills, experience_level';
 const CACHE_TTL = 1800;      // 30 minutes — unchanged
+const STALE_TTL = 86400;     // 24 hours — stale fallback
 const CACHE_KEY = 'jobs:all';
+const STALE_KEY = 'jobs:all:stale';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -53,14 +55,26 @@ export async function GET() {
 
     if (error) {
       console.error('[jobs-api] Supabase error:', error);
+      // ✅ FIX: On Supabase failure, serve stale Redis data rather than a hard error
+      const stale = await redis.get(STALE_KEY);
+      if (stale) {
+        const jobs = typeof stale === 'string' ? JSON.parse(stale) : stale;
+        console.warn('[jobs-api] Serving STALE fallback cache');
+        return NextResponse.json(
+          { jobs, total: jobs.length, source: 'stale-cache' },
+          { headers: { 'Cache-Control': 'no-store' } }
+        );
+      }
       return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
 
     const jobs = data || [];
+    const serialized = JSON.stringify(jobs);
 
-    // ✅ FIX: manually stringify before writing — guarantees data is stored correctly
-    await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(jobs));
-    console.log(`[jobs-api] Cached ${jobs.length} jobs in Redis for ${CACHE_TTL}s`);
+    // ✅ FIX: Write both the short-lived primary cache and the long-lived stale fallback
+    await redis.setex(CACHE_KEY, CACHE_TTL, serialized);
+    await redis.setex(STALE_KEY, STALE_TTL, serialized);
+    console.log(`[jobs-api] Cached ${jobs.length} jobs (primary: ${CACHE_TTL}s, stale: ${STALE_TTL}s)`);
 
     return NextResponse.json(
       { jobs, total: jobs.length, source: 'supabase' },
