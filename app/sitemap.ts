@@ -59,17 +59,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // ✅ Count ALL jobs (active + expired) — expired pages stay indexed for SEO
+    // ✅ FIX: Count only active + expired_indexed — must match the filter in route.ts
     const { count, error } = await supabase
       .from('jobs')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['active', 'expired_indexed']);
 
     if (error) {
       console.error('Error counting jobs:', JSON.stringify(error));
       return baseSitemaps;
     }
 
-    // ✅ Treat null/0 count as valid — return base sitemaps with a warning, not a crash
     if (!count || count === 0) {
       console.warn('No jobs found — skipping job sitemaps');
       return baseSitemaps;
@@ -78,10 +78,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const numberOfSitemaps = Math.ceil(count / JOBS_PER_SITEMAP);
     console.log(`📊 Total jobs: ${count}, Creating ${numberOfSitemaps} job sitemaps`);
 
+    // ✅ FIX: URLs must NOT have .xml — they point to the Next.js route handler at
+    //    app/sitemap-jobs/[page]/route.ts which serves /sitemap-jobs/1, /sitemap-jobs/2, etc.
     const jobSitemaps: MetadataRoute.Sitemap = Array.from(
       { length: numberOfSitemaps },
       (_, i) => ({
-        url: `${siteUrl}/sitemap-jobs/${i + 1}.xml`,
+        url: `${siteUrl}/sitemap-jobs/${i + 1}`,
         lastModified: new Date(),
         changeFrequency: 'hourly',
         priority: 1,

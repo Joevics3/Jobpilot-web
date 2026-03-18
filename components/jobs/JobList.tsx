@@ -17,8 +17,17 @@ import { scoreJob, JobRow, UserOnboardingData } from '@/lib/matching/matchEngine
 import { matchCacheService } from '@/lib/matching/matchCache';
 import CreateCVModal from '@/components/cv/CreateCVModal';
 import CreateCoverLetterModal from '@/components/cv/CreateCoverLetterModal';
+import AdUnit from '@/components/ads/AdUnit';
 
 import { OrganizationSchema, WebSiteSchema } from '@/components/seo/StructuredData';
+
+// ─── Ad slot IDs ───────────────────────────────────────────────────────────────
+const AD_SLOTS = {
+  BANNER:           '8152297343',       // jobpilot-banner-responsive  (above pagination)
+  IN_FEED:          '2040985457',       // jobpilot-infeed-native      (every 7 jobs)
+  IN_FEED_LAYOUT_KEY: '-g4-2b+f-5v+o7',
+} as const;
+// ───────────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -1011,15 +1020,33 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                 </div>
               ) : (
                 <>
-                  {paginatedJobs.map((job) => (
+                  {paginatedJobs.map((job, index) => (
                     <React.Fragment key={job.id}>
                       <JobCard job={job} savedJobs={savedJobs} appliedJobs={appliedJobs} onSave={handleSave} onApply={handleApply} onShowBreakdown={handleShowBreakdown} showMatch={false} />
+
+                      {/* ── In-feed ad after every 7th job, skip the very last card ── */}
+                      {(index + 1) % 7 === 0 && index !== paginatedJobs.length - 1 && (
+                        <div className="my-3 w-full overflow-hidden rounded-lg">
+                          <AdUnit
+                            slot={AD_SLOTS.IN_FEED}
+                            format="fluid"
+                            layoutKey={AD_SLOTS.IN_FEED_LAYOUT_KEY}
+                          />
+                        </div>
+                      )}
                     </React.Fragment>
                   ))}
                   {latestJobsLoading && paginatedJobs.length === 0 && (
                     <div className="flex items-center justify-center py-6"><p style={{ color: theme.colors.text.secondary }}>Loading jobs...</p></div>
                   )}
                 </>
+              )}
+
+              {/* ── Banner ad above pagination ── */}
+              {totalPages > 1 && !latestJobsLoading && sortedJobs.length > 0 && (
+                <div className="mt-6 mb-2 w-full overflow-hidden rounded-lg">
+                  <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+                </div>
               )}
 
               {totalPages > 1 && !latestJobsLoading && (

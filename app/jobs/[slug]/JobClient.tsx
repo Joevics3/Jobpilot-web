@@ -29,7 +29,18 @@ import { theme } from '@/lib/theme';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import AdUnit from '@/components/ads/AdUnit';
 
+// ─── Ad slot IDs ───────────────────────────────────────────────────────────────
+// Each placement MUST use a unique slot ID. Reusing the same slot on one page
+// causes AdSense to silently drop all but the first push({}) call.
+const AD_SLOTS = {
+  BANNER_TOP:    '6866736453',   // jobpage-banner-top      — after job header card
+  IN_ARTICLE:    '5553654784',   // jobpage-inarticle        — after job description
+  BANNER_BOTTOM: '4240573110',   // jobpage-banner-bottom    — end of main content
+  SIDEBAR:       '9189647463',   // jobpage-sidebar          — right column
+} as const;
+// ───────────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEYS = {
   SAVED_JOBS: 'saved_jobs',
@@ -640,6 +651,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
               </div>
 
               {/* About Company */}
+              {/* ── AD #1: Responsive banner after job header ── */}
+              <div className="w-full rounded-lg">
+                <AdUnit key={AD_SLOTS.BANNER_TOP} slot={AD_SLOTS.BANNER_TOP} format="auto" />
+              </div>
+
               {job.about_company && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">About the Company</h2>
@@ -660,6 +676,12 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   />
                 </div>
               )}
+
+              {/* ── AD #2: In-article after description ── */}
+              {/* minHeight ensures the fluid ad container is never 0px tall */}
+              <div className="w-full rounded-lg" style={{ minHeight: '100px' }}>
+                <AdUnit key={AD_SLOTS.IN_ARTICLE} slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" />
+              </div>
 
               {/* Required Skills */}
               {((job.skills_required && Array.isArray(job.skills_required) && job.skills_required.length > 0) ||
@@ -990,12 +1012,12 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </a>
                 </div>
               )}
-
+              {/* ── AD #3: Banner at the end of main content ── */}
+              <div className="w-full rounded-lg">
+                <AdUnit key={AD_SLOTS.BANNER_BOTTOM} slot={AD_SLOTS.BANNER_BOTTOM} format="auto" />
+              </div>
 
             </div>
-
-            {/* ═══════════════════════════════════════════════
-                RIGHT COLUMN — Sidebar
             ═══════════════════════════════════════════════ */}
             <div className="lg:col-span-1 space-y-6">
 
@@ -1035,6 +1057,11 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   </div>
                 </div>
               )}
+
+              {/* ── Sidebar AD ── */}
+              <div className="hidden lg:block w-full rounded-lg">
+                <AdUnit key={AD_SLOTS.SIDEBAR} slot={AD_SLOTS.SIDEBAR} format="auto" />
+              </div>
 
               {/* Similar Jobs */}
               {similarJobs && similarJobs.length > 0 && (
