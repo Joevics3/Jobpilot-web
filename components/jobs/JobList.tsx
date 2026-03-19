@@ -1022,10 +1022,17 @@ export default function JobList({ initialCountry, initialRoleCategory, initialJo
                 <>
                   {paginatedJobs.map((job, index) => (
                     <React.Fragment key={job.id}>
+                      {/* ── Banner ad before the very first job card ── */}
+                      {index === 0 && (
+                        <div className="mb-4 w-full overflow-hidden rounded-lg">
+                          <AdUnit slot={AD_SLOTS.BANNER} format="auto" />
+                        </div>
+                      )}
+
                       <JobCard job={job} savedJobs={savedJobs} appliedJobs={appliedJobs} onSave={handleSave} onApply={handleApply} onShowBreakdown={handleShowBreakdown} showMatch={false} />
 
-                      {/* ── In-feed ad after every 7th job, skip the very last card ── */}
-                      {(index + 1) % 7 === 0 && index !== paginatedJobs.length - 1 && (
+                      {/* ── In-feed ad after every 5th job, skip the very last card ── */}
+                      {(index + 1) % 5 === 0 && index !== paginatedJobs.length - 1 && (
                         <div className="my-3 w-full overflow-hidden rounded-lg">
                           <AdUnit
                             slot={AD_SLOTS.IN_FEED}
