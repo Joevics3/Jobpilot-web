@@ -181,7 +181,6 @@ export default function InternshipFinderPage() {
             : (job.company?.name || '').toLowerCase();
           return title.includes(q) || company.includes(q);
         });
-        saveSearchHistory(searchQuery.trim(), filtered.length);
       }
 
       // ── Sector filter ─────────────────────────────────────────────────────
