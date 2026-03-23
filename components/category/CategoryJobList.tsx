@@ -13,7 +13,6 @@ const STORAGE_KEYS = {
   APPLIED_JOBS: 'applied_jobs',
 };
 
-// Shape of a raw job row coming from the server (page.tsx SSR fetch)
 export interface RawJobRow {
   id: string;
   slug: string | null;
@@ -75,7 +74,7 @@ function transformJobToUI(job: RawJobRow): JobUI {
     location: locationStr,
     salary: salaryStr,
 
-    // Disabled match logic completely
+    // Match disabled
     match: 0,
     calculatedTotal: 0,
     breakdown: null,
@@ -158,7 +157,6 @@ export default function CategoryJobList({ initialJobs = [] }: CategoryJobListPro
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Header */}
       <div
         className="px-6 py-4 border-b flex items-center justify-between"
         style={{ borderColor: theme.colors.border.DEFAULT }}
@@ -171,7 +169,6 @@ export default function CategoryJobList({ initialJobs = [] }: CategoryJobListPro
         </div>
       </div>
 
-      {/* Job List */}
       <div className="divide-y" style={{ borderColor: theme.colors.border.DEFAULT }}>
         {sortedJobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-6">
@@ -192,6 +189,7 @@ export default function CategoryJobList({ initialJobs = [] }: CategoryJobListPro
                 appliedJobs={appliedJobs}
                 onSave={handleSave}
                 onApply={handleApply}
+                onShowBreakdown={() => {}}
               />
             </React.Fragment>
           ))
