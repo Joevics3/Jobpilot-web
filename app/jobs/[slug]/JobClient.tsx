@@ -589,10 +589,10 @@ export default function JobClient({ job, relatedJobs }: { job: any; relatedJobs?
                   const STOP_WORDS = new Set(['a','an','the','of','for','in','at','to','and','or','with','on','by','as','is','are','be','was','were','job','jobs']);
                   const roleWords = rawRole.split(/\s+/).filter(Boolean);
                   const roleLabel = roleWords
-                    .filter((w, i) => !(i === roleWords.length - 1 && /^jobs?$/i.test(w)))
+                    .filter((w: string, i: number) => !(i === roleWords.length - 1 && /^jobs?$/i.test(w)))
                     .join(' ');
                   const searchWords = roleWords
-                    .filter(w => !STOP_WORDS.has(w.toLowerCase()))
+                    .filter((w: string) => !STOP_WORDS.has(w.toLowerCase()))
                     .slice(0, 2);
                   const roleSearchUrl = searchWords.length
                     ? `/jobs?sort=match&search=${encodeURIComponent(searchWords.join(' '))}`
