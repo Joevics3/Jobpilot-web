@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-   "node": "24.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.0",
     "@next/swc-wasm-nodejs": "13.5.1",
+    "@opennextjs/cloudflare": "^1.18.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -59,7 +60,7 @@
     "dompurify": "^3.3.1",
     "embla-carousel-react": "^8.3.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^15.5.14",
+    "eslint-config-next": "^15.5.2",
     "firebase": "^12.8.0",
     "firebase-admin": "^13.6.0",
     "html-react-parser": "^5.2.12",
@@ -71,7 +72,7 @@
     "jspdf": "^4.0.0",
     "lucide-react": "^0.446.0",
     "mammoth": "^1.6.0",
-    "next": "^15.5.14",
+    "next": "^15.5.2",
     "next-themes": "^0.3.0",
     "pdf-parse": "^2.4.5",
     "postcss": "8.4.30",
