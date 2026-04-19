@@ -382,7 +382,7 @@ export default function TheoryQuizClient({ company }: { company: string }) {
         </div>
       </div>
 
-      {/* Mobile anchor spacer — prevents content hiding behind the bar */}
+      {/* Mobile anchor spacer */}
       {!isAnchorClosed && (
         <div className="lg:hidden" style={{ height: `${ANCHOR_HEIGHT}px` }} aria-hidden="true" />
       )}
@@ -402,12 +402,12 @@ export default function TheoryQuizClient({ company }: { company: string }) {
           >
             <X size={18} />
           </button>
+
           {/* Ad Container */}
           <div className="w-full" style={{ height: `${ANCHOR_HEIGHT}px` }}>
             <AdUnit
               slot="3349195672"
               format="auto"
-              fullWidthResponsive={true}
               style={{ display: 'block', width: '100%', height: `${ANCHOR_HEIGHT}px` }}
             />
           </div>
