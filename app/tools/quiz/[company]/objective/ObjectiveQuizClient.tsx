@@ -351,7 +351,7 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
           </div>
         </div>
 
-        {/* Mid-quiz ad: show between every 5th question (Q5, Q10, Q15...) */}
+        {/* Mid-quiz ad: show between every 5th question */}
         {(currentIndex + 1) % 5 === 0 && (
           <div className="mb-4">
             <AdUnit slot="4198231153" format="auto" />
@@ -389,12 +389,12 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
         </div>
       </div>
 
-      {/* Mobile anchor spacer — prevents content hiding behind the bar */}
+      {/* Mobile anchor spacer */}
       {!isAnchorClosed && (
         <div className="lg:hidden" style={{ height: `${ANCHOR_HEIGHT}px` }} aria-hidden="true" />
       )}
 
-      {/* Mobile Anchor Ad with Close Button */}
+      {/* Mobile Anchor Ad */}
       {!isAnchorClosed && (
         <div
           id="mobile-anchor-ad"
@@ -409,12 +409,12 @@ export default function ObjectiveQuizClient({ company }: { company: string }) {
           >
             <X size={18} />
           </button>
+
           {/* Ad Container */}
           <div className="w-full" style={{ height: `${ANCHOR_HEIGHT}px` }}>
             <AdUnit
               slot="3349195672"
               format="auto"
-              fullWidthResponsive={true}
               style={{ display: 'block', width: '100%', height: `${ANCHOR_HEIGHT}px` }}
             />
           </div>
