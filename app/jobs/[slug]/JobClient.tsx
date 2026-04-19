@@ -623,7 +623,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
                     key={AD_SLOTS.DISPLAY_TOP}
                     slot={AD_SLOTS.DISPLAY_TOP}
                     format="auto"
-                    fullWidthResponsive={true}
                     style={{ display: 'block', width: '100%', minHeight: '250px' }}
                   />
                 </div>
@@ -789,7 +788,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   key={AD_SLOTS.DISPLAY_BOTTOM}
                   slot={AD_SLOTS.DISPLAY_BOTTOM}
                   format="auto"
-                  fullWidthResponsive={true}
                   style={{ display: 'block', width: '100%' }}
                 />
               </div>
@@ -1225,7 +1223,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   key={AD_SLOTS.JOBCLIENT_DISPLAY}
                   slot={AD_SLOTS.JOBCLIENT_DISPLAY}
                   format="auto"
-                  fullWidthResponsive={true}
                   style={{ display: 'block', width: '100%', minHeight: '250px' }}
                 />
               </div>
@@ -1236,7 +1233,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   key={`${AD_SLOTS.MULTIPLEX}-sidebar`}
                   slot={AD_SLOTS.MULTIPLEX}
                   format="auto"
-                  fullWidthResponsive={true}
                   style={{ display: 'block', width: '100%', minHeight: '250px' }}
                 />
               </div>
@@ -1263,7 +1259,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
               key={AD_SLOTS.ANCHOR_MOBILE}
               slot={AD_SLOTS.ANCHOR_MOBILE}
               format="auto"
-              fullWidthResponsive={true}
+              fullWidthResponsive={true}  {/* This one was missed earlier — removed now */}
               style={{ display: 'block', width: '100%', height: `${anchorHeight}px`, maxHeight: `${anchorHeight}px` }}
             />
           </div>

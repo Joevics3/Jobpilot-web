@@ -105,7 +105,7 @@ export default function ApplyForMePage() {
       icon: <Send className="w-6 h-6" />,
       number: "04",
       title: "We Apply. Every Month.",
-      desc: "We source 10–15 matched roles from JobMeter's database, write tailored cover letters, and submit every application — while you focus on your current job."
+      desc: "We source 10–15 matched roles from JobMeter's database, write tailored cover letters, and manually submit every application — while you focus on your current job."
     },
     {
       icon: <BarChart2 className="w-6 h-6" />,
