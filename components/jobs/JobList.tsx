@@ -46,7 +46,8 @@ const STORAGE_KEYS = {
 };
 
 const JOBS_PER_PAGE_DISPLAY = 50;
-const CLIENT_CACHE_DURATION = 20 * 60 * 1000; // 20 min — expires before Redis 30 min
+const CLIENT_CACHE_DURATION = 20 * 60 * 1000;            // 20 min — latest jobs
+const MATCHES_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days — match scores
 
 interface JobListProps {
   initialJobs?: any[];
@@ -105,15 +106,46 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
   const [loading, setLoading] = useState(false);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
-  const [user, setUser] = useState<any>(null);
+  // Pre-seed synchronously from localStorage so authChecked=true on first render
+  // when there's a valid cached session — no blank/flash gap waiting for async listener.
+  const [user, setUser] = useState<any>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!raw) return null;
+      const parsed = JSON.parse(localStorage.getItem(raw) || '');
+      return parsed?.user ?? null;
+    } catch { return null; }
+  });
   const [userName, setUserName] = useState<string | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(null);
+  const [authChecked, setAuthChecked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      return !!raw && !!JSON.parse(localStorage.getItem(raw) || '')?.user;
+    } catch { return false; }
+  });
+  const [userOnboardingData, setUserOnboardingData] = useState<UserOnboardingData | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!raw) return null;
+      const userId = JSON.parse(localStorage.getItem(raw) || '')?.user?.id;
+      if (!userId) return null;
+      const cached = localStorage.getItem(`onboarding_cache_${userId}`);
+      const ts = localStorage.getItem(`onboarding_cache_ts_${userId}`);
+      if (cached && ts && Date.now() - parseInt(ts, 10) < 7 * 24 * 60 * 60 * 1000) {
+        return JSON.parse(cached);
+      }
+    } catch { }
+    return null;
+  });
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
   const [refreshingMatches, setRefreshingMatches] = useState(false);
+  const [matchesCachedAt, setMatchesCachedAt] = useState<number | null>(null);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [matchModalData, setMatchModalData] = useState<MatchBreakdownModalData | null>(null);
   const [sortBy, setSortBy] = useState<'match' | 'latest' | 'salary'>('match');
@@ -487,8 +519,9 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
           if (cachedJobs && cacheTimestamp) {
             const age = Date.now() - parseInt(cacheTimestamp, 10);
             const userMatches = (!user && !cachedUserId) || (user && cachedUserId === user.id);
-            if (age < CLIENT_CACHE_DURATION && userMatches) {
+            if (age < MATCHES_CACHE_DURATION && userMatches) {
               setJobs(JSON.parse(cachedJobs));
+              setMatchesCachedAt(parseInt(cacheTimestamp, 10));
               setLoading(false);
               return;
             }
@@ -505,9 +538,11 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
       processedJobs.sort((a, b) => (b.calculatedTotal || 0) - (a.calculatedTotal || 0));
 
       try {
+        const now = Date.now();
         localStorage.setItem(STORAGE_KEYS.MATCHES_CACHE, JSON.stringify(processedJobs));
-        localStorage.setItem(STORAGE_KEYS.MATCHES_CACHE_TS, Date.now().toString());
+        localStorage.setItem(STORAGE_KEYS.MATCHES_CACHE_TS, now.toString());
         localStorage.setItem(STORAGE_KEYS.MATCHES_CACHE_USER, user?.id || '');
+        setMatchesCachedAt(now);
       } catch (e) {
         console.warn('[JobList] localStorage write failed:', e);
       }
@@ -545,8 +580,9 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
       if (cachedJobs && cacheTimestamp) {
         const age = Date.now() - parseInt(cacheTimestamp, 10);
         const userMatches = (!user && !cachedUserId) || (user && cachedUserId === user.id);
-        if (age < CLIENT_CACHE_DURATION && userMatches) {
+        if (age < MATCHES_CACHE_DURATION && userMatches) {
           setJobs(JSON.parse(cachedJobs));
+          setMatchesCachedAt(parseInt(cacheTimestamp, 10));
           return;
         }
       }
@@ -836,7 +872,6 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
   }, [jobs, appliedJobs, activeTab]);
 
   const handleTabChange = (tab: 'latest' | 'matches') => {
-    if (tab === 'matches' && !user) { setAuthModalOpen(true); return; }
     setActiveTab(tab);
     localStorage.setItem('active_jobs_tab', tab);
   };
@@ -874,18 +909,135 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
         </div>
 
         {/* Tabs */}
-        <div className="px-6 pb-2">
-          <div className="flex gap-1 border-b" style={{ borderColor: theme.colors.border.DEFAULT }}>
-            <button onClick={() => handleTabChange('latest')} className="flex-1 px-6 py-3 font-medium transition-all relative rounded-t-lg text-center"
-              style={{ color: activeTab === 'latest' ? '#2563EB' : theme.colors.text.secondary, backgroundColor: activeTab === 'latest' ? '#EFF6FF' : 'transparent', borderBottom: activeTab === 'latest' ? '2px solid #2563EB' : '2px solid transparent' }}>
-              Latest Jobs
+        <div className="px-6 pb-4 pt-2">
+          <div className="flex gap-2 p-1 rounded-2xl" style={{ backgroundColor: '#F1F5F9' }}>
+            <button
+              onClick={() => handleTabChange('latest')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200"
+              style={activeTab === 'latest'
+                ? { backgroundColor: '#2563EB', color: '#ffffff', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }
+                : { backgroundColor: 'transparent', color: '#64748B' }}
+            >
+              📋 Latest Jobs
             </button>
-            <button onClick={() => handleTabChange('matches')} className="flex-1 px-6 py-3 font-medium transition-all relative rounded-t-lg text-center"
-              style={{ color: activeTab === 'matches' ? '#059669' : theme.colors.text.secondary, backgroundColor: activeTab === 'matches' ? '#D1FAE5' : 'transparent', borderBottom: activeTab === 'matches' ? '2px solid #059669' : '2px solid transparent' }}>
-              Matches
+            <button
+              onClick={() => handleTabChange('matches')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 relative"
+              style={activeTab === 'matches'
+                ? { backgroundColor: '#7C3AED', color: '#ffffff', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }
+                : { backgroundColor: 'transparent', color: '#64748B' }}
+            >
+              <Sparkles size={15} style={{ color: activeTab === 'matches' ? '#ffffff' : '#7C3AED' }} />
+              My Matches
+              {activeTab !== 'matches' && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: '#7C3AED', color: '#ffffff' }}>✦</span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Matches tab header */}
+        {activeTab === 'matches' && (
+          <div className="px-6 py-4">
+            <div className="rounded-xl p-4 border" style={{ background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', borderColor: '#C4B5FD' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg mb-1 flex items-center gap-2" style={{ color: '#4C1D95' }}>
+                    <Sparkles size={18} style={{ color: '#7C3AED' }} />
+                    Your Personalized Matches
+                  </h3>
+                  <p className="text-sm" style={{ color: '#6D28D9' }}>
+                    {loading
+                      ? <span className="flex items-center gap-2"><RefreshCw size={14} className="animate-spin" />Calculating your match scores…</span>
+                      : <>Found <span className="font-bold" style={{ color: '#7C3AED' }}>{matchedJobs.length}</span> job{matchedJobs.length !== 1 ? 's' : ''} matched to your profile</>}
+                  </p>
+                  {!loading && matchesCachedAt && (
+                    <p className="text-xs mt-1.5" style={{ color: '#8B5CF6' }}>
+                      ⏱ Last calculated: {(() => {
+                        const diffMs = Date.now() - matchesCachedAt;
+                        const diffMin = Math.floor(diffMs / 60000);
+                        const diffHr = Math.floor(diffMs / 3600000);
+                        const diffDay = Math.floor(diffMs / 86400000);
+                        if (diffMin < 1) return 'just now';
+                        if (diffMin < 60) return `${diffMin}m ago`;
+                        if (diffHr < 24) return `${diffHr}h ago`;
+                        return `${diffDay}d ago`;
+                      })()} · refreshes weekly
+                    </p>
+                  )}
+                </div>
+                {user && (
+                  <button
+                    onClick={handleRefreshMatches}
+                    disabled={refreshingMatches}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border-2 transition-all disabled:opacity-60"
+                    style={{ backgroundColor: '#ffffff', borderColor: '#7C3AED', color: '#7C3AED' }}
+                  >
+                    <Sparkles size={14} className={refreshingMatches ? 'animate-spin' : ''} />
+                    {refreshingMatches ? 'Calculating…' : 'Recalculate'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Matches tab job list */}
+        {activeTab === 'matches' && (
+          <div className="px-6 py-4">
+            {/* Not logged in and auth has resolved — show inline sign-in prompt */}
+            {!user && authChecked ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#EDE9FE' }}>
+                  <Sparkles size={28} style={{ color: '#7C3AED' }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.text.primary }}>Sign in to see your matches</h3>
+                <p className="text-sm mb-5" style={{ color: theme.colors.text.secondary }}>Create a free account and we'll match you to jobs based on your skills, experience, and preferences.</p>
+                <button onClick={() => setAuthModalOpen(true)} className="px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all" style={{ backgroundColor: '#7C3AED' }}>
+                  Sign Up Free
+                </button>
+              </div>
+            ) : (loading || (jobs.length === 0 && !matchesCachedAt)) ? (
+              /* Spinner while loading OR while waiting for first fetch to complete */
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="w-12 h-12 border-3 border-gray-200 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+                <p style={{ color: theme.colors.text.secondary }}>Analyzing jobs for your perfect match...</p>
+              </div>
+            ) : matchedJobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
+                <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4"><Search size={24} style={{ color: theme.colors.warning }} /></div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.text.primary }}>No matches found yet</h3>
+                <p className="text-sm mb-4" style={{ color: theme.colors.text.secondary }}>Update your profile to improve matching or check back later for new opportunities</p>
+                <button onClick={() => router.push('/onboarding')} className="px-4 py-2 text-sm bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-medium">Update Profile</button>
+              </div>
+            ) : (
+              matchedJobs.map((job, index) => (
+                <React.Fragment key={job.id}>
+                  <JobCard job={job} savedJobs={savedJobs} appliedJobs={appliedJobs} onSave={handleSave} onApply={handleApply} onShowBreakdown={handleShowBreakdown} showMatch={true} />
+
+                  {index === 0 && (
+                    <div className="w-full overflow-hidden" style={{ margin: 0, padding: '3px 0' }}>
+                      <AdUnit slot={AD_SLOTS.BANNER} format="auto" style={{ display: 'block' }} />
+                    </div>
+                  )}
+
+                  {(index + 1) % 5 === 0 && (
+                    <div className="w-full overflow-hidden" style={{ margin: 0, padding: '3px 0' }}>
+                      <AdUnit
+                        key={`infeed-match-${index}`}
+                        slot={AD_SLOTS.IN_FEED}
+                        format="fluid"
+                        layoutKey={AD_SLOTS.IN_FEED_LAYOUT_KEY}
+                        style={{ display: 'block' }}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Search + Filters — Latest tab only */}
         {activeTab === 'latest' && (
@@ -1205,50 +1357,6 @@ export default function JobList({ initialJobs, initialCountry, initialRoleCatego
                 </>
               )}
 
-              {activeTab !== 'latest' && (
-                <>
-                  {loading ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <div className="w-12 h-12 border-3 border-gray-200 border-t-green-500 rounded-full animate-spin mb-4"></div>
-                      <p style={{ color: theme.colors.text.secondary }}>Analyzing jobs for your perfect match...</p>
-                    </div>
-                  ) : matchedJobs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">
-                      <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4"><Search size={24} style={{ color: theme.colors.warning }} /></div>
-                      <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.text.primary }}>No matches found yet</h3>
-                      <p className="text-sm mb-4" style={{ color: theme.colors.text.secondary }}>{user ? 'Update your profile to improve matching or check back later for new opportunities' : 'Create an account to get personalized job matches based on your profile'}</p>
-                      {user ? <button onClick={() => router.push('/onboarding')} className="px-4 py-2 text-sm bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-medium">Update Profile</button>
-                        : <button onClick={() => setAuthModalOpen(true)} className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium">Sign Up Free</button>}
-                    </div>
-                  ) : (
-                    matchedJobs.map((job, index) => (
-                      <React.Fragment key={job.id}>
-                        <JobCard job={job} savedJobs={savedJobs} appliedJobs={appliedJobs} onSave={handleSave} onApply={handleApply} onShowBreakdown={handleShowBreakdown} showMatch={true} />
-
-                        {/* Ad after job card #1 */}
-                        {index === 0 && (
-                          <div className="w-full overflow-hidden" style={{ margin: 0, padding: '3px 0' }}>
-                            <AdUnit slot={AD_SLOTS.BANNER} format="auto" style={{ display: 'block' }} />
-                          </div>
-                        )}
-
-                        {/* Ad after every 5th job card: card 5, 10, 15, 20 (index 4,9,14,19) */}
-                        {(index + 1) % 5 === 0 && (
-                          <div className="w-full overflow-hidden" style={{ margin: 0, padding: '3px 0' }}>
-                            <AdUnit
-                              key={`infeed-match-${index}`}
-                              slot={AD_SLOTS.IN_FEED}
-                              format="fluid"
-                              layoutKey={AD_SLOTS.IN_FEED_LAYOUT_KEY}
-                              style={{ display: 'block' }}
-                            />
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))
-                  )}
-                </>
-              )}
             </div>
           </div>
         )}

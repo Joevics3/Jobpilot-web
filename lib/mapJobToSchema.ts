@@ -72,24 +72,34 @@ export function mapJobToSchema(job: any) {
     return map[l] || 36;
   };
 
-  // ─── FIXED: Only include address fields that have real values ───────────
+  // ─── FIXED: Always return a jobLocation for non-remote jobs ────────────
   const getJobLocation = () => {
     // Remote-only jobs: no jobLocation at all
-    if (!job.location || job.location.remote) return undefined;
+    if (job.location?.remote) return undefined;
+
+    // No location data — default to Nigeria so Google never flags missing jobLocation
+    if (!job.location) {
+      return {
+        "@type": "Place",
+        address: { "@type": "PostalAddress", addressCountry: "NG", addressLocality: "Nigeria" },
+      };
+    }
 
     const city = job.location.city;
     const state = job.location.state;
     const country = job.location.country || "NG";
 
-    // Need at least a city or state to produce a valid address
-    if (!city && !state) return undefined;
+    // Map country codes to full names for addressLocality fallback
+    const countryNames: Record<string, string> = { NG: "Nigeria" };
+    const countryFullName = countryNames[country] || country;
 
     const address: Record<string, string> = {
       "@type": "PostalAddress",
       addressCountry: country,
+      // addressLocality is required by Google — fall back to state, then country name
+      addressLocality: city || state || countryFullName,
     };
 
-    if (city) address.addressLocality = city;
     if (state) address.addressRegion = state;
 
     // Only include streetAddress / postalCode if they're non-empty strings

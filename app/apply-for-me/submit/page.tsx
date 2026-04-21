@@ -40,29 +40,26 @@ export default function ApplyForMeSubmitPage() {
         return;
       }
 
-      // Check subscriptions table for apply_for_me plan
-      const { data: sub } = await supabase
-        .from('subscriptions')
+      // Check payment_transactions for a completed apply_for_me payment.
+      // The old code queried a 'subscriptions' table that doesn't exist, which
+      // always returned nothing, causing every user to be bounced back even
+      // after a successful payment. localStorage was the only fallback, but
+      // Paystack's full-page redirect clears in-flight JS state so the flag
+      // set in handlePaymentSuccess never survived to be read here.
+      const { data: tx } = await supabase
+        .from('payment_transactions')
         .select('id')
         .eq('user_id', user.id)
         .eq('plan_type', 'apply_for_me')
+        .eq('status', 'completed')
         .maybeSingle();
 
-      if (sub) {
-        // Has paid — set flag and allow access
-        localStorage.setItem('afm-paid', user.id);
+      if (tx) {
         setChecking(false);
         return;
       }
 
-      // Check localStorage flag (set when Paystack redirects here)
-      const flag = localStorage.getItem('afm-paid');
-      if (flag === user.id) {
-        setChecking(false);
-        return;
-      }
-
-      // No payment found — redirect back
+      // No completed payment found — redirect back
       router.replace('/apply-for-me');
     }
 

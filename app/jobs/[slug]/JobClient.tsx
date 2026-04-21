@@ -25,23 +25,24 @@ import {
   BookOpen,
   PenTool,
   X,
+  SendHorizonal,
 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import AdUnit from '@/components/ads/AdUnit';
+import TimedJobPopup from '@/components/TimedJobPopup';
 
 // ─── Ad slot IDs ───────────────────────────────────────────────────────────────
 const AD_SLOTS = {
-  DISPLAY_TOP:        '4198231153',
-  IN_ARTICLE_1:       '4690286797',
-  IN_ARTICLE_2:       '8181708196',
-  DISPLAY_BOTTOM:     '9751041788',
-  SIDEBAR_MOBILE:     '9025117620',
-  ANCHOR_MOBILE:      '9010641928',
-  JOBCLIENT_DISPLAY:  '1809021288',
-  MULTIPLEX:          '8344942808',
+  DISPLAY_TOP:        '4198231153',  // in main job header card
+  IN_ARTICLE:         '3314340925',  // new in-article (replaces both old in-article slots)
+  DISPLAY_BOTTOM:     '9751041788',  // below benefits in main column
+  SIDEBAR_MOBILE:     '9025117620',  // mobile only, below quizzes
+  ANCHOR_MOBILE:      '9010641928',  // fixed bottom mobile
+  BANNER_1:           '7253585934',  // new banner — top of sidebar (desktop) + bottom of main (desktop)
+  BANNER_2:           '5940504265',  // new banner — bottom of sidebar (desktop)
 } as const;
 
 const STORAGE_KEYS = {
@@ -115,15 +116,18 @@ export default function JobClient({ job, relatedJobs, companies }: {
   const [isAnchorClosed, setIsAnchorClosed] = useState(false);
 
   const [randomBlogs, setRandomBlogs] = useState<typeof ALL_BLOGS>([]);
+  // Exposed for conditional rendering (Apply for Me section)
+  const [isNigerianJob, setIsNigerianJob] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     const jobCountry = typeof job.location === 'object'
       ? (job.location?.country || '')
       : '';
-    const isNigerianJob = jobCountry === 'NG' || jobCountry.toLowerCase() === 'nigeria';
+    const nigerianJob = jobCountry === 'NG' || jobCountry.toLowerCase() === 'nigeria';
+    setIsNigerianJob(nigerianJob);
     const pool = ALL_BLOGS.filter(b =>
-      b.region === 'global' || (isNigerianJob && b.region === 'nigeria')
+      b.region === 'global' || (nigerianJob && b.region === 'nigeria')
     );
     setRandomBlogs(getRandomItems(pool, 5));
   }, []);
@@ -599,7 +603,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
 
                 <div className="mt-4 -mx-6 px-6" style={{ minHeight: '250px' }}>
                   <AdUnit
-                    key={AD_SLOTS.DISPLAY_TOP}
                     slot={AD_SLOTS.DISPLAY_TOP}
                     format="auto"
                     style={{ display: 'block', width: '100%', minHeight: '250px' }}
@@ -677,10 +680,10 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
+              {/* In-Article Ad 1 */}
               <div className="w-full overflow-hidden">
                 <AdUnit
-                  key={AD_SLOTS.IN_ARTICLE_1}
-                  slot={AD_SLOTS.IN_ARTICLE_1}
+                  slot={AD_SLOTS.IN_ARTICLE}
                   format="fluid"
                   layout="in-article"
                   style={{ display: 'block', textAlign: 'center', width: '100%' }}
@@ -729,10 +732,10 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 return null;
               })()}
 
+              {/* In-Article Ad 2 */}
               <div className="w-full overflow-hidden">
                 <AdUnit
-                  key={AD_SLOTS.IN_ARTICLE_2}
-                  slot={AD_SLOTS.IN_ARTICLE_2}
+                  slot={AD_SLOTS.IN_ARTICLE}
                   format="fluid"
                   layout="in-article"
                   style={{ display: 'block', textAlign: 'center', width: '100%' }}
@@ -762,7 +765,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
 
               <div className="w-full overflow-hidden" style={{ minHeight: '100px' }}>
                 <AdUnit
-                  key={AD_SLOTS.DISPLAY_BOTTOM}
                   slot={AD_SLOTS.DISPLAY_BOTTOM}
                   format="auto"
                   style={{ display: 'block', width: '100%' }}
@@ -904,6 +906,34 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
+              {/* ─── Apply for Me — Nigerian jobs only ──────────────────────────── */}
+              {isNigerianJob && !isExpired && (
+                <div
+                  className="rounded-xl overflow-hidden shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-5"
+                  style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa' }}
+                >
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-1" style={{ color: '#ea580c' }}>
+                      Too Busy to Apply?
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      With JobMeter&apos;s <span className="font-semibold text-gray-800">Apply for Me</span> service, we apply to up to{' '}
+                      <span className="font-bold" style={{ color: '#ea580c' }}>15 jobs/month</span> on your behalf — sourced, matched, with a tailored CV for each application.
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <a
+                      href="/apply-for-me"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors hover:opacity-90 whitespace-nowrap shadow-sm"
+                      style={{ backgroundColor: '#ea580c' }}
+                    >
+                      Learn More
+                      <ChevronRight size={15} />
+                    </a>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Join Our Communities</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1011,10 +1041,28 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
+              {/* ─── Banner ad — bottom of main column (all screens) ─────────────── */}
+              <div className="w-full rounded-lg overflow-hidden">
+                <AdUnit
+                  slot={AD_SLOTS.BANNER_1}
+                  format="auto"
+                  style={{ display: 'block', width: '100%' }}
+                />
+              </div>
+
             </div>
 
             {/* RIGHT COLUMN — Sidebar */}
             <div className="lg:col-span-1 space-y-6">
+
+              {/* ─── Desktop-only banner ad — top of sidebar ─────────────────────── */}
+              <div className="hidden lg:block w-full rounded-lg overflow-hidden">
+                <AdUnit
+                  slot={AD_SLOTS.BANNER_1}
+                  format="auto"
+                  style={{ display: 'block', width: '100%' }}
+                />
+              </div>
 
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" 
@@ -1049,9 +1097,9 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               </div>
 
+              {/* ─── Mobile-only sidebar ad ───────────────────────────────────────── */}
               <div className="flex lg:hidden w-full overflow-hidden">
                 <AdUnit
-                  key={AD_SLOTS.SIDEBAR_MOBILE}
                   slot={AD_SLOTS.SIDEBAR_MOBILE}
                   format="fluid"
                   layoutKey="-fb+5w+4e-db+86"
@@ -1194,21 +1242,12 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
-              <div className="w-full rounded-lg overflow-hidden" style={{ minHeight: '250px' }}>
+              {/* ─── Banner ad — bottom of sidebar (all screens) ─────────────────── */}
+              <div className="w-full rounded-lg overflow-hidden">
                 <AdUnit
-                  key={AD_SLOTS.JOBCLIENT_DISPLAY}
-                  slot={AD_SLOTS.JOBCLIENT_DISPLAY}
+                  slot={AD_SLOTS.BANNER_2}
                   format="auto"
-                  style={{ display: 'block', width: '100%', minHeight: '250px' }}
-                />
-              </div>
-
-              <div className="hidden lg:block w-full rounded-lg overflow-hidden" style={{ minHeight: '250px' }}>
-                <AdUnit
-                  key={`${AD_SLOTS.MULTIPLEX}-sidebar`}
-                  slot={AD_SLOTS.MULTIPLEX}
-                  format="auto"
-                  style={{ display: 'block', width: '100%', minHeight: '250px' }}
+                  style={{ display: 'block', width: '100%' }}
                 />
               </div>
 
@@ -1231,7 +1270,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
           </button>
           <div className="w-full transition-all duration-300" style={{ height: `${anchorHeight}px` }}>
             <AdUnit
-              key={AD_SLOTS.ANCHOR_MOBILE}
               slot={AD_SLOTS.ANCHOR_MOBILE}
               format="auto"
               style={{ display: 'block', width: '100%', height: `${anchorHeight}px`, maxHeight: `${anchorHeight}px` }}
@@ -1256,6 +1294,9 @@ export default function JobClient({ job, relatedJobs, companies }: {
             currentCredits={upgradeErrorData?.currentCredits}
           />
         )}
+        {/* Apply for Me popup — Nigerian jobs only, shows after 45s */}
+        <TimedJobPopup forceShow={isNigerianJob} />
+
       </div>
     </>
   );

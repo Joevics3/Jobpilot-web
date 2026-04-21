@@ -72,7 +72,6 @@ interface ApplyPaymentModalProps {
   onOpenChange: (open: boolean) => void;
   defaultPackage?: string;
   onAuthRequired: () => void;
-  onSuccess?: () => void;        // Added to fix TypeScript error
 }
 
 export function ApplyPaymentModal({
@@ -80,7 +79,6 @@ export function ApplyPaymentModal({
   onOpenChange,
   defaultPackage = 'pro',
   onAuthRequired,
-  onSuccess,                     // Added
 }: ApplyPaymentModalProps) {
   const [selectedPackage, setSelectedPackage] = useState(defaultPackage);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -112,7 +110,7 @@ export function ApplyPaymentModal({
 
     const callback_url = `${window.location.origin}${successRedirect}`;
 
-    const paymentSuccess = await initializePayment({
+    await initializePayment({
       email: userEmail,
       amount: pkg.price,
       paymentType: 'subscription',
@@ -121,11 +119,6 @@ export function ApplyPaymentModal({
       creditAmount: pkg.creditAmount,
       callback_url,
     });
-
-    // Trigger parent's onSuccess callback if payment initialization succeeded
-    if (paymentSuccess && onSuccess) {
-      onSuccess();
-    }
   };
 
   return (

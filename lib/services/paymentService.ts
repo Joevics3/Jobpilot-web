@@ -29,6 +29,19 @@ export interface PaymentResult {
 export async function initializePayment(params: InitializePaymentParams): Promise<PaymentResult> {
   const { email, amount, userId, paymentType, planId, planType, creditAmount, metadata, callback_url } = params;
 
+  // FIX: Catch missing env vars early and surface a clear error instead of
+  // sending "Bearer undefined" to Paystack (which causes a silent auth failure
+  // and returns { status: false } with no authorizationUrl).
+  if (!process.env.PAYSTACK_SECRET_KEY) {
+    console.error('[initializePayment] PAYSTACK_SECRET_KEY is not set in environment variables.');
+    return { success: false, error: 'Payment service is not configured. Please contact support.' };
+  }
+
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    console.error('[initializePayment] NEXT_PUBLIC_APP_URL is not set in environment variables.');
+    return { success: false, error: 'App URL is not configured. Please contact support.' };
+  }
+
   try {
     const reference = `JP_${userId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
@@ -47,7 +60,7 @@ export async function initializePayment(params: InitializePaymentParams): Promis
           user_id: userId,
           payment_type: paymentType,
           plan_type: planType,
-          plan_slug: planId, // Storing the string slug (e.g., 'pro') safely in metadata
+          plan_slug: planId,
           credit_amount: creditAmount,
           ...metadata,
         },
@@ -56,11 +69,24 @@ export async function initializePayment(params: InitializePaymentParams): Promis
 
     const data = await response.json();
 
+    // FIX: Log the full Paystack response when it fails so the actual reason
+    // (invalid key, domain not whitelisted, etc.) is visible in server logs.
     if (!data.status) {
-      return { success: false, error: data.message };
+      console.error('[initializePayment] Paystack rejected the request:', {
+        message: data.message,
+        httpStatus: response.status,
+      });
+      return { success: false, error: data.message || 'Paystack declined the request' };
     }
 
-    // --- FIX FOR 22P02 ERROR ---
+    // FIX: Validate that Paystack actually returned a checkout URL before
+    // proceeding. A missing URL here would propagate to the client and cause
+    // a silent redirect to the callback page.
+    if (!data.data?.authorization_url) {
+      console.error('[initializePayment] Paystack returned no authorization_url:', data);
+      return { success: false, error: 'No checkout URL returned by Paystack' };
+    }
+
     // Validate if planId is a valid UUID before inserting into the plan_id column.
     // If it's a slug like 'pro' or 'apply-for-me', we leave plan_id null to avoid DB rejection.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId || '');
@@ -71,7 +97,7 @@ export async function initializePayment(params: InitializePaymentParams): Promis
       amount,
       payment_type: paymentType,
       status: 'pending',
-      plan_id: isUuid ? planId : null, 
+      plan_id: isUuid ? planId : null,
       plan_type: planType,
       credit_amount: creditAmount,
     });
@@ -87,7 +113,7 @@ export async function initializePayment(params: InitializePaymentParams): Promis
       authorizationUrl: data.data.authorization_url,
     };
   } catch (error: any) {
-    console.error('[initializePayment] Error:', error);
+    console.error('[initializePayment] Unexpected error:', error);
     return { success: false, error: error.message || 'Failed to initialize payment' };
   }
 }
@@ -106,6 +132,7 @@ export async function verifyPayment(reference: string) {
     const data = await response.json();
 
     if (!data.status) {
+      console.error('[verifyPayment] Paystack verification failed:', data.message);
       return { success: false, error: data.message };
     }
 
@@ -132,9 +159,8 @@ export async function handleSuccessfulPayment(paymentData: any) {
     throw new Error('No user_id found in payment metadata');
   }
 
-  // Determine credits and monthly allocation based on the package selected
   let creditsToAdd = 0;
-  let allocation = 5; // Default free tier allocation
+  let allocation = 5;
 
   if (planType === 'apply_for_me') {
     creditsToAdd = 15;
@@ -146,7 +172,6 @@ export async function handleSuccessfulPayment(paymentData: any) {
     creditsToAdd = metadata.credit_amount || 0;
   }
 
-  // Fetch current user record to perform addition (not overwrite)
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from('user_credits')
     .select('credits_remaining, plan_allocation')
@@ -158,9 +183,8 @@ export async function handleSuccessfulPayment(paymentData: any) {
   }
 
   if (existing) {
-    // If purchasing a plan, update the base allocation for the monthly cron-job reset
-    const newAllocation = (planType === 'pro' || planType === 'apply_for_me') 
-      ? allocation 
+    const newAllocation = (planType === 'pro' || planType === 'apply_for_me')
+      ? allocation
       : (existing.plan_allocation ?? 5);
 
     const { error: updateError } = await supabaseAdmin
@@ -174,12 +198,11 @@ export async function handleSuccessfulPayment(paymentData: any) {
 
     if (updateError) throw new Error(`Update failed: ${updateError.message}`);
   } else {
-    // Create new record if user doesn't have one
     const { error: insertError } = await supabaseAdmin
       .from('user_credits')
       .insert({
         user_id: userId,
-        credits_remaining: creditsToAdd + 5, // Includes initial 5 free credits
+        credits_remaining: creditsToAdd + 5,
         plan_allocation: allocation,
         welcome_credits_assigned: true,
       });
@@ -187,7 +210,6 @@ export async function handleSuccessfulPayment(paymentData: any) {
     if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
   }
 
-  // Finalize the transaction record
   const { error: txError } = await supabaseAdmin
     .from('payment_transactions')
     .update({ status: 'completed' })
